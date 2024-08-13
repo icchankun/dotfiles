@@ -14,6 +14,8 @@ source $HOMEBREW_PREFIX/opt/zinit/zinit.zsh
 ## plug-in
 zinit wait lucid light-mode for \
     OMZL::git.zsh \
+    OMZP::docker \
+    OMZP::docker-compose \
   atload"unalias grv" \
     OMZP::git \
   atinit"zicompinit; zicdreplay" \
