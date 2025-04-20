@@ -4,6 +4,7 @@ source $HOMEBREW_PREFIX/opt/zinit/zinit.zsh
 ## plug-in
 zinit wait lucid light-mode for \
     OMZL::git.zsh \
+    OMZP::asdf \
     OMZP::docker \
     OMZP::docker-compose \
   atload"unalias grv" \
@@ -66,11 +67,8 @@ alias de='docker exec -it $(docker ps | peco | cut -d " " -f 1) /bin/bash'
 # VSCode shell integration (ref. https://code.visualstudio.com/docs/terminal/shell-integration#_manual-installation)
 [[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path zsh)"
 
-# rbenv
-eval "$(rbenv init - zsh)"
-
-# fnm (node version manager)
-eval "$(fnm env --use-on-cd)"
+# asdf
+export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
 
 # sqlite
 export PATH="/opt/homebrew/opt/sqlite/bin:$PATH"
