@@ -77,6 +77,12 @@ export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
 # sqlite
 export PATH="/opt/homebrew/opt/sqlite/bin:$PATH"
 
+# mysql
+export PATH="/opt/homebrew/opt/mysql@8.0/bin:$PATH"
+
+# postgresql
+export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"
+
 # custom
 ## use arrow keys to select completion.
 zstyle ':completion:*' menu select
