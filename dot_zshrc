@@ -65,11 +65,11 @@ function peco-cdr() {
 zle -N peco-cdr
 bindkey '^u' peco-cdr
 
-## switch git braches
-alias -g lb='`git branch | peco --prompt "GIT BRANCH>" | head -n 1 | sed -e "s/^\*\s*//g"`'
+## select git branch interactively (used with gco, git wt, etc.)
+alias -g lb='`git branch | peco --prompt "GIT BRANCH>" | head -n 1 | sed -e "s/^[*+]\s*//g"`'
 
-## enter the docker container
-alias de='docker exec -it $(docker ps | peco | cut -d " " -f 1) /bin/bash'
+# git-wt
+eval "$(git wt --init zsh)"
 
 # asdf
 export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
