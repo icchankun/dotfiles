@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# =============================================================================
+# vscode-chezmoi-merge
+# Wrapper script to open VS Code's 3-way merge editor for chezmoi conflicts.
+# (chezmoi のコンフリクト解消に VS Code のマージエディタを使うためのラッパー。)
+#
+# Dependencies / 依存:
+#   - code (VS Code CLI)  https://code.visualstudio.com/
+#   - chezmoi             https://www.chezmoi.io/
+#
+# Setup / セットアップ:
+#   1. Install VS Code and enable the `code` CLI command
+#      (Command Palette → "Shell Command: Install 'code' command in PATH")
+#
+#   2. Configure chezmoi to use this script as the merge tool (~/.config/chezmoi/chezmoi.toml)
+#      [merge]
+#        command = "vscode-chezmoi-merge"
+#        args = ["--wait", "--merge", "{{ .Destination }}", "{{ .Source }}", "{{ .Target }}", "{{ .Destination }}"]
+#
+#   3. Make this script executable and place it somewhere on your PATH
+#      chmod +x vscode-chezmoi-merge
+#      mv vscode-chezmoi-merge /usr/local/bin/vscode-chezmoi-merge
+#
+# Usage / 使い方:
+#   Intended to run automatically via `chezmoi merge`.
+#   (`chezmoi merge` 実行時に自動的に呼び出される。)
+#   Works around a VS Code limitation: merge editor won't open if local and result share the same path.
+#   (VS Code の制約（local と result が同一パスだとマージエディタが開かない）を
+#   This is resolved by copying files to temporary paths before opening.
+#   一時ファイルにコピーすることで回避している。)
+# =============================================================================
+
+local_file="$3"   # Destination (current file on disk)
+remote_file="$4"  # Source (chezmoi source)
+result_file="$6"  # Destination (same as local)
+
+tmp_base=$(mktemp "${TMPDIR:-/tmp}/chezmoi-merge-base.XXXXXX")
+tmp_result=$(mktemp "${TMPDIR:-/tmp}/chezmoi-merge-result.XXXXXX")
+trap 'rm -f "$tmp_base" "$tmp_result"' EXIT
+
+cp "$local_file" "$tmp_base"
+cp "$result_file" "$tmp_result"
+
+code --wait --merge "$local_file" "$remote_file" "$tmp_base" "$tmp_result"
+
+cp "$tmp_result" "$result_file"
