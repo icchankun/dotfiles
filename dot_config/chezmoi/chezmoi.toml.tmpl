@@ -1,0 +1,7 @@
+[edit]
+    command = "code"
+    args = ["--wait"]
+
+[merge]
+    command = "vscode-chezmoi-merge"
+    args = ["--wait", "--merge", "{{ "{{" }} .Destination {{ "}}" }}", "{{ "{{" }} .Source {{ "}}" }}", "{{ "{{" }} .Target {{ "}}" }}", "{{ "{{" }} .Destination {{ "}}" }}"]

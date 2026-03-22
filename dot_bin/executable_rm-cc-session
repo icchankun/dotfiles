@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+
+# =============================================================================
+# rm-cc-session
+# Interactive Claude Code session browser and deleter using fzf.
+# (fzf を使って Claude Code セッションを一覧表示・削除する対話型ツール。)
+#
+# Dependencies / 依存:
+#   - fzf  https://github.com/junegunn/fzf
+#   - jq   https://stedolan.github.io/jq/
+#
+# Setup / セットアップ:
+#   1. Install dependencies
+#      brew install fzf jq
+#
+#   2. Make this script executable and place it somewhere on your PATH
+#      chmod +x rm-cc-session
+#      mv rm-cc-session /usr/local/bin/rm-cc-session
+#
+# Usage / 使い方:
+#   rm-cc-session
+#   (セッション一覧が fzf で表示される。)
+#   [Tab] select multiple  [ctrl-d] delete mode  [Esc] quit
+#   ([Tab] 複数選択 / [ctrl-d] 削除モード / [Esc] で終了)
+#   Session preview is shown in the right pane.
+#   (プレビューペインに会話の冒頭が表示される。)
+# =============================================================================
+
+PROJECTS_DIR="$HOME/.claude/projects"
+SELF="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+
+_list() {
+  find "$PROJECTS_DIR" -maxdepth 2 -name "*.jsonl" 2>/dev/null | while read -r file; do
+    local line
+    line=$(jq -rcs '
+      (map(select(.type == "user" and (.message.role? == "user"))) | first) as $first |
+      ([.[] | select(.customTitle != null) | .customTitle] | last // "-") as $title |
+      if $first then
+        [
+          ($first.timestamp[0:16] | gsub("T"; " ")),
+          $title,
+          ($first.gitBranch // "-"),
+          ($first.cwd // "" | split("/") | last),
+          # 全文検索用（非表示）
+          ([.[] | select(.type == "user" or .type == "assistant") |
+            if .type == "user" then
+              (.message.content | if type == "array" then (.[0].text // "") else . end)
+            else
+              (.message.content // "" |
+                if type == "array" then ([.[] | select(.type == "text") | .text] | join(""))
+                else . end)
+            end
+          ] | join(" ") | gsub("[\\n\\t\\r]"; " ") | .[0:3000])
+        ] | @tsv
+      else empty end
+    ' "$file" 2>/dev/null)
+    [ -n "$line" ] && printf '%s\t%s\n' "$line" "$file"
+  done | sort -r
+}
+
+_preview() {
+  local file="$1"
+  local title
+  title=$(jq -rs '[.[] | select(.customTitle != null) | .customTitle] | last // "-"' "$file" 2>/dev/null)
+  echo -e "\033[97m$title\033[0m"
+  echo -e "\033[90mSession: $(basename "$file" .jsonl)\033[0m"
+  echo -e "\033[90mFile:    $file\033[0m"
+  echo ""
+  jq -r '
+    select(.type == "user" or .type == "assistant") |
+    if .type == "user" then
+      (.message.content |
+        if type == "array" then (.[0].text // "") else . end |
+        gsub("^\\s+|\\s+$"; "")) |
+      if length > 0 then
+        "\n\u001b[32m[自分]\u001b[0m\n" + .[0:600]
+      else empty end
+    else
+      (.message.content |
+        if type == "array" then
+          ([.[] | select(.type == "text") | .text] | join("") | gsub("^\\s+|\\s+$"; ""))
+        else (. // "" | gsub("^\\s+|\\s+$"; "")) end) |
+      if length > 0 then
+        "\n\u001b[34m[Claude]\u001b[0m\n" + .[0:600]
+      else empty end
+    end
+  ' "$file" 2>/dev/null | head -300
+}
+
+HEADER_NORMAL=$'[Tab] 選択  [ctrl-d] 削除  [Esc] Quit\n'
+HEADER_CONFIRM=$'削除しますか？ [y] 削除  [n] キャンセル\n'
+
+case "$1" in
+  --list)    _list ;;
+  --preview) _preview "$2" ;;
+  *)
+    if ! command -v fzf &>/dev/null; then
+      echo "Error: fzf is required. Install with: brew install fzf" >&2
+      exit 1
+    fi
+    _list | fzf \
+      --ansi \
+      --multi \
+      --delimiter=$'\t' \
+      --with-nth=1..4 \
+      --header="$HEADER_NORMAL" \
+      --preview="\"$SELF\" --preview {6}" \
+      --preview-window="right:55%:wrap" \
+      --bind="ctrl-d:change-header($HEADER_CONFIRM)+rebind(y,n)" \
+      --bind="y:execute-silent(rm {+6})+reload(\"$SELF\" --list)+change-header($HEADER_NORMAL)+unbind(y,n)" \
+      --bind="n:change-header($HEADER_NORMAL)+unbind(y,n)"
+    ;;
+esac

@@ -28,61 +28,14 @@ zinit wait lucid light-mode for \
 
 zinit ice depth=1; zinit light romkatv/powerlevel10k
 
-# peco
-## select a previously executed command.
-function peco-select-history() {
-  BUFFER=$(\history -n -r 1 | peco --query "$LBUFFER")
-  CURSOR=$#BUFFER
-  zle clear-screen
-}
-zle -N peco-select-history
-bindkey '^r' peco-select-history
+# functions
+source ~/.zsh/functions.zsh
 
-## select a previously opened directory.
-if [[ -n $(echo ${^fpath}/chpwd_recent_dirs(N)) && -n $(echo ${^fpath}/cdr(N)) ]]; then
-    autoload -Uz chpwd_recent_dirs cdr add-zsh-hook
-    add-zsh-hook chpwd chpwd_recent_dirs
-    zstyle ':completion:*' recent-dirs-insert both
-    zstyle ':chpwd:*' recent-dirs-default true
-    zstyle ':chpwd:*' recent-dirs-max 1000
-    zstyle ':chpwd:*' recent-dirs-file "$HOME/.cache/chpwd-recent-dirs"
-fi
-
-function peco-get-destination-from-cdr() {
-  cdr -l | \
-  sed -e 's/^[[:digit:]]*[[:blank:]]*//' | \
-  peco --query "$LBUFFER"
-}
-function peco-cdr() {
-  local destination="$(peco-get-destination-from-cdr)"
-  if [ -n "$destination" ]; then
-    BUFFER="cd $destination"
-    zle accept-line
-  else
-    zle reset-prompt
-  fi
-}
-zle -N peco-cdr
-bindkey '^u' peco-cdr
-
-## select git branch interactively (used with gco, git wt, etc.)
-alias -g lb='`git branch | peco --prompt "GIT BRANCH>" | head -n 1 | sed -e "s/^[*+]\s*//g"`'
+# aliases
+source ~/.zsh/aliases.zsh
 
 # git-wt
 eval "$(git wt --init zsh)"
 
-# asdf
-export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
-
-# sqlite
-export PATH="/opt/homebrew/opt/sqlite/bin:$PATH"
-
-# mysql
-export PATH="/opt/homebrew/opt/mysql@8.0/bin:$PATH"
-
-# postgresql
-export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"
-
-# custom
-## use arrow keys to select completion.
+# use arrow keys to select completion
 zstyle ':completion:*' menu select
