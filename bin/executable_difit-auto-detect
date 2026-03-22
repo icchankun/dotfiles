@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+
+# =============================================================================
+# difit-auto-detect
+# Automatically detects git state and opens appropriate diff view
+# with difit in a cmux browser split pane.
+# (git の状態を自動検出し、適切な diff を difit で cmux のブラウザペインに表示する。)
+#
+# Based on / 参考:
+#   https://gist.github.com/azu/cef84c98aeef832d43dfb640c7e321f5
+#
+# Dependencies / 依存:
+#   - cmux    https://cmux.app/
+#   - difit   https://github.com/yoshiko-pg/difit
+#
+# Setup / セットアップ:
+#   1. Install cmux
+#      Download from https://cmux.app/ and move to /Applications/
+#   1.1 Change "Socakge Control Mode" to "Automation Mode"
+#      (「Socket Control Mode」を「Automation Mode」に変更する)
+#
+#   2. Install difit
+#      npm install -g difit
+#
+#   3. Make this script executable and place it somewhere on your PATH
+#      chmod +x difit-auto-detect
+#      mv difit-auto-detect /usr/local/bin/difit-auto-detect
+#
+#   4. (Optional) Bind to a global shortcut via your preferred launcher
+#      (お好みのランチャー（Alfred, Karabiner Elements, Raycast など）でショートカットに登録する)
+#
+# Usage / 使い方:
+#   Run this script while cmux is focused on a git repository pane.
+#   (cmux が git リポジトリのペインにフォーカスしている状態で実行する。)
+#   The script will:
+#   (スクリプトは以下を行う:)
+#     - Detect the current branch and default branch
+#       (現在のブランチとデフォルトブランチを検出する)
+#     - Show diff against merge-base (for feature branches)
+#       (フィーチャーブランチの場合は merge-base との diff を表示する)
+#     - Show diff against HEAD (for default branch or detached HEAD)
+#       (デフォルトブランチまたは detached HEAD の場合は HEAD との diff を表示する)
+#     - Open the result in a cmux browser split at http://localhost:4966/
+#       (結果を cmux のブラウザスプリットで http://localhost:4966/ に表示する)
+#     - Automatically shut down the difit server when the browser pane is closed
+#       (ブラウザペインを閉じると difit サーバーを自動停止する)
+# =============================================================================
+
+CMUX="/Applications/cmux.app/Contents/Resources/bin/cmux"
+DIFIT_PORT=4966
+
+# Provide immediate feedback so the user knows the script is running
+"$CMUX" notify --title "Difit" --body "Loading diff: $PWD"
+
+currentBranch=$(git rev-parse --abbrev-ref HEAD)
+
+# Detect default branch (origin/HEAD → origin/main → origin/master)
+defaultBranch=$(git symbolic-ref refs/remotes/origin/HEAD --short 2>/dev/null)
+if [[ -z "$defaultBranch" ]]; then
+    if git rev-parse --verify origin/main >/dev/null 2>&1; then
+        defaultBranch="origin/main"
+    elif git rev-parse --verify origin/master >/dev/null 2>&1; then
+        defaultBranch="origin/master"
+    fi
+fi
+
+# Kill any existing difit server before starting a new one
+lsof -ti :"$DIFIT_PORT" | xargs kill -9 2>/dev/null || true
+
+difitArgs=(--mode unified --no-open --include-untracked --port "$DIFIT_PORT")
+
+difit_working() {
+    difit working "${difitArgs[@]}" > /dev/null 2>&1 &
+}
+
+if [[ -z "$defaultBranch" ]] || [[ "$currentBranch" == "${defaultBranch#origin/}" ]]; then
+    # On the default branch or no remote — diff working directory against HEAD
+    difit_working
+else
+    mergeBase=$(git merge-base HEAD "$defaultBranch" 2>/dev/null)
+    if [[ -z "$mergeBase" ]]; then
+        # Fallback if merge-base cannot be determined
+        difit_working
+    else
+        difit "$mergeBase" HEAD "${difitArgs[@]}" > /dev/null 2>&1 &
+    fi
+fi
+
+# Wait until the difit server is ready
+while ! curl -s "http://localhost:${DIFIT_PORT}/" > /dev/null 2>&1; do
+    sleep 0.5
+done
+
+# Open in a cmux browser split
+"$CMUX" browser open-split "http://localhost:${DIFIT_PORT}/" > /dev/null

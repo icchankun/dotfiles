@@ -1,0 +1,135 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# =============================================================================
+# rename-cc-session
+# Generates a title for a Claude Code session and appends it to the transcript.
+# (Claude Code セッションのタイトルを AI で自動生成し、トランスクリプトに追記する。)
+#
+# Dependencies / 依存:
+#   - claude CLI  https://github.com/anthropics/claude-code
+#   - activesupport (gem)
+#
+# Setup / セットアップ:
+#   1. Install the claude CLI
+#      npm install -g @anthropic-ai/claude-code
+#
+#   2. Install the required gem
+#      gem install activesupport
+#
+#   3. Register as a Claude Code hook (SessionEnd) in ~/.claude/settings.json
+#      "hooks": { "SessionEnd": [{ "command": "rename-cc-session" }] }
+#
+# Usage / 使い方:
+#   Intended to run automatically as a SessionEnd hook.
+#   (SessionEnd フックとして自動実行される想定。)
+#   Reads JSON from stdin with session_id, transcript_path, cwd, etc.
+#   (stdin から JSON を受け取り、会話内容を元にタイトルを生成してセッションに保存する。)
+# =============================================================================
+
+require 'json'
+require 'shellwords'
+require 'active_support/core_ext/object/blank'
+require 'active_support/core_ext/string/inflections'
+
+class CcSessionRenamer
+  def self.call(cc_session_id:, transcript_path:, cwd:)
+    new(cc_session_id:, transcript_path:, cwd:).call
+  end
+
+  def initialize(cc_session_id:, transcript_path:, cwd:)
+    @cc_session_id = cc_session_id
+    @transcript_path = transcript_path
+    @cwd = cwd
+  end
+
+  def call
+    title = generate_title
+    return if title.blank?
+
+    rename_cc_session(title)
+  end
+
+  private
+
+  attr_reader :cc_session_id, :transcript_path, :cwd
+
+  def generate_title
+    messages = build_messages
+    return if messages.empty?
+
+    prompt = <<~TEXT
+      以下の会話について、次の形式で1行だけ出力してください。
+      形式: タイトル#{current_branch} #キーワード1 #キーワード2 #キーワード3
+      - タイトルは日本語かつ30文字以内 (できるだけ詳しく)
+      - キーワードは固有名詞(英語)または日本語で、3つまで
+      - マークダウン記法やプレフィックスは不要
+
+      出力例: フックのデバッグ#{current_branch} #hook #stdin #ruby
+
+      ```会話内容
+      #{messages.join("\n")}
+      ```
+    TEXT
+
+    `echo #{Shellwords.escape(prompt)} | claude -p --model claude-haiku-4-5-20251001 --setting-sources '' --no-session-persistence 2>/dev/null`.lines.first&.strip
+  end
+
+  def build_messages
+    File.foreach(transcript_path).each_with_object([]) do |line, messages|
+      message = build_message(line)
+      messages << message if message
+    end
+  end
+
+  TARGET_MESSAGE_TYPES = %w[user assistant].freeze
+  def build_message(line)
+    line_hash = JSON.parse(line) rescue return
+    message_type = line_hash['type']
+    return unless TARGET_MESSAGE_TYPES.include?(message_type)
+
+    content = extract_message_content(line_hash)
+    return if content.blank?
+
+    "#{message_type.titleize}: #{content}"
+  end
+
+  TARGET_MESSAGE_CONTENT_TYPE = 'text'
+  def extract_message_content(obj)
+    content = obj.dig('message', 'content')
+
+    case content
+    when Array
+      content.select { |c| c.is_a?(Hash) && c['type'] == TARGET_MESSAGE_CONTENT_TYPE }
+             .map { |c| c['text'].to_s }
+             .join(' ')
+    when String then content
+    else ''
+    end
+  end
+
+  def current_branch
+    branch = `git -C #{Shellwords.escape(cwd)} rev-parse --abbrev-ref HEAD 2>/dev/null`.strip
+    branch.present? ? " [#{branch}]" : ''
+  end
+
+  def rename_cc_session(title)
+    entry = JSON.generate({ type: 'custom-title', customTitle: title, sessionId: cc_session_id })
+    File.open(transcript_path, 'a') { |f| f.puts(entry) }
+  end
+end
+
+# $stdin で以下のような json が渡ってくる
+# {
+#   "session_id":"91d590b5-...",
+#   "transcript_path":"~/.claude/projects/hoge.jsonl"
+#   "cwd":"~/workspace/hoge",
+#   "hook_event_name":"SessionEnd",
+#   "reason":"prompt_input_exit"
+# }
+input = JSON.parse($stdin.read)
+CcSessionRenamer.call(
+  cc_session_id: input['session_id'],
+  transcript_path: input['transcript_path'],
+  cwd: input['cwd']
+)
