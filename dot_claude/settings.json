@@ -43,6 +43,16 @@
   "language": "Japanese",
   "voiceEnabled": true,
   "hooks": {
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '/handover (auto: PreCompact triggered)'"
+          }
+        ]
+      }
+    ],
     "SessionEnd": [
       {
         "hooks": [
