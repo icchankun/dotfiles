@@ -1,0 +1,53 @@
+# --- 参考リンク ---
+# - 【日本語訳】Ghosttyの設定チートシート: https://qiita.com/genimura/items/7fad3295c4de5538d6fe
+# - WarpからGhosttyに乗り換えて、ブランチ名表示やコマンド補完も有効にする: https://zenn.dev/tonkotsuboy_com/scraps/2df0297db0ac41
+# - Ghosttyへ入門する: https://zenn.dev/fendo181/articles/2b75b12c80fe06
+
+# --- デザイン ---
+# フォントサイズ (pt)
+font-size = 18
+# 使用するフォントファミリー (複数指定でフォールバック可能)
+font-family = "MesloLGS NF"
+# 背景の不透明度
+background-opacity = 0.9
+# 背景のぼかし
+background-blur = true
+# セル高さ調整
+adjust-cell-height = 10%
+# 水平パディング(ポイント)
+window-padding-x = 10
+# 垂直パディング(ポイント)
+window-padding-y = 10
+# パディングバランス
+window-padding-balance = true
+# テーマ名またはパス (ghostty +list-themes で確認可能)
+theme = Nord
+# アプリアイコン
+macos-icon = xray
+
+# --- ウィンドウ・クリップボード設定 ---
+# 新窓が cwd を継承するか
+window-inherit-working-directory = true
+# 状態保存
+window-save-state = always
+# 選択時自動コピー
+copy-on-select = true
+# クリップボード読み取り
+clipboard-read = allow
+# クリップボード書き込み
+clipboard-write = allow
+# Optionキー→Alt扱い
+macos-option-as-alt = true
+
+# --- キーバインド設定 ---
+# ペイン分割
+keybind = shift+alt+left=new_split:left
+keybind = shift+alt+right=new_split:right
+keybind = shift+alt+down=new_split:down
+keybind = shift+alt+up=new_split:up
+
+# ペイン移動
+keybind = alt+left=goto_split:left
+keybind = alt+right=goto_split:right
+keybind = alt+down=goto_split:down
+keybind = alt+up=goto_split:up
