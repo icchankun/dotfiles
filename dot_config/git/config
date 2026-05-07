@@ -3,3 +3,4 @@
 [core]
 	commentChar = ^
 	editor = code --wait
+	hooksPath = ~/.config/git/hooks
