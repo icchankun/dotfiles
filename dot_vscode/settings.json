@@ -1,0 +1,77 @@
+{
+  // ========== Workbench ==========
+  "workbench.colorTheme": "Nord",
+  "workbench.productIconTheme": "fluent-icons",
+  "workbench.startupEditor": "none",
+  "workbench.editor.wrapTabs": true,
+  "workbench.editor.enablePreview": false,
+  "workbench.editor.openPositioning": "last",
+  "workbench.editor.focusRecentEditorAfterClose": false,
+  "workbench.colorCustomizations": { "tab.activeBackground": "#708090" },
+  "workbench.editor.limit.enabled": true,
+  "workbench.editor.limit.value": 10,
+  "workbench.layoutControl.enabled": false,
+  "workbench.navigationControl.enabled": false,
+
+  // ========== Editor ==========
+  "editor.fontSize": 18,
+  "editor.fontFamily": "MesloLGS NF",
+  "editor.tabSize": 2,
+  "editor.formatOnSave": true,
+  "editor.formatOnType": true,
+  "editor.insertSpaces": true,
+  "editor.semanticHighlighting.enabled": true,
+  "editor.minimap.enabled": false,
+  "[html][css][scss][json][jsonc][javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+  },
+  "diffEditor.ignoreTrimWhitespace": true,
+
+  // ========== Files ==========
+  "files.autoSave": "afterDelay",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "files.trimFinalNewlines": true,
+
+  // ========== Terminal ==========
+  "terminal.integrated.fontSize": 18,
+  "terminal.integrated.defaultProfile.osx": "zsh",
+  "terminal.integrated.stickyScroll.enabled": true,
+  "terminal.integrated.suggest.enabled": true,
+  "terminal.integrated.scrollback": 10000,
+  "terminal.external.osxExec": "Warp.app",
+
+  // ========== Window ==========
+  "window.openFoldersInNewWindow": "off",
+  "window.openFilesInNewWindow": "off",
+
+  // ========== Git ==========
+  "scm.repositories.selectionMode": "single",
+  "git-worktree-manager.worktreeCopyPatterns": [
+    ".env",
+    ".envrc",
+    ".vscode/**",
+    "*.local",
+  ],
+  "git-worktree-manager.treeView.showOpenRepositoryInTreeItem": false,
+  "git-worktree-manager.treeView.showCheckoutInWorktreeItem": false,
+  "git-worktree-manager.treeView.showFetchInTreeItem": false,
+  "git-worktree-manager.treeView.showOpenExplorerInTreeItem": false,
+
+  // ========== Ruby ==========
+  "rubyLsp.addonSettings": {
+    "rspecCommand": "rspec -f d",
+    "debug": true,
+    "useRelativePaths": true,
+  },
+  "rubyLsp.rubyVersionManager": {
+    "identifier": "asdf",
+  },
+
+  // ========== Claude ==========
+  "claudeCode.preferredLocation": "panel",
+  "chat.agentsControl.enabled": false,
+  "chat.mcp.discovery.enabled": {
+    "claude-desktop": true,
+  },
+}
