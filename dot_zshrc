@@ -29,6 +29,7 @@ zinit ice depth=1; zinit light romkatv/powerlevel10k
 
 eval "$(git wt --init zsh)"
 eval "$(zoxide init zsh --cmd j)"
+eval "$(direnv hook zsh)"
 
 # functions
 source ~/.zsh/functions.zsh

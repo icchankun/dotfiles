@@ -1,0 +1,615 @@
+lockfile_version: '1'
+generated_at: '2026-06-21T09:15:03.320497+00:00'
+apm_version: 0.21.0
+dependencies:
+- repo_url: alirezarezvani/claude-skills
+  host: github.com
+  resolved_commit: 4a3c05b69e64f4925f7fc65c88890f614f79caf0
+  resolved_ref: 4a3c05b69e64f4925f7fc65c88890f614f79caf0
+  virtual_path: engineering-team/skills/engineering-skills
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .claude/skills/engineering-skills
+  - .claude/skills/engineering-skills/SKILL.md
+  deployed_file_hashes:
+    .claude/skills/engineering-skills/SKILL.md: sha256:99c775af2aa507257a7dce7e3cb2b13c7976a20b04c8655f12d70cad40eaa132
+  content_hash: sha256:16ff6e1ea5914ae7deb3631d2e8a6b7386fe8e79aba98ee82d28ef369f431133
+- repo_url: anthropics/claude-plugins-official
+  host: github.com
+  resolved_commit: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  resolved_ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  virtual_path: plugins/agent-sdk-dev
+  is_virtual: true
+  package_type: marketplace_plugin
+  deployed_files:
+  - .claude/agents/agent-sdk-verifier-py.md
+  - .claude/agents/agent-sdk-verifier-ts.md
+  - .claude/commands/new-sdk-app.md
+  deployed_file_hashes:
+    .claude/agents/agent-sdk-verifier-py.md: sha256:a72c50412f4f9940932cac0f3ca61d6ced7354b8ac8892e3f1507bcd2957006e
+    .claude/agents/agent-sdk-verifier-ts.md: sha256:68fe98341656fa242a5de9272165481d62b5670b2fff294961bc45a5c4ee57ea
+    .claude/commands/new-sdk-app.md: sha256:d10bb91b1e71b43e34719a29bd8ce1cd9d3a340439d0be9abaec26540b9e0c12
+  content_hash: sha256:77f385c5cf28918fdb1dccfdf43140414d08b96562c747e8b37324fd7d811ef5
+- repo_url: anthropics/claude-plugins-official
+  host: github.com
+  resolved_commit: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  resolved_ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  virtual_path: plugins/claude-code-setup
+  is_virtual: true
+  package_type: marketplace_plugin
+  deployed_files:
+  - .claude/skills/claude-automation-recommender
+  - .claude/skills/claude-automation-recommender/SKILL.md
+  - .claude/skills/claude-automation-recommender/references/hooks-patterns.md
+  - .claude/skills/claude-automation-recommender/references/mcp-servers.md
+  - .claude/skills/claude-automation-recommender/references/plugins-reference.md
+  - .claude/skills/claude-automation-recommender/references/skills-reference.md
+  - .claude/skills/claude-automation-recommender/references/subagent-templates.md
+  deployed_file_hashes:
+    .claude/skills/claude-automation-recommender/SKILL.md: sha256:441c57e26f0931b64dd085deaad9213c4e3efea27d916dd7443cd33c7e338227
+    .claude/skills/claude-automation-recommender/references/hooks-patterns.md: sha256:7b6e91b53aa0f1ed471fd66e177de17a88c1d6620ce95f5c8e8cdfebd20d939e
+    .claude/skills/claude-automation-recommender/references/mcp-servers.md: sha256:0f62bf84869d7e982e5dc15ebc789bb4734175b7d7b824051548c615ba79aa97
+    .claude/skills/claude-automation-recommender/references/plugins-reference.md: sha256:6570ff4c853253b3f15fb62e5d540cbf0ce3371936437791dde8fb53b7d444f3
+    .claude/skills/claude-automation-recommender/references/skills-reference.md: sha256:b4b57d953526a07146d5757ca5332034b9b4b4eeba839e4bb08111398c94556f
+    .claude/skills/claude-automation-recommender/references/subagent-templates.md: sha256:7f9a107d8619ff96fea07d5a17da31b269cec0ee343e5a9ff643c0d6cb4ba944
+  content_hash: sha256:11fd786ba7edf6ed23b81ea22b9e36cc37df6feb03b97365f90ba857681fdfb8
+- repo_url: anthropics/claude-plugins-official
+  host: github.com
+  resolved_commit: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  resolved_ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  virtual_path: plugins/claude-md-management
+  is_virtual: true
+  package_type: marketplace_plugin
+  deployed_files:
+  - .claude/commands/revise-claude-md.md
+  - .claude/skills/claude-md-improver
+  - .claude/skills/claude-md-improver/SKILL.md
+  - .claude/skills/claude-md-improver/references/quality-criteria.md
+  - .claude/skills/claude-md-improver/references/templates.md
+  - .claude/skills/claude-md-improver/references/update-guidelines.md
+  deployed_file_hashes:
+    .claude/commands/revise-claude-md.md: sha256:749dc2d70bd14cfad56b424e23205ae3cc81dca9378c869e3c895a78197cdd69
+    .claude/skills/claude-md-improver/SKILL.md: sha256:b06c7420be08ca1c7f6d75f7f4709fdb787624a2d363e2f8052216d8c780f85b
+    .claude/skills/claude-md-improver/references/quality-criteria.md: sha256:383def16b05dca948297dd1acb33f007cb1b1b2c368454d424c5634348a8bab1
+    .claude/skills/claude-md-improver/references/templates.md: sha256:de0aa3ac30120a0c77f9cd82738a75ed8326864f98feb89356a253f2deaf3ab0
+    .claude/skills/claude-md-improver/references/update-guidelines.md: sha256:02a158d6ca41a0ab702a67a213e92205f09c073cea53796633251bc62fd7ec55
+  content_hash: sha256:eef0aa5a71845be937066ef304fbd152d523d2574587474d342def4c3e8514d4
+- repo_url: anthropics/claude-plugins-official
+  host: github.com
+  resolved_commit: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  resolved_ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  virtual_path: plugins/code-modernization
+  is_virtual: true
+  package_type: marketplace_plugin
+  deployed_files:
+  - .claude/agents/architecture-critic.md
+  - .claude/agents/business-rules-extractor.md
+  - .claude/agents/legacy-analyst.md
+  - .claude/agents/scaffolder.md
+  - .claude/agents/security-auditor.md
+  - .claude/agents/test-engineer.md
+  - .claude/agents/version-delta-analyst.md
+  - .claude/commands/modernize-assess.md
+  - .claude/commands/modernize-brief.md
+  - .claude/commands/modernize-extract-rules.md
+  - .claude/commands/modernize-harden.md
+  - .claude/commands/modernize-map.md
+  - .claude/commands/modernize-preflight.md
+  - .claude/commands/modernize-reimagine.md
+  - .claude/commands/modernize-status.md
+  - .claude/commands/modernize-transform.md
+  - .claude/commands/modernize-uplift.md
+  deployed_file_hashes:
+    .claude/agents/architecture-critic.md: sha256:a1de2a6a3d5a208a5722dd3902dcb2488ff9a879a5494f34a170518126495065
+    .claude/agents/business-rules-extractor.md: sha256:aa718e013a378929adcd83a2c3efdc75266fbf69b3e31eebe085e617005d1491
+    .claude/agents/legacy-analyst.md: sha256:a0125d35744dc04482834b7f0354de7ed76f1ed02fb83f2dd4476c3f8a5d7892
+    .claude/agents/scaffolder.md: sha256:67686ebb1b7eb6884e7eef386cd03463582e3b8458fea54715ac7f85a242ad78
+    .claude/agents/security-auditor.md: sha256:0910739fa2df087ff5566ea1f34271f5fdd7569c16621ca14e01c1cca2c379d6
+    .claude/agents/test-engineer.md: sha256:2bb01314295aef845536e1677ef28a6dbfecb9375d95b8c1489b7c82dc8481c1
+    .claude/agents/version-delta-analyst.md: sha256:984c7cf4c74d93c1e138908cadf3fc1e8608cdf347cffd6a788fb2aaffa8e034
+    .claude/commands/modernize-assess.md: sha256:abff811bc729926ec88fba16f216060d512c3244699a8e91e1077a0556f7bd14
+    .claude/commands/modernize-brief.md: sha256:f851d43b76c9bcc81fd8fb04b419345cea6963738c9ea6933969aa44565c0325
+    .claude/commands/modernize-extract-rules.md: sha256:c61b6eaaebc3823f2c5fdb1a2c05c562a52b4f7d0ad6a1e8c8f42a22b9752b76
+    .claude/commands/modernize-harden.md: sha256:2d1b83ff429768e4997f1ddea47dc989520b886256330e6ff2877046d929320c
+    .claude/commands/modernize-map.md: sha256:7952d021c2379a41ddac02e5ab8177b8d9cdccb24f959bbd72f65fb2eba53c8e
+    .claude/commands/modernize-preflight.md: sha256:9d7f77b98e0ec3d1d295a6c75c08b36110996f4fd41aed13881ba319c79a564c
+    .claude/commands/modernize-reimagine.md: sha256:7b1c18bd5d4d06e0350a83eda23491e03db9e892742ef11aa947e13429d88679
+    .claude/commands/modernize-status.md: sha256:67a39b4a8b8e552ce95e13768a6a02a7e0a0b780a82800c987ae4d0f4f66543e
+    .claude/commands/modernize-transform.md: sha256:39d03f9d92066d0df27a15814b6ee5fd0f6c8fb11ec9cb5fefdc61e266502af0
+    .claude/commands/modernize-uplift.md: sha256:c300d193c841acb45245eac07953a324681587981aa0049871af5c36c3b28398
+  content_hash: sha256:79f8f89401b40dbe65fcf39677a59f3fcf0e2330e4a00fe70d71e4ac01b4c47f
+- repo_url: anthropics/claude-plugins-official
+  host: github.com
+  resolved_commit: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  resolved_ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  virtual_path: plugins/code-review
+  is_virtual: true
+  package_type: marketplace_plugin
+  deployed_files:
+  - .claude/commands/code-review.md
+  deployed_file_hashes:
+    .claude/commands/code-review.md: sha256:8520c75ee89a853b88a11822c50d96a9db8dae6f40776870240a82441f7451e0
+  content_hash: sha256:cb9d921f1af650fe9fdd59ee9f78cb3c4833d46322d3b6937a2e14588124b96a
+- repo_url: anthropics/claude-plugins-official
+  host: github.com
+  resolved_commit: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  resolved_ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  virtual_path: plugins/code-simplifier
+  is_virtual: true
+  package_type: marketplace_plugin
+  deployed_files:
+  - .claude/agents/code-simplifier.md
+  deployed_file_hashes:
+    .claude/agents/code-simplifier.md: sha256:976ddb22b84bc5a714216531a75db5e73169554add6b953442beeedb49b56891
+  content_hash: sha256:17829c1e01585fdaac1ff7de902433fca42517c678ed627640617ef9492bc6e8
+- repo_url: anthropics/claude-plugins-official
+  host: github.com
+  resolved_commit: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  resolved_ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  virtual_path: plugins/commit-commands
+  is_virtual: true
+  package_type: marketplace_plugin
+  deployed_files:
+  - .claude/commands/clean_gone.md
+  - .claude/commands/commit-push-pr.md
+  - .claude/commands/commit.md
+  deployed_file_hashes:
+    .claude/commands/clean_gone.md: sha256:24ce5c79da87b481d346d26b297cbe327862f1e4bbee05406589f4b5468c7fa3
+    .claude/commands/commit-push-pr.md: sha256:63ee94bcf2a60101d542ec46bf2afa18b31565105ebfc63f1a38e4d308d3cd2f
+    .claude/commands/commit.md: sha256:366740b9d9f45e05bf7cc5b703156f95fe28180012899ceb90d89d34d4110e47
+  content_hash: sha256:6d51547a7480fd2e8967fb5fb0aa1e91baf30c33c5e685675c3f1fb2265d40fd
+- repo_url: anthropics/claude-plugins-official
+  host: github.com
+  resolved_commit: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  resolved_ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  virtual_path: plugins/feature-dev
+  is_virtual: true
+  package_type: marketplace_plugin
+  deployed_files:
+  - .claude/agents/code-architect.md
+  - .claude/agents/code-explorer.md
+  - .claude/agents/code-reviewer.md
+  - .claude/commands/feature-dev.md
+  deployed_file_hashes:
+    .claude/agents/code-architect.md: sha256:c50fb08d59a4bbd19660860626a049e44cf1a2b0c1cf782e6c7a99ba7e71b0c3
+    .claude/agents/code-explorer.md: sha256:3b277703de7458988ec3b8021c716f79f642e174950ed332629310f68322029a
+    .claude/agents/code-reviewer.md: sha256:019395c3ce457460115cc703e2f4a86fed4bbe560dc58355051c4d877155d366
+    .claude/commands/feature-dev.md: sha256:656a01ce40782ee849c444916362df0e4e4173afcd33313777fa86021d89994b
+  content_hash: sha256:a2418714c221d9c60aacb744884b82bf172aa48829df3421c5dfb2ce884cea2b
+- repo_url: anthropics/claude-plugins-official
+  host: github.com
+  resolved_commit: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  resolved_ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  virtual_path: plugins/frontend-design
+  is_virtual: true
+  package_type: marketplace_plugin
+  deployed_files:
+  - .claude/skills/frontend-design
+  - .claude/skills/frontend-design/LICENSE.txt
+  - .claude/skills/frontend-design/SKILL.md
+  deployed_file_hashes:
+    .claude/skills/frontend-design/LICENSE.txt: sha256:0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594
+    .claude/skills/frontend-design/SKILL.md: sha256:1608ea77fbb6fc30d13a97d12cfa8ebf31358d40f0dd97beed24829d6b3f45dd
+  content_hash: sha256:110f3b5dd1c077861a5d0ef42035c7d0dd0209d87a783b8e973f6000579c3be4
+- repo_url: anthropics/claude-plugins-official
+  host: github.com
+  resolved_commit: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  resolved_ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  virtual_path: plugins/mcp-server-dev
+  is_virtual: true
+  package_type: marketplace_plugin
+  deployed_files:
+  - .claude/skills/build-mcp-app
+  - .claude/skills/build-mcp-app/SKILL.md
+  - .claude/skills/build-mcp-app/references/abuse-protection.md
+  - .claude/skills/build-mcp-app/references/apps-sdk-messages.md
+  - .claude/skills/build-mcp-app/references/directory-checklist.md
+  - .claude/skills/build-mcp-app/references/iframe-sandbox.md
+  - .claude/skills/build-mcp-app/references/payload-budgeting.md
+  - .claude/skills/build-mcp-app/references/widget-templates.md
+  - .claude/skills/build-mcp-server
+  - .claude/skills/build-mcp-server/SKILL.md
+  - .claude/skills/build-mcp-server/references/auth.md
+  - .claude/skills/build-mcp-server/references/deploy-cloudflare-workers.md
+  - .claude/skills/build-mcp-server/references/elicitation.md
+  - .claude/skills/build-mcp-server/references/remote-http-scaffold.md
+  - .claude/skills/build-mcp-server/references/resources-and-prompts.md
+  - .claude/skills/build-mcp-server/references/server-capabilities.md
+  - .claude/skills/build-mcp-server/references/tool-design.md
+  - .claude/skills/build-mcp-server/references/versions.md
+  - .claude/skills/build-mcpb
+  - .claude/skills/build-mcpb/SKILL.md
+  - .claude/skills/build-mcpb/references/local-security.md
+  - .claude/skills/build-mcpb/references/manifest-schema.md
+  deployed_file_hashes:
+    .claude/skills/build-mcp-app/SKILL.md: sha256:d2fd94f0096506469ec855c581e48293d35480e58e6405b2bfcdba0486a0c218
+    .claude/skills/build-mcp-app/references/abuse-protection.md: sha256:103711d50f6c0c46fc3c2ecbe684f4397b0e048b7b7289ecd22f562c3214a700
+    .claude/skills/build-mcp-app/references/apps-sdk-messages.md: sha256:df8857d98dc9b186a670ebce006ec7ef5a983338808a0dfca8ff1a2f326876dc
+    .claude/skills/build-mcp-app/references/directory-checklist.md: sha256:9f6113638f1ba15691462093945d283c86323b0f648f23c6602453c05e2fc3b9
+    .claude/skills/build-mcp-app/references/iframe-sandbox.md: sha256:d4c4a303f6e63840b3e4c1b0d943b24555efc88cc944261ec43c94bd9fd018ba
+    .claude/skills/build-mcp-app/references/payload-budgeting.md: sha256:0dc6d9bfa24d2ffe314de631d3f552cf3b5c86b2afcf25e902d1898069d58625
+    .claude/skills/build-mcp-app/references/widget-templates.md: sha256:d165f546ed7f91ece474d7605abc91e54e410ecebd3b649829687282c4887386
+    .claude/skills/build-mcp-server/SKILL.md: sha256:088cd04be7f03ebbdfd24973cbcbf93c7a2e09117c4bba7b2b06bcc3e0a556f6
+    .claude/skills/build-mcp-server/references/auth.md: sha256:83869c9c5ff0aee69ad88589e88c3a6888a7cc4a7843e9ea85185e11ac369e0f
+    .claude/skills/build-mcp-server/references/deploy-cloudflare-workers.md: sha256:b72abb420638510187da33b3e5348c6e8b5f319821b339d646517efbb3c8084c
+    .claude/skills/build-mcp-server/references/elicitation.md: sha256:d8f19b01b1bd3a8bad0fdb22e1898bb43110343db1d321e6c472f603d288f856
+    .claude/skills/build-mcp-server/references/remote-http-scaffold.md: sha256:bd5d49e1f4caa895221b7e539bd7cd23ad2c7e2dff5e7cf0bf4b976ebbb178e4
+    .claude/skills/build-mcp-server/references/resources-and-prompts.md: sha256:90537efcaf329ead6cabe42ab197412d39eb8401b6d1d734bf329f8a78cf8a60
+    .claude/skills/build-mcp-server/references/server-capabilities.md: sha256:a4d76934e9fb386a5026c44a1888ea1338ca8f128314547a765827d60a1aaff0
+    .claude/skills/build-mcp-server/references/tool-design.md: sha256:fd3747e5abf5d2aa584fb94936a879fe57e46203e0f896dad2a2e22a69f0a3fa
+    .claude/skills/build-mcp-server/references/versions.md: sha256:f7592e72c5c357153c3e031c7c768e32f670a654b146509cbeaf6d8d4f2e3752
+    .claude/skills/build-mcpb/SKILL.md: sha256:6bb90afd0415754e13f353ee5982d13857c14826edbcbdf5f1481fa5563cd56b
+    .claude/skills/build-mcpb/references/local-security.md: sha256:7813aae1084e050537241956ba835adceb710804871894b53a9adcdeb3736241
+    .claude/skills/build-mcpb/references/manifest-schema.md: sha256:6a97f9481107ebdbe8a75f06a5e126ba28021e1e8652677109e53d63a5793c72
+  content_hash: sha256:3d7bab9a8a16cc37defa6bbff6069227a871ffa287e853b56361bc26b217b57e
+- repo_url: anthropics/claude-plugins-official
+  host: github.com
+  resolved_commit: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  resolved_ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  virtual_path: plugins/mcp-tunnels
+  is_virtual: true
+  package_type: marketplace_plugin
+  deployed_files:
+  - .claude/commands/create-docker-mcp-tunnel.md
+  deployed_file_hashes:
+    .claude/commands/create-docker-mcp-tunnel.md: sha256:436054833b40e5729dc11a0585701bd7df507d96c391544c48932ab74fee88cc
+  content_hash: sha256:72545c7b24a3c26d35c643b87479b78225ee554d24c2d0aa580b2f1dbb3ffef0
+- repo_url: anthropics/claude-plugins-official
+  host: github.com
+  resolved_commit: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  resolved_ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  virtual_path: plugins/playground
+  is_virtual: true
+  package_type: marketplace_plugin
+  deployed_files:
+  - .claude/skills/playground
+  - .claude/skills/playground/SKILL.md
+  - .claude/skills/playground/templates/code-map.md
+  - .claude/skills/playground/templates/concept-map.md
+  - .claude/skills/playground/templates/data-explorer.md
+  - .claude/skills/playground/templates/design-playground.md
+  - .claude/skills/playground/templates/diff-review.md
+  - .claude/skills/playground/templates/document-critique.md
+  deployed_file_hashes:
+    .claude/skills/playground/SKILL.md: sha256:521a3d62211e5f47b65ed17b660e001b15cf8d88d058cbf31bc00e889bcb63cc
+    .claude/skills/playground/templates/code-map.md: sha256:0eb7c0d1ac3dbd1401c4a2348631e7be2a02ec30739dd514aab6f162cfade77f
+    .claude/skills/playground/templates/concept-map.md: sha256:153810786435a1f3e3948aba075ebf3c887df827464bebca61f48ce7974e9622
+    .claude/skills/playground/templates/data-explorer.md: sha256:4b884e4b400f3af82b7f33210c5c2017a5296cab16f1496963bd42061a1fe342
+    .claude/skills/playground/templates/design-playground.md: sha256:190f7da424ebd3226a679045420b64171a98d081b7d84e26be4553de13c91fe7
+    .claude/skills/playground/templates/diff-review.md: sha256:32112ba4e82fbb8b656af166d1e21f8461cedbb4fdb5d2c314c43d210ea7e37d
+    .claude/skills/playground/templates/document-critique.md: sha256:c5bd7a68a53f2075d127e482c93b5f3d0b51c24bf8d301c1124801cca7be2d41
+  content_hash: sha256:53d1e742ef8ed5dcc7dc50429ba2b3e6e6dc108bc170843418ad8e10288f8028
+- repo_url: anthropics/claude-plugins-official
+  host: github.com
+  resolved_commit: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  resolved_ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  virtual_path: plugins/plugin-dev
+  is_virtual: true
+  package_type: marketplace_plugin
+  deployed_files:
+  - .claude/agents/agent-creator.md
+  - .claude/agents/plugin-validator.md
+  - .claude/agents/skill-reviewer.md
+  - .claude/commands/create-plugin.md
+  - .claude/skills/agent-development
+  - .claude/skills/agent-development/SKILL.md
+  - .claude/skills/agent-development/examples/agent-creation-prompt.md
+  - .claude/skills/agent-development/examples/complete-agent-examples.md
+  - .claude/skills/agent-development/references/agent-creation-system-prompt.md
+  - .claude/skills/agent-development/references/system-prompt-design.md
+  - .claude/skills/agent-development/references/triggering-examples.md
+  - .claude/skills/agent-development/scripts/validate-agent.sh
+  - .claude/skills/command-development
+  - .claude/skills/command-development/README.md
+  - .claude/skills/command-development/SKILL.md
+  - .claude/skills/command-development/examples/plugin-commands.md
+  - .claude/skills/command-development/examples/simple-commands.md
+  - .claude/skills/command-development/references/advanced-workflows.md
+  - .claude/skills/command-development/references/documentation-patterns.md
+  - .claude/skills/command-development/references/frontmatter-reference.md
+  - .claude/skills/command-development/references/interactive-commands.md
+  - .claude/skills/command-development/references/marketplace-considerations.md
+  - .claude/skills/command-development/references/plugin-features-reference.md
+  - .claude/skills/command-development/references/testing-strategies.md
+  - .claude/skills/hook-development
+  - .claude/skills/hook-development/SKILL.md
+  - .claude/skills/hook-development/examples/load-context.sh
+  - .claude/skills/hook-development/examples/validate-bash.sh
+  - .claude/skills/hook-development/examples/validate-write.sh
+  - .claude/skills/hook-development/references/advanced.md
+  - .claude/skills/hook-development/references/migration.md
+  - .claude/skills/hook-development/references/patterns.md
+  - .claude/skills/hook-development/scripts/README.md
+  - .claude/skills/hook-development/scripts/hook-linter.sh
+  - .claude/skills/hook-development/scripts/test-hook.sh
+  - .claude/skills/hook-development/scripts/validate-hook-schema.sh
+  - .claude/skills/mcp-integration
+  - .claude/skills/mcp-integration/SKILL.md
+  - .claude/skills/mcp-integration/examples/http-server.json
+  - .claude/skills/mcp-integration/examples/sse-server.json
+  - .claude/skills/mcp-integration/examples/stdio-server.json
+  - .claude/skills/mcp-integration/references/authentication.md
+  - .claude/skills/mcp-integration/references/server-types.md
+  - .claude/skills/mcp-integration/references/tool-usage.md
+  - .claude/skills/plugin-settings
+  - .claude/skills/plugin-settings/SKILL.md
+  - .claude/skills/plugin-settings/examples/create-settings-command.md
+  - .claude/skills/plugin-settings/examples/example-settings.md
+  - .claude/skills/plugin-settings/examples/read-settings-hook.sh
+  - .claude/skills/plugin-settings/references/parsing-techniques.md
+  - .claude/skills/plugin-settings/references/real-world-examples.md
+  - .claude/skills/plugin-settings/scripts/parse-frontmatter.sh
+  - .claude/skills/plugin-settings/scripts/validate-settings.sh
+  - .claude/skills/plugin-structure
+  - .claude/skills/plugin-structure/README.md
+  - .claude/skills/plugin-structure/SKILL.md
+  - .claude/skills/plugin-structure/examples/advanced-plugin.md
+  - .claude/skills/plugin-structure/examples/minimal-plugin.md
+  - .claude/skills/plugin-structure/examples/standard-plugin.md
+  - .claude/skills/plugin-structure/references/component-patterns.md
+  - .claude/skills/plugin-structure/references/manifest-reference.md
+  - .claude/skills/skill-development
+  - .claude/skills/skill-development/SKILL.md
+  - .claude/skills/skill-development/references/skill-creator-original.md
+  deployed_file_hashes:
+    .claude/agents/agent-creator.md: sha256:99ca808b7577e5c4b816cd7e621a1dea4b0ba9104ba24629cd713170cfe9dbd3
+    .claude/agents/plugin-validator.md: sha256:cd1cf892e9d4693a1b783ffd53965a25bad9c293db87a2122578c97fdb098b94
+    .claude/agents/skill-reviewer.md: sha256:78ac55ddc31dd78227df90029d9c2333bdd97567296ddd4a9b23c090a94fc09a
+    .claude/commands/create-plugin.md: sha256:02731693cbd329d15b961d5fb2e18081540fe7968ff38edeb5a20b22809abb2b
+    .claude/skills/agent-development/SKILL.md: sha256:6a2826571320828cc6f8f21ccd8e6eefd2bced62000c8c5e43a712c12e2d83a1
+    .claude/skills/agent-development/examples/agent-creation-prompt.md: sha256:a299652c1bba7b43736cc72a14ada464baccc80c6431e5fa3a55bd13129ac54c
+    .claude/skills/agent-development/examples/complete-agent-examples.md: sha256:8321e9933dd0033c46bf5ae831e7cf7dc79783c80fb9b5ea1b66c74f4ac2b337
+    .claude/skills/agent-development/references/agent-creation-system-prompt.md: sha256:c56e7fafb84bcbeff69ecd61b1f68ca380e8ba4177dc57c6ceeecd3aa8a83d7b
+    .claude/skills/agent-development/references/system-prompt-design.md: sha256:eaac53eaaf8326ac04428987280fb5041920b7571477ad41742517c5aac683fc
+    .claude/skills/agent-development/references/triggering-examples.md: sha256:b8ff47692b007b19b36df81ebd0562476202a21d67db80eeca9c3ee05528cb10
+    .claude/skills/agent-development/scripts/validate-agent.sh: sha256:d22e1292f997169fb745793dc50ebe3e9c6631603e1d77f04c2e79bb1fc63cba
+    .claude/skills/command-development/README.md: sha256:dd4ba7eded93d7ba698f05ec63d06d110a6b5543664af359b005dd976ce811b8
+    .claude/skills/command-development/SKILL.md: sha256:c55ad02cfe4cbb2a947eea3b1ed5fa1871e722d627c3c6792c3ed87c10c4d7a8
+    .claude/skills/command-development/examples/plugin-commands.md: sha256:7d71d7b516020a6c171171399b40dd2cad02b842c9faa78b90e0983906c9ee94
+    .claude/skills/command-development/examples/simple-commands.md: sha256:f2533ed834305166603bcb4dd870d695af4a33b9a49d330937a4c70ed964767c
+    .claude/skills/command-development/references/advanced-workflows.md: sha256:eb258095b5a411b68377c96730effe597884a14b619cb0c1a7ab1c801d80a7d9
+    .claude/skills/command-development/references/documentation-patterns.md: sha256:70c6c9b0a9b2d46a925ada6c45808a73498a457e1d641c82cc05de8a29a33b05
+    .claude/skills/command-development/references/frontmatter-reference.md: sha256:db1ea175ca4b0bb7d11c75cb8a7d00b353ea7cf4df2027b4263e45ded4d39475
+    .claude/skills/command-development/references/interactive-commands.md: sha256:09ab1f18bfa3ff5f7088e45d5810ac20eb25ffc97fc9e8bb79416d40e0b4516b
+    .claude/skills/command-development/references/marketplace-considerations.md: sha256:ab30835431d06a8e65cd629ba0e73b3f1de5b043126c6fef7ea70163400e90f4
+    .claude/skills/command-development/references/plugin-features-reference.md: sha256:57e11ae6a4bbc1a4a295d1f036202970911d6029d64f4ab058b63a4c5a899072
+    .claude/skills/command-development/references/testing-strategies.md: sha256:e6ccf78d85c23bc58582dbc8b91731c4e412568705ed2c87ac699a1ded9adc67
+    .claude/skills/hook-development/SKILL.md: sha256:f47e2d42f6360294216a859ae0c30b93caafdd2b2e5ffc007489ba4ca447fa5c
+    .claude/skills/hook-development/examples/load-context.sh: sha256:0d614599e711c087b381a4ac7ee3c40758af1022669fc998649d199b9dfe15ed
+    .claude/skills/hook-development/examples/validate-bash.sh: sha256:348c58f4cf38a2e7080ea5272935a7658c7122d83dd6c52d0a1f2ef599c176ab
+    .claude/skills/hook-development/examples/validate-write.sh: sha256:89a8ef9bb7508e4819080e65834d6783afa5a5a614d458a3821b80a329eb32e5
+    .claude/skills/hook-development/references/advanced.md: sha256:5b139ceeb6a3ef16555a6eef421e2642e6ca286b5527ee2b4e02c11ae5b75dd5
+    .claude/skills/hook-development/references/migration.md: sha256:7f8e7a795829837f46a0c058c26c8f5c4aa8be5c9fb5316b828229d1802ded77
+    .claude/skills/hook-development/references/patterns.md: sha256:cb607fca192bfa892fd198141b86dac9d0ca2c573a280b054b7beaa56fc9a8bf
+    .claude/skills/hook-development/scripts/README.md: sha256:08a28b12ffa9fcb16f257ea685c70a920f4f835978b9ffbbac055137c6f6aca0
+    .claude/skills/hook-development/scripts/hook-linter.sh: sha256:85a7d55488f8f38f9b98350b5cb597fb306432d5e61eaa3444e7226ca9309e0b
+    .claude/skills/hook-development/scripts/test-hook.sh: sha256:ded642e811b4731f6a2c90c73b02e00c937511d9ee65236bb8cf9964f0069393
+    .claude/skills/hook-development/scripts/validate-hook-schema.sh: sha256:e7785d6c61d368f5ea5270c979753aea02f776f5b6aa220137ec4585abd720c2
+    .claude/skills/mcp-integration/SKILL.md: sha256:2bcc3b5e93924d7632218f494890f6e6f75a9248138bc97070bc62aea942dd49
+    .claude/skills/mcp-integration/examples/http-server.json: sha256:7a11adaea5ac1bb76269bf473f5cf5cbd636a83c2ec0b7007f2b1cbf4a8a725f
+    .claude/skills/mcp-integration/examples/sse-server.json: sha256:9b0be023f74e12c804757e56dc86349134fd7497ef17f34c7c2ff25039cd1efc
+    .claude/skills/mcp-integration/examples/stdio-server.json: sha256:46148a5dc7fc5e63c681c5fb975d3908d3f3052f51de7236725cdadda41e2b5d
+    .claude/skills/mcp-integration/references/authentication.md: sha256:9f3ca61a857a15cc4c0dea9143365b0c49cae558690089dd61f6434186c702ce
+    .claude/skills/mcp-integration/references/server-types.md: sha256:7b06c7ea92e255218897189c550a32cbad1daa173e78e40ec94524fc9a1fb36b
+    .claude/skills/mcp-integration/references/tool-usage.md: sha256:8dd0005d7ba6cd2d24e72f9e6102c129b7445fc818e14656ad9ebaef6621a7a6
+    .claude/skills/plugin-settings/SKILL.md: sha256:028b955244b937ebc1a5c268a12776b8ceae4cbfb60928fbca927227f4c8851d
+    .claude/skills/plugin-settings/examples/create-settings-command.md: sha256:abf0a36bb3f6425041046f2da1ebfac5505c5b37656fdd4772cfc4d8bd2fa655
+    .claude/skills/plugin-settings/examples/example-settings.md: sha256:f07209b6e2fb62d443ae07d01bc1674c6c741c352a04549bfa978e1f34b9769e
+    .claude/skills/plugin-settings/examples/read-settings-hook.sh: sha256:627fce38d37d64c971401ecc85d548f060075670bcac52f65c92ca156e810c70
+    .claude/skills/plugin-settings/references/parsing-techniques.md: sha256:bc90aa020aa5fcbb3483d7316754450dcc91d086ee96f9304fa655e878f7712e
+    .claude/skills/plugin-settings/references/real-world-examples.md: sha256:35c8805ac43fccd9efeef932bc49afc424f8fd150b553197652996abf2d1327e
+    .claude/skills/plugin-settings/scripts/parse-frontmatter.sh: sha256:1ab8c42d5a19e0b404af3c573d0267fc19b5987e1d7885f522066ffd76e54553
+    .claude/skills/plugin-settings/scripts/validate-settings.sh: sha256:2f4975285cba7f16b82c764a95fe76d34ac488308ba6705c04561267da4f4f75
+    .claude/skills/plugin-structure/README.md: sha256:c7cb4931d6d71198cba6b552e4733b41940be56a65552a2ff7c5656750b95184
+    .claude/skills/plugin-structure/SKILL.md: sha256:a2dbc1e5502aacb360d0ca74732cdd7be4f6a12a49edf4f2ade4134fbc026247
+    .claude/skills/plugin-structure/examples/advanced-plugin.md: sha256:3d24f5856048a94cb99fe2b8207d99f2f5d69325771b361d63ec73024290759c
+    .claude/skills/plugin-structure/examples/minimal-plugin.md: sha256:c4f14fe56b153be3c532b7947bb10b453fc92e280dca5a7da752d2b1b5d17448
+    .claude/skills/plugin-structure/examples/standard-plugin.md: sha256:b8cfba84bd4dbdc83365cebcde5dcc6391252372300df0c1ea7890441582d784
+    .claude/skills/plugin-structure/references/component-patterns.md: sha256:38681792a6aba4f06d3c391b20b04060263f1fbaacc5880cc0cafe0543d37f91
+    .claude/skills/plugin-structure/references/manifest-reference.md: sha256:d0ff8ffece4754df92c543266b8d0b689fb85473f51fbb57e215f2d235ee9782
+    .claude/skills/skill-development/SKILL.md: sha256:d51b4e20043b13e462aa86c47ea82d43e216eb292871538127f4b12a54e4944f
+    .claude/skills/skill-development/references/skill-creator-original.md: sha256:8c0ce23bb87be91f5b0853c2e9815617c3858b63acdddfe5da47d2c2d3a60816
+  content_hash: sha256:098af2daaf5c83b1e629ff1ae8f82c2bfe7750a2eab1ecacfdd56f4c6b80cec3
+- repo_url: anthropics/claude-plugins-official
+  host: github.com
+  resolved_commit: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  resolved_ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  virtual_path: plugins/pr-review-toolkit
+  is_virtual: true
+  package_type: marketplace_plugin
+  deployed_files:
+  - .claude/agents/code-reviewer.md
+  - .claude/agents/code-simplifier.md
+  - .claude/agents/comment-analyzer.md
+  - .claude/agents/pr-test-analyzer.md
+  - .claude/agents/silent-failure-hunter.md
+  - .claude/agents/type-design-analyzer.md
+  - .claude/commands/review-pr.md
+  deployed_file_hashes:
+    .claude/agents/code-reviewer.md: sha256:019395c3ce457460115cc703e2f4a86fed4bbe560dc58355051c4d877155d366
+    .claude/agents/code-simplifier.md: sha256:976ddb22b84bc5a714216531a75db5e73169554add6b953442beeedb49b56891
+    .claude/agents/comment-analyzer.md: sha256:4a9c1f2eb8234a4b9231983e75739663d512e1aed242388964a165a719b84698
+    .claude/agents/pr-test-analyzer.md: sha256:fcb1cde9ba7b21694b508766a8d6a79bc91bed9982f828f816210059934f46b4
+    .claude/agents/silent-failure-hunter.md: sha256:fa9b0daec5a267e7e66435cc48b3328301fc9f70c3af259fe248881327a1babc
+    .claude/agents/type-design-analyzer.md: sha256:c1cf67843d3c4fd27ddf6b24aa92521414b16c01610e7f7e87212c7b8681198d
+    .claude/commands/review-pr.md: sha256:1c3ca6f18f9851ac88ffdc3f98b45e9bd19fb139eb14850f2c22cd18c7a167b2
+  content_hash: sha256:b9c3b2508dbae3008eda4b8f5818471873743bffe3786032df576cbe01c9ec58
+- repo_url: anthropics/claude-plugins-official
+  host: github.com
+  resolved_commit: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  resolved_ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  virtual_path: plugins/project-artifact
+  is_virtual: true
+  package_type: marketplace_plugin
+  deployed_files:
+  - .claude/skills/project-artifact
+  - .claude/skills/project-artifact/SKILL.md
+  - .claude/skills/project-artifact/swe.md
+  - .claude/skills/project-artifact/template.html
+  deployed_file_hashes:
+    .claude/skills/project-artifact/SKILL.md: sha256:5417e25c920250af113b8e3fe7bf749be71a5d32769a0120e61cd4be8e0ff54f
+    .claude/skills/project-artifact/swe.md: sha256:396b7cfa9c99b78b44326cf4add4f7ac8e07d07d76c56697b84b44197c77b4ce
+    .claude/skills/project-artifact/template.html: sha256:467b8ec1ad799591e099012711e072352395c0b897029200661e852374be9764
+  content_hash: sha256:aca5cc1603da5e138a34154afcbd56d19d2d72e2832d333060ac9cf7516c313f
+- repo_url: anthropics/claude-plugins-official
+  host: github.com
+  resolved_commit: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  resolved_ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  virtual_path: plugins/session-report
+  is_virtual: true
+  package_type: skill_bundle
+  deployed_files:
+  - .claude/skills/session-report
+  - .claude/skills/session-report/SKILL.md
+  - .claude/skills/session-report/analyze-sessions.mjs
+  - .claude/skills/session-report/template.html
+  deployed_file_hashes:
+    .claude/skills/session-report/SKILL.md: sha256:ef0fbc4259a41b7fd61b517fb1c9a95f02b83ea3c79ba0b3afbeee4942570397
+    .claude/skills/session-report/analyze-sessions.mjs: sha256:7e660e93b4089e9262c822f36f7233f55b77d2d6d7e19dd664596cd90c6331ea
+    .claude/skills/session-report/template.html: sha256:b2981488f8e9eeadb305330e8f6ddf795b0360d756a7f1f175f8320811202fc3
+  content_hash: sha256:4c0724cd997c628a9cb2ef09101e78b44a2d58ee22d35f85b1445a37162b8311
+- repo_url: anthropics/claude-plugins-official
+  host: github.com
+  resolved_commit: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  resolved_ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  virtual_path: plugins/skill-creator
+  is_virtual: true
+  package_type: marketplace_plugin
+  deployed_files:
+  - .claude/skills/skill-creator
+  - .claude/skills/skill-creator/LICENSE.txt
+  - .claude/skills/skill-creator/SKILL.md
+  - .claude/skills/skill-creator/agents/analyzer.md
+  - .claude/skills/skill-creator/agents/comparator.md
+  - .claude/skills/skill-creator/agents/grader.md
+  - .claude/skills/skill-creator/assets/eval_review.html
+  - .claude/skills/skill-creator/eval-viewer/generate_review.py
+  - .claude/skills/skill-creator/eval-viewer/viewer.html
+  - .claude/skills/skill-creator/references/schemas.md
+  - .claude/skills/skill-creator/scripts/__init__.py
+  - .claude/skills/skill-creator/scripts/aggregate_benchmark.py
+  - .claude/skills/skill-creator/scripts/generate_report.py
+  - .claude/skills/skill-creator/scripts/improve_description.py
+  - .claude/skills/skill-creator/scripts/package_skill.py
+  - .claude/skills/skill-creator/scripts/quick_validate.py
+  - .claude/skills/skill-creator/scripts/run_eval.py
+  - .claude/skills/skill-creator/scripts/run_loop.py
+  - .claude/skills/skill-creator/scripts/utils.py
+  deployed_file_hashes:
+    .claude/skills/skill-creator/LICENSE.txt: sha256:58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd
+    .claude/skills/skill-creator/SKILL.md: sha256:dcd4803e61e913e6fc27294184cd3a71f09f5e924ff20c8a9a20173e7b3c2bcf
+    .claude/skills/skill-creator/agents/analyzer.md: sha256:bf68f4cac5a56c673a928c2e6d619586c5b93ea364026ab37547772cb45a663a
+    .claude/skills/skill-creator/agents/comparator.md: sha256:fe1fc9787c495d864c5d6eada47396478572325fde1b33a96d78bf4b849b7a3e
+    .claude/skills/skill-creator/agents/grader.md: sha256:57134da0c1a4eea33fbd74a1c9c44aa814f07d6bc64de303edb586f941e5d21a
+    .claude/skills/skill-creator/assets/eval_review.html: sha256:ce477dcc74dc1c0d1d3352646a79167b5a63634e936b1019160025065974e452
+    .claude/skills/skill-creator/eval-viewer/generate_review.py: sha256:fc9d1b9243fe5ab6012ebd579bd76d0035de1b79fd3b969de114defab26478fb
+    .claude/skills/skill-creator/eval-viewer/viewer.html: sha256:a53213426ee1100441d701a3a0d49cda7a842f992d2c36463f4d3cc0258575fa
+    .claude/skills/skill-creator/references/schemas.md: sha256:8e8876180a8989b406a4d3edddf875b04cdfd5805cc8616686d552b11ce4455f
+    .claude/skills/skill-creator/scripts/__init__.py: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    .claude/skills/skill-creator/scripts/aggregate_benchmark.py: sha256:123ef128ea5ccc01a4b1ac212ef5567f21e9c13d3d240609780beeb3200c49aa
+    .claude/skills/skill-creator/scripts/generate_report.py: sha256:13df7118a3c50c83c4c3250a606d5f2b20b25a3d44cbc392b3d669ec75281453
+    .claude/skills/skill-creator/scripts/improve_description.py: sha256:87d864570220b699fac52da309d2d6efdb060647bfebc74f768128e646accf80
+    .claude/skills/skill-creator/scripts/package_skill.py: sha256:1a33059b0db1ef73375d46d513e5ea81369d2e8838c970597b0d52ddef8d1c0f
+    .claude/skills/skill-creator/scripts/quick_validate.py: sha256:67cf5703402013936c8fb75ad6a1afecd8841d45cc5e606b634eb05825fde365
+    .claude/skills/skill-creator/scripts/run_eval.py: sha256:43e3b8f80dbf69c343967ba77e268fae991d9fa3ed68b32a0ff02532cd48657f
+    .claude/skills/skill-creator/scripts/run_loop.py: sha256:7bd6f674203168520517eec94c55f493c0d154339b061b4d7c0f0dad187d0f21
+    .claude/skills/skill-creator/scripts/utils.py: sha256:3af8ae62c40c73ab712207436a0d9a981e845f25c5a7040229eb189cc8e45bb1
+  content_hash: sha256:c162e318dd2dd4ce3b647c46b0cbd8c30f89b15b929ce6940fab43f70c428ee4
+- repo_url: icchankun/skills
+  host: github.com
+  resolved_commit: 133fba4721cf5cdfac834bbe87a21133c1d649b1
+  resolved_ref: 133fba4721cf5cdfac834bbe87a21133c1d649b1
+  package_type: marketplace_plugin
+  deployed_files:
+  - .claude/skills/git-branch
+  - .claude/skills/git-branch/SKILL.md
+  - .claude/skills/git-commit
+  - .claude/skills/git-commit/SKILL.md
+  - .claude/skills/github-pr
+  - .claude/skills/github-pr/SKILL.md
+  - .claude/skills/handover
+  - .claude/skills/handover/SKILL.md
+  - .claude/skills/resolving-pr-reviews
+  - .claude/skills/resolving-pr-reviews/SKILL.md
+  - .claude/skills/resolving-pr-reviews/scripts/fetch_pr_comments.rb
+  - .claude/skills/takeover
+  - .claude/skills/takeover/SKILL.md
+  deployed_file_hashes:
+    .claude/skills/git-branch/SKILL.md: sha256:50571d7a8b5dc520114728422e184ea0470bc3cedf59709ee17198b23e7c9918
+    .claude/skills/git-commit/SKILL.md: sha256:0c29247982c452e8df4d3a701bfadf23d11c81dee2baa6d9f2ca136ea2e9846c
+    .claude/skills/github-pr/SKILL.md: sha256:d6430edb35c2ddb3e9d24888e8365f8d389872960fb4fd51f9bdb4cd31b94a39
+    .claude/skills/handover/SKILL.md: sha256:2a20be1d243ca3f151422266ab42150a7ce84b4c7fbf6d6afcb7dcf0ec348309
+    .claude/skills/resolving-pr-reviews/SKILL.md: sha256:90794d1382143dde1510357a61d345e1cf8a8a1efb2b8aa5ba3e813a7d955276
+    .claude/skills/resolving-pr-reviews/scripts/fetch_pr_comments.rb: sha256:e8ee8e44323bc4a10300382e1a0524f70d28dac0738487662639d260c62ac1e7
+    .claude/skills/takeover/SKILL.md: sha256:6aa6157b489acee5c40c1ccbdf6a2abb042180daa7e39944d6c2594af5fa2f20
+  content_hash: sha256:07c9bb2d03c6b0142034feeb0fa4205391fbe5c7ac3fe73fb754e84ab618dedb
+mcp_servers:
+- aws-documentation
+- chrome-devtools
+- desktop-commander
+- git
+- github
+- gitmcp
+- homebrew
+- playwright
+mcp_configs:
+  aws-documentation:
+    name: aws-documentation
+    transport: stdio
+    env:
+      FASTMCP_LOG_LEVEL: ERROR
+      AWS_DOCUMENTATION_PARTITION: aws
+    args:
+    - awslabs.aws-documentation-mcp-server@latest
+    registry: false
+    command: uvx
+  chrome-devtools:
+    name: chrome-devtools
+    transport: stdio
+    args:
+    - -y
+    - chrome-devtools-mcp@latest
+    registry: false
+    command: npx
+  desktop-commander:
+    name: desktop-commander
+    transport: stdio
+    args:
+    - -y
+    - '@wonderwhy-er/desktop-commander@latest'
+    registry: false
+    command: npx
+  git:
+    name: git
+    transport: stdio
+    args:
+    - mcp-server-git
+    registry: false
+    command: uvx
+  github:
+    name: github
+    transport: http
+    registry: false
+    headers:
+      Authorization: Bearer ${GITHUB_TOKEN}
+    url: https://api.githubcopilot.com/mcp/
+  gitmcp:
+    name: gitmcp
+    transport: http
+    registry: false
+    url: https://gitmcp.io/docs
+  homebrew:
+    name: homebrew
+    transport: stdio
+    args:
+    - mcp-server
+    registry: false
+    command: /opt/homebrew/bin/brew
+  playwright:
+    name: playwright
+    transport: stdio
+    args:
+    - '@playwright/mcp@latest'
+    registry: false
+    command: npx

@@ -1,0 +1,118 @@
+name: icchankun
+version: 1.0.0
+description: APM project for icchankun
+author: icchankun
+targets:
+  - claude
+dependencies:
+  apm:
+    # my skills
+    - git: icchankun/skills
+      ref: 133fba4721cf5cdfac834bbe87a21133c1d649b1
+    # 3rd-party
+    - git: alirezarezvani/claude-skills
+      path: engineering-team/skills/engineering-skills
+      ref: 4a3c05b69e64f4925f7fc65c88890f614f79caf0
+    # official plugins
+    # APM は install のみ（installed_plugins.json への登録 = claude plugin list に
+    # 出る状態）。有効化は settings.json の enabledPlugins で別途行う必要があるため、
+    # ここに追加したプラグインは enabledPlugins にも列挙すること。
+    # hooks: apm は hooks/ 内のスクリプトのみ展開し core/ 等の依存を含めない。
+    # LSP: 空リポジトリのため展開物がない。
+    - git: anthropics/claude-plugins-official
+      path: plugins/agent-sdk-dev
+      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+    - git: anthropics/claude-plugins-official
+      path: plugins/claude-code-setup
+      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+    - git: anthropics/claude-plugins-official
+      path: plugins/claude-md-management
+      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+    - git: anthropics/claude-plugins-official
+      path: plugins/code-modernization
+      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+    - git: anthropics/claude-plugins-official
+      path: plugins/code-review
+      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+    - git: anthropics/claude-plugins-official
+      path: plugins/code-simplifier
+      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+    - git: anthropics/claude-plugins-official
+      path: plugins/commit-commands
+      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+    - git: anthropics/claude-plugins-official
+      path: plugins/feature-dev
+      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+    - git: anthropics/claude-plugins-official
+      path: plugins/frontend-design
+      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+    - git: anthropics/claude-plugins-official
+      path: plugins/mcp-server-dev
+      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+    - git: anthropics/claude-plugins-official
+      path: plugins/mcp-tunnels
+      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+    - git: anthropics/claude-plugins-official
+      path: plugins/playground
+      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+    - git: anthropics/claude-plugins-official
+      path: plugins/plugin-dev
+      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+    - git: anthropics/claude-plugins-official
+      path: plugins/pr-review-toolkit
+      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+    - git: anthropics/claude-plugins-official
+      path: plugins/project-artifact
+      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+    - git: anthropics/claude-plugins-official
+      path: plugins/session-report
+      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+    - git: anthropics/claude-plugins-official
+      path: plugins/skill-creator
+      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+  mcp:
+    - name: homebrew
+      registry: false
+      transport: stdio
+      command: /opt/homebrew/bin/brew
+      args: ["mcp-server"]
+    - name: aws-documentation
+      registry: false
+      transport: stdio
+      command: uvx
+      args: ["awslabs.aws-documentation-mcp-server@latest"]
+      env:
+        FASTMCP_LOG_LEVEL: ERROR
+        AWS_DOCUMENTATION_PARTITION: aws
+    - name: chrome-devtools
+      registry: false
+      transport: stdio
+      command: npx
+      args: ["-y", "chrome-devtools-mcp@latest"]
+    - name: gitmcp
+      registry: false
+      transport: http
+      url: https://gitmcp.io/docs
+    - name: desktop-commander
+      registry: false
+      transport: stdio
+      command: npx
+      args: ["-y", "@wonderwhy-er/desktop-commander@latest"]
+    - name: git
+      registry: false
+      transport: stdio
+      command: uvx
+      args: ["mcp-server-git"]
+    - name: github
+      registry: false
+      transport: http
+      url: https://api.githubcopilot.com/mcp/
+      headers:
+        Authorization: "Bearer ${GITHUB_TOKEN}"
+    - name: playwright
+      registry: false
+      transport: stdio
+      command: npx
+      args: ["@playwright/mcp@latest"]
+includes: auto
+scripts: {}
