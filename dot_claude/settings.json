@@ -37,27 +37,13 @@
       "Bash(ls *)"
     ],
     "deny": [
-      "Read(~/.env)",
       "Read(**/.env)",
-      "Read(~/.claude.json)",
-      "Read(**/.claude.json)",
-      "Bash(cat *.env*)",
-      "Bash(env)",
-      "Bash(printenv*)"
-    ]
-  },
-  "hooks": {
-    "SessionEnd": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.bin/rename-cc-session",
-            "async": true
-          }
-        ]
-      }
-    ]
+      "Read(**/.env.*)",
+      "Read(~/.ssh/*)",
+      "Bash(rm -rf *)",
+      "Bash(sudo *)"
+    ],
+    "defaultMode": "auto"
   },
   "enabledPlugins": {
     "ruby-lsp@claude-plugins-official": true,
@@ -79,6 +65,19 @@
         "repo": "warpdotdev/claude-code-warp"
       }
     }
+  },
+  "hooks": {
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.bin/rename-cc-session",
+            "async": true
+          }
+        ]
+      }
+    ]
   },
   "language": "Japanese",
   "voiceEnabled": true
