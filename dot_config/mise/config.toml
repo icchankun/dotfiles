@@ -8,8 +8,4 @@ minimum_release_age = "3d"
 node = "latest"
 python = "latest"
 ruby = "latest"
-hk = "latest"
 betterleaks = "latest"
-
-[hooks]
-postinstall = "hk install --global"

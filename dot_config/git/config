@@ -3,4 +3,7 @@
 [core]
 	commentChar = ^
 	editor = code --wait
-	hooksPath = ~/.config/git/hooks
+[hook "betterleaks"]
+	# 全リポジトリでコミット前にシークレットを検出する
+	command = mise exec -- betterleaks git --pre-commit --redact --staged --verbose
+	event = pre-commit

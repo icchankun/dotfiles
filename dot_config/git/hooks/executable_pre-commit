@@ -1,3 +1,0 @@
-#!/bin/sh
-# ステージされたファイルにシークレットが含まれていないかスキャンし、検出された場合はコミットを中断する
-gitleaks protect --staged --verbose
