@@ -1,0 +1,15 @@
+[settings]
+# 各言語の慣例バージョンファイル（.node-version, .python-version, .ruby-version 等）を mise で読み込む
+idiomatic_version_file_enable_tools = ["node", "python", "ruby"]
+# リリースから3日未満のバージョンを無視（サプライチェーン対策）
+minimum_release_age = "3d"
+
+[tools]
+node = "latest"
+python = "latest"
+ruby = "latest"
+hk = "latest"
+betterleaks = "latest"
+
+[hooks]
+postinstall = "hk install --global"
