@@ -21,6 +21,11 @@ dependencies:
       ref: 9b118a1a737662fa118d591b5687340b86005d5c
       skills:
         - playwright-cli
+    # 拡張本体は `gh extension install github/gh-stack` が別途必要
+    - git: github/gh-stack
+      ref: 14fc42ed9b6c376a53b2f999f138d3bd26dac546
+      skills:
+        - gh-stack
     - git: cursor/plugins
       ref: e46364b8be46000b7df0f260550cd712afbb8d36
       path: pstack
@@ -115,12 +120,6 @@ dependencies:
       transport: stdio
       command: uvx
       args: ["mcp-server-git"]
-    - name: github
-      registry: false
-      transport: http
-      url: https://api.githubcopilot.com/mcp/
-      headers:
-        Authorization: "Bearer ${GITHUB_TOKEN}"
     - name: playwright
       registry: false
       transport: stdio
