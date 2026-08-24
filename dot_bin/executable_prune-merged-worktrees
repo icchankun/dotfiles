@@ -1,0 +1,203 @@
+#!/usr/bin/env bash
+
+# =============================================================================
+# prune-merged-worktrees
+# Delete git worktrees/branches whose remote branch is already gone (merged).
+# (リモートブランチが削除済み = マージ済みの worktree/branch を削除する。)
+#
+# Dependencies / 依存:
+#   - git only / git のみ
+#
+# Usage / 使い方:
+#   prune-merged-worktrees [-n] [-q] [--root DIR] [--depth N]
+#
+#   -n, --dry-run   Show what would be deleted without deleting.
+#                   (削除せず対象を表示するだけ。)
+#   -q, --quiet     Only report repositories that had something to do.
+#                   (何か処理したリポジトリだけを出力する。)
+#       --root DIR  Directory to scan for repositories. (default: ~/workspace)
+#       --depth N   Max search depth under --root. (default: 3)
+#
+# Safety / 安全策:
+#   - A worktree with uncommitted or untracked changes is skipped.
+#     (未コミット・未追跡の変更がある worktree はスキップする。)
+#   - The default branch and the main worktree are never touched.
+#     (デフォルトブランチとメイン worktree には触れない。)
+# =============================================================================
+
+set -uo pipefail
+
+# launchd starts with a minimal PATH / launchd 経由だと PATH が最小限なので補う
+export PATH="/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+
+# ssh-agent is not always inherited / launchd 経由で ssh-agent が引き継がれない場合の補完
+if [[ -z "${SSH_AUTH_SOCK:-}" ]] && command -v launchctl >/dev/null 2>&1; then
+  sock="$(launchctl getenv SSH_AUTH_SOCK 2>/dev/null)"
+  [[ -n "$sock" ]] && export SSH_AUTH_SOCK="$sock"
+fi
+
+# Never block on credential prompts / 認証プロンプトで固まらないようにする
+export GIT_TERMINAL_PROMPT=0
+export GIT_SSH_COMMAND="${GIT_SSH_COMMAND:-ssh -o BatchMode=yes -o ConnectTimeout=10}"
+
+ROOT="$HOME/workspace"
+DEPTH=3
+DRY_RUN=false
+QUIET=false
+
+usage() {
+  cat <<'USAGE'
+Usage: prune-merged-worktrees [-n] [-q] [--root DIR] [--depth N]
+
+Delete git worktrees/branches whose remote branch is already gone (merged).
+(リモートブランチが削除済み = マージ済みの worktree/branch を削除する。)
+
+  -n, --dry-run   Show what would be deleted without deleting.
+                  (削除せず対象を表示するだけ。)
+  -q, --quiet     Only report repositories that had something to do.
+                  (何か処理したリポジトリだけを出力する。)
+      --root DIR  Directory to scan for repositories. (default: ~/workspace)
+      --depth N   Max search depth under --root. (default: 3)
+  -h, --help      Show this help.
+USAGE
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -n|--dry-run) DRY_RUN=true; shift ;;
+    -q|--quiet)   QUIET=true; shift ;;
+    --root)       ROOT="$2"; shift 2 ;;
+    --depth)      DEPTH="$2"; shift 2 ;;
+    -h|--help)    usage; exit 0 ;;
+    *) echo "unknown option: $1" >&2; usage >&2; exit 1 ;;
+  esac
+done
+
+log() { printf '%s %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"; }
+
+# Branches whose upstream is gone / upstream が削除済みのブランチを列挙
+gone_branches() {
+  git -C "$1" for-each-ref --format='%(refname:short) %(upstream:track)' refs/heads \
+    | awk '$2 == "[gone]" { print $1 }'
+}
+
+# Worktree path for a branch, empty if none / ブランチに対応する worktree のパス
+worktree_path() {
+  git -C "$1" worktree list --porcelain \
+    | awk -v br="refs/heads/$2" '
+        /^worktree / { path = substr($0, 10) }
+        /^branch /   { if (substr($0, 8) == br) { print path; exit } }
+      '
+}
+
+# The first entry of `git worktree list` is the main worktree
+# (`git worktree list` の先頭がメイン worktree)
+main_worktree() {
+  git -C "$1" worktree list --porcelain \
+    | awk '/^worktree / { print substr($0, 10); exit }'
+}
+
+# origin/HEAD, falling back to main/master / origin/HEAD がなければ main/master を見る
+default_branch() {
+  local repo="$1" ref branch
+  ref="$(git -C "$repo" symbolic-ref --quiet refs/remotes/origin/HEAD 2>/dev/null)"
+  if [[ -n "$ref" ]]; then
+    printf '%s\n' "${ref#refs/remotes/origin/}"
+    return
+  fi
+  for branch in main master; do
+    if git -C "$repo" show-ref --verify --quiet "refs/heads/$branch"; then
+      printf '%s\n' "$branch"
+      return
+    fi
+  done
+}
+
+# Uncommitted or untracked changes? / 未コミット・未追跡の変更があるか
+is_dirty() {
+  [[ -n "$(git -C "$1" status --porcelain 2>/dev/null)" ]]
+}
+
+# Remove directories left empty by `git worktree remove`, stopping at the repo
+# (worktree 削除後に空になった中間ディレクトリを、リポジトリ直下まで遡って掃除する)
+prune_empty_dirs() {
+  local dir="$1" stop="$2"
+  while [[ "$dir" != "$stop" && "$dir" != "/" ]]; do
+    rmdir "$dir" 2>/dev/null || break
+    dir="$(dirname "$dir")"
+  done
+}
+
+# Delete the worktree (if any) and the branch / worktree があれば消してからブランチを消す
+delete_branch() {
+  local repo="$1" branch="$2" wt="$3" out
+  if [[ -n "$wt" ]]; then
+    if ! out="$(git -C "$repo" worktree remove "$wt" 2>&1)"; then
+      printf '%s' "$out"
+      return 1
+    fi
+    prune_empty_dirs "$(dirname "$wt")" "$repo"
+  fi
+  if ! out="$(git -C "$repo" branch -D "$branch" 2>&1)"; then
+    printf '%s' "$out"
+    return 1
+  fi
+}
+
+deleted_total=0
+skipped_total=0
+
+while IFS= read -r gitdir; do
+  repo="$(dirname "$gitdir")"
+
+  if ! git -C "$repo" fetch --prune --quiet 2>/dev/null; then
+    log "WARN  $repo: fetch failed, skipped"
+    continue
+  fi
+
+  mapfile -t branches < <(gone_branches "$repo")
+  [[ ${#branches[@]} -eq 0 ]] && continue
+
+  default="$(default_branch "$repo")"
+  main_wt="$(main_worktree "$repo")"
+
+  "$QUIET" || log "REPO  $repo"
+
+  for branch in "${branches[@]}"; do
+    if [[ -n "$default" && "$branch" == "$default" ]]; then
+      log "SKIP  $repo: $branch (default branch)"
+      ((skipped_total++))
+      continue
+    fi
+
+    wt="$(worktree_path "$repo" "$branch")"
+
+    if [[ -n "$wt" && "$wt" == "$main_wt" ]]; then
+      log "SKIP  $repo: $branch (checked out in the main worktree)"
+      ((skipped_total++))
+      continue
+    fi
+
+    if [[ -n "$wt" ]] && is_dirty "$wt"; then
+      log "SKIP  $repo: $branch (uncommitted changes in $wt)"
+      ((skipped_total++))
+      continue
+    fi
+
+    if "$DRY_RUN"; then
+      log "DRY   $repo: would delete $branch${wt:+ ($wt)}"
+      ((deleted_total++))
+      continue
+    fi
+
+    if out="$(delete_branch "$repo" "$branch" "$wt")"; then
+      log "DEL   $repo: $branch${wt:+ ($wt)}"
+      ((deleted_total++))
+    else
+      log "FAIL  $repo: $branch -- ${out//$'\n'/ }"
+      ((skipped_total++))
+    fi
+  done
+done < <(find "$ROOT" -maxdepth "$DEPTH" -type d -name .git -prune 2>/dev/null | sort)
+
+log "DONE  deleted=$deleted_total skipped=$skipped_total root=$ROOT$("$DRY_RUN" && echo ' (dry-run)')"
