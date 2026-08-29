@@ -1,5 +1,5 @@
 lockfile_version: '1'
-generated_at: '2026-08-09T10:24:49.145366+00:00'
+generated_at: '2026-08-29T06:42:21.973177+00:00'
 apm_version: 0.28.0
 dependencies:
 - repo_url: alirezarezvani/claude-skills
@@ -882,9 +882,9 @@ dependencies:
 - repo_url: icchankun/skills
   name: icchankun-skills
   host: github.com
-  resolved_commit: 133fba4721cf5cdfac834bbe87a21133c1d649b1
-  resolved_ref: 133fba4721cf5cdfac834bbe87a21133c1d649b1
-  version: 133fba4
+  resolved_commit: fdc363fd079ffe29efe338a2b7aef44118343521
+  resolved_ref: fdc363fd079ffe29efe338a2b7aef44118343521
+  version: fdc363f
   package_type: marketplace_plugin
   deployed_files:
   - .claude/skills/git-branch
@@ -902,13 +902,13 @@ dependencies:
   - .claude/skills/takeover/SKILL.md
   deployed_file_hashes:
     .claude/skills/git-branch/SKILL.md: sha256:50571d7a8b5dc520114728422e184ea0470bc3cedf59709ee17198b23e7c9918
-    .claude/skills/git-commit/SKILL.md: sha256:0c29247982c452e8df4d3a701bfadf23d11c81dee2baa6d9f2ca136ea2e9846c
-    .claude/skills/github-pr/SKILL.md: sha256:d6430edb35c2ddb3e9d24888e8365f8d389872960fb4fd51f9bdb4cd31b94a39
-    .claude/skills/handover/SKILL.md: sha256:2a20be1d243ca3f151422266ab42150a7ce84b4c7fbf6d6afcb7dcf0ec348309
+    .claude/skills/git-commit/SKILL.md: sha256:d3c700fd7cc15d8938ac54722666be9c2f7a619beae038a459d7b05666ab2330
+    .claude/skills/github-pr/SKILL.md: sha256:285be542d2e737f7091b9a7683706b9c435947f3497a41cc1591a9a921b1057d
+    .claude/skills/handover/SKILL.md: sha256:a1d057d283de9a2a4d2b14ddd1ec6dbb6b1d060652294f5dd96b3f133facee2d
     .claude/skills/resolving-pr-reviews/SKILL.md: sha256:90794d1382143dde1510357a61d345e1cf8a8a1efb2b8aa5ba3e813a7d955276
     .claude/skills/resolving-pr-reviews/scripts/fetch_pr_comments.rb: sha256:e8ee8e44323bc4a10300382e1a0524f70d28dac0738487662639d260c62ac1e7
-    .claude/skills/takeover/SKILL.md: sha256:6aa6157b489acee5c40c1ccbdf6a2abb042180daa7e39944d6c2594af5fa2f20
-  content_hash: sha256:07c9bb2d03c6b0142034feeb0fa4205391fbe5c7ac3fe73fb754e84ab618dedb
+    .claude/skills/takeover/SKILL.md: sha256:07f6455ade8e472bc4d561693e8dd841b88c5dc84a98adf3f0dc6c0aa6f8ec73
+  content_hash: sha256:40d188dc0b46f6904eebd1b5305858910e4c109c6ae8c19389484e58c9b568b4
 - repo_url: microsoft/playwright-cli
   name: playwright-cli
   host: github.com
@@ -1925,7 +1925,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:0c29247982c452e8df4d3a701bfadf23d11c81dee2baa6d9f2ca136ea2e9846c
+  content_hash: sha256:d3c700fd7cc15d8938ac54722666be9c2f7a619beae038a459d7b05666ab2330
 - kind: project-relative
   target: claude
   value: .claude/skills/github-pr
@@ -1943,7 +1943,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:d6430edb35c2ddb3e9d24888e8365f8d389872960fb4fd51f9bdb4cd31b94a39
+  content_hash: sha256:285be542d2e737f7091b9a7683706b9c435947f3497a41cc1591a9a921b1057d
 - kind: project-relative
   target: claude
   value: .claude/skills/handover
@@ -1961,7 +1961,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:2a20be1d243ca3f151422266ab42150a7ce84b4c7fbf6d6afcb7dcf0ec348309
+  content_hash: sha256:a1d057d283de9a2a4d2b14ddd1ec6dbb6b1d060652294f5dd96b3f133facee2d
 - kind: project-relative
   target: claude
   value: .claude/skills/hook-development
@@ -4040,7 +4040,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:6aa6157b489acee5c40c1ccbdf6a2abb042180daa7e39944d6c2594af5fa2f20
+  content_hash: sha256:07f6455ade8e472bc4d561693e8dd841b88c5dc84a98adf3f0dc6c0aa6f8ec73
 - kind: project-relative
   target: claude
   value: .claude/skills/typescript-best-practices
