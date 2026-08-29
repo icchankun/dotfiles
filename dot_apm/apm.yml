@@ -8,7 +8,7 @@ dependencies:
   apm:
     # my skills
     - git: icchankun/skills
-      ref: 133fba4721cf5cdfac834bbe87a21133c1d649b1
+      ref: fdc363fd079ffe29efe338a2b7aef44118343521
     # 3rd-party
     - git: alirezarezvani/claude-skills
       path: engineering-team/skills/engineering-skills
