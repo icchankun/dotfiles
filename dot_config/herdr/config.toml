@@ -1,0 +1,53 @@
+onboarding = false
+
+[keys]
+prefix = "ctrl+p"
+# Claude Code側のCtrl+Pデフォルトショートカットと衝突するため、組み込みコマンドを別キーに退避
+resize_mode = "prefix+alt+r"
+toggle_sidebar = "prefix+alt+b"
+
+# Navigator: workspace/agent/セッションへfuzzyジャンプ
+[[keys.command]]
+key = "prefix+space"
+type = "plugin_action"
+command = "herdr-navigator.open"
+description = "Navigator: jump to anything"
+
+[[keys.command]]
+key = "prefix+b"
+type = "plugin_action"
+command = "herdr-navigator.jump-back"
+description = "Navigator: jump back"
+
+# reviewr: agentのdiffにレビューコメントを付けて送信
+[[keys.command]]
+key = "prefix+r"
+type = "plugin_action"
+command = "persiyanov.reviewr.toggle"
+description = "reviewr: toggle pane"
+
+[ui]
+agent_panel_sort = "spaces"
+show_agent_labels_on_pane_borders = false
+status_indicators = "dots"
+
+[ui.toast]
+# OS通知センターではなくHerdr内のトーストで通知する
+delivery = "herdr"
+
+[ui.sound]
+enabled = true
+
+[experimental]
+# Kitty graphics対応ツールの画像をHerdr経由でも表示する
+kitty_graphics = true
+# Ghosttyのクイックターミナルからの起動が入れ子と誤判定され拒否されるため許可する
+allow_nested = true
+
+[theme]
+name = "nord"
+auto_switch = false
+
+[advanced]
+# Claude Codeの長いログを遡れるよう既定の10MBから引き上げる
+scrollback_limit_bytes = 50000000

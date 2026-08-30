@@ -9,7 +9,7 @@ font-size = 18
 # 使用するフォントファミリー (複数指定でフォールバック可能)
 font-family = "MesloLGS NF"
 # 背景の不透明度
-background-opacity = 0.9
+background-opacity = 0.75
 # 背景のぼかし
 background-blur = true
 # セル高さ調整
@@ -39,15 +39,18 @@ clipboard-write = allow
 # Optionキー→Alt扱い
 macos-option-as-alt = true
 
-# --- キーバインド設定 ---
-# ペイン分割
-keybind = shift+alt+left=new_split:left
-keybind = shift+alt+right=new_split:right
-keybind = shift+alt+down=new_split:down
-keybind = shift+alt+up=new_split:up
+# --- 起動コマンド ---
+# 新規ウィンドウ/タブでzshの代わりにherdrへ直接アタッチ。
+# GhosttyはGUIアプリのためlaunchdの最小PATHしか持たず、それがherdrサーバーに
+# 引き継がれてalerter等のHomebrew製バイナリを解決できなくなる。
+# ログインシェル経由で起動して~/.zprofileのbrew shellenvを通す
+command = /bin/zsh -lc "exec /opt/homebrew/bin/herdr"
 
-# ペイン移動
-keybind = alt+left=goto_split:left
-keybind = alt+right=goto_split:right
-keybind = alt+down=goto_split:down
-keybind = alt+up=goto_split:up
+# --- キーバインド設定 ---
+# ペイン分割・移動は Herdr 側に一本化（Herdr の Ctrl+p プレフィックスで操作）
+# クイックターミナル：どこからでもCtrl+iで呼び出せるドロップダウン端末（全面表示）
+keybind = global:ctrl+i=toggle_quick_terminal
+quick-terminal-position = top
+quick-terminal-size = 100%,100%
+# 開閉アニメーションを無効化（即座に表示/非表示）
+quick-terminal-animation-duration = 0
