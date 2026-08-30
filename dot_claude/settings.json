@@ -51,20 +51,11 @@
     "hookify@claude-plugins-official": true,
     "security-guidance@claude-plugins-official": true,
     "ralph-loop@claude-plugins-official": true,
-    "warp@claude-code-warp": true,
     "code-review@claude-plugins-official": true,
     "engineering-skills@claude-code-skills": true,
     "frontend-design@claude-plugins-official": true,
     "pr-review-toolkit@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true
-  },
-  "extraKnownMarketplaces": {
-    "claude-code-warp": {
-      "source": {
-        "source": "github",
-        "repo": "warpdotdev/claude-code-warp"
-      }
-    }
   },
   "hooks": {
     "SessionStart": [
@@ -91,6 +82,13 @@
       }
     ]
   },
+  "statusLine": {
+    "type": "command",
+    "command": "node ~/.claude/statusline-packages/node_modules/ccstatusline/dist/ccstatusline.js",
+    "padding": 0
+  },
   "language": "Japanese",
+  "effortLevel": "medium",
+  "remoteControlAtStartup": true,
   "voiceEnabled": true
 }

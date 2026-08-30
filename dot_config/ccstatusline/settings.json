@@ -1,0 +1,112 @@
+{
+  "version": 3,
+  "lines": [
+    [
+      {
+        "id": "1a",
+        "type": "custom-text",
+        "customText": "モデル: ",
+        "color": "cyan"
+      },
+      {
+        "id": "1",
+        "type": "model",
+        "color": "cyan",
+        "rawValue": true
+      },
+      {
+        "id": "2",
+        "type": "separator"
+      },
+      {
+        "id": "5",
+        "type": "git-branch",
+        "color": "magenta"
+      },
+      {
+        "id": "8",
+        "type": "separator"
+      },
+      {
+        "id": "9a",
+        "type": "custom-text",
+        "customText": "コンテキスト: ",
+        "color": "brightBlack"
+      },
+      {
+        "id": "9",
+        "type": "context-percentage",
+        "color": "brightBlack",
+        "rawValue": true
+      },
+      {
+        "id": "10",
+        "type": "separator"
+      },
+      {
+        "id": "11a",
+        "type": "custom-text",
+        "customText": "推定API相当額: ",
+        "color": "blue"
+      },
+      {
+        "id": "11",
+        "type": "session-cost",
+        "color": "blue",
+        "rawValue": true
+      }
+    ],
+    [
+      {
+        "id": "12a",
+        "type": "custom-text",
+        "customText": "5時間制限: ",
+        "color": "brightBlue"
+      },
+      {
+        "id": "12",
+        "type": "session-usage",
+        "color": "brightBlue",
+        "rawValue": true
+      },
+      {
+        "id": "13",
+        "type": "separator"
+      },
+      {
+        "id": "14a",
+        "type": "custom-text",
+        "customText": "週次制限: ",
+        "color": "brightBlue"
+      },
+      {
+        "id": "14",
+        "type": "weekly-usage",
+        "color": "brightBlue",
+        "rawValue": true
+      }
+    ],
+    []
+  ],
+  "flexMode": "full-minus-40",
+  "compactThreshold": 60,
+  "colorLevel": 2,
+  "defaultPaddingSide": "both",
+  "inheritSeparatorColors": false,
+  "globalBold": false,
+  "gitCacheTtlSeconds": 5,
+  "minimalistMode": false,
+  "powerline": {
+    "enabled": false,
+    "separators": [
+      ""
+    ],
+    "separatorInvertBackground": [
+      false
+    ],
+    "startCaps": [],
+    "endCaps": [],
+    "autoAlign": false,
+    "continueThemeAcrossLines": false
+  }
+}
