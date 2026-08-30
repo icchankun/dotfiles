@@ -1,0 +1,48 @@
+{
+  "$schema": "https://www.schemastore.org/claude-code-keybindings.json",
+  "$docs": "https://code.claude.com/docs/en/keybindings",
+  "bindings": [
+    {
+      "context": "Settings",
+      "bindings": {
+        "ctrl+p": null
+      }
+    },
+    {
+      "context": "Transcript",
+      "bindings": {
+        "ctrl+p": null
+      }
+    },
+    {
+      "context": "Footer",
+      "bindings": {
+        "ctrl+p": null
+      }
+    },
+    {
+      "context": "MessageSelector",
+      "bindings": {
+        "ctrl+p": null
+      }
+    },
+    {
+      "context": "Select",
+      "bindings": {
+        "ctrl+p": null
+      }
+    },
+    {
+      "context": "Scroll",
+      "bindings": {
+        "ctrl+p": null
+      }
+    },
+    {
+      "context": "Chat",
+      "bindings": {
+        "ctrl+g": null
+      }
+    }
+  ]
+}
