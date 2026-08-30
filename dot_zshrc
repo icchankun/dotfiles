@@ -29,6 +29,7 @@ zinit ice depth=1; zinit light romkatv/powerlevel10k
 eval "$(mise activate zsh)"
 eval "$(git wt --init zsh)"
 eval "$(zoxide init zsh --cmd j)"
+export DIRENV_LOG_FORMAT=
 eval "$(direnv hook zsh)"
 
 # functions
@@ -36,6 +37,9 @@ source ~/.zsh/functions.zsh
 
 # aliases
 source ~/.zsh/aliases.zsh
+
+# machine-local config (chezmoi-unmanaged, loaded only if present)
+[ -f ~/.zsh/local.zsh ] && source ~/.zsh/local.zsh
 
 # use arrow keys to select completion
 zstyle ':completion:*' menu select
