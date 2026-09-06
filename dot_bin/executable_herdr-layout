@@ -1,0 +1,328 @@
+#!/usr/bin/env bash
+
+# =============================================================================
+# herdr-layout
+# Build a Herdr pane layout for a task type and start the named agents in it.
+# (タスクの種類に応じた Herdr のペイン構成を作り、名前付きのエージェントを起動する。)
+#
+# Dependencies / 依存:
+#   - herdr  https://herdr.dev
+#   - jq
+#   - herdr-agent-name
+#
+# Usage / 使い方:
+#   herdr-layout <mode> [options]
+#
+#   Modes / モード:
+#     coding    coder + reviewer  (実装役とレビュー役を分ける)
+#     research  researcher-1..N   (コードベースを並列で調べる)
+#     review    worktree + reviewer (PR を別ブランチでレビューする)
+#
+#   Options / オプション:
+#     -n, --count N      Researchers for research mode, as a floor: the ones
+#                        already running are kept and only the shortfall starts.
+#                        (research モードの調査役の下限。既に動いているものは
+#                         残り、足りない分だけ起動する。default: 2)
+#     -b, --branch NAME  Branch for review mode. (review モードのブランチ。必須)
+#     -h, --help         Show this help. (このヘルプを表示する。)
+#
+# Notes / 補足:
+#   - Panes are created without stealing focus, so the calling pane keeps it.
+#     (フォーカスは奪わないので、呼び出し元のペインに留まる。)
+#   - Workers start with `-n <agent name>`, so the Herdr agent name and the Claude
+#     session name match. Address them with SendMessage by that name instead of
+#     driving them through `herdr agent prompt`.
+#     (`-n <agent名>` 付きで起動するので、Herdr の agent 名と Claude のセッション名が
+#      一致する。ワーカーへは `herdr agent prompt` ではなく、その名前で SendMessage
+#      を送る。)
+#   - Workers are named after the *calling driver's* pane, not their own, so
+#     re-running a mode reuses this driver's workers (see herdr-agent-name).
+#     (ワーカーの名前は自分ではなく呼び出した driver のペインから付くので、再実行
+#      すればその driver のワーカーが再利用される。詳細は herdr-agent-name。)
+#   - A mode leaves its tab holding only the panes it named: any other pane is
+#     closed, and another driver sharing the tab is an error rather than
+#     something to close, since a driver is what a person talks to.
+#     (どのモードもタブを自分が名前を付けたペインだけにする。それ以外のペインは
+#      閉じるが、同じタブに別の driver がいるときは閉じずにエラーで止める。driver は
+#      人がやりとりする相手のため。)
+#   - `review` is the exception: its worker lives in the worktree's own workspace,
+#     so it is named after its own pane there and is created fresh every time.
+#     Each branch under review is a separate thing to read.
+#     (例外は review。ワーカーは worktree 側のワークスペースにいるので、そちらの
+#      自分のペイン由来の名前を使い、毎回新しく作る。読む対象はブランチごとに
+#      別物のため。)
+# =============================================================================
+
+set -euo pipefail
+
+# Args every worker starts with.
+# (ワーカー共通の起動引数。)
+readonly WORKER_ARGS=(
+  # MCP off: every server's tool definitions are resent on each request, and that
+  # cost multiplies by the number of workers.
+  # (MCP 無効。ツール定義は毎リクエスト再送され、その費用が並列数の分だけ掛かる。)
+  --strict-mcp-config
+  --mcp-config '{"mcpServers":{}}'
+  # Notifications off: only the driver talks to the user, so a worker going idle
+  # is not something to interrupt them for.
+  # (通知は無効。ユーザーとやりとりするのは driver だけなので、ワーカーが手を
+  #  空けたことでユーザーを中断させない。)
+  --settings '{"inputNeededNotifEnabled":false,"agentPushNotifEnabled":false}'
+)
+
+# How long to wait for a freshly split pane to become a usable shell.
+# (分割直後のペインがシェルとして使えるようになるまで待つ回数と間隔。)
+readonly START_ATTEMPTS=20
+readonly START_INTERVAL=0.25
+
+mode=""
+count=2
+branch=""
+
+die() {
+  printf 'herdr-layout: %s\n' "$1" >&2
+  exit 1
+}
+
+usage() {
+  sed -n '/^# Usage/,/^# ===/p' "$0" | sed 's/^# \{0,1\}//;$d'
+}
+
+parse_args() {
+  [ $# -gt 0 ] || { usage; exit 1; }
+
+  case "$1" in
+    coding | research | review) mode="$1"; shift ;;
+    -h | --help) usage; exit 0 ;;
+    *) die "unknown mode: $1" ;;
+  esac
+
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      -n | --count) count="${2:-}"; shift 2 ;;
+      -b | --branch) branch="${2:-}"; shift 2 ;;
+      -h | --help) usage; exit 0 ;;
+      *) die "unknown option: $1" ;;
+    esac
+  done
+
+  [[ "$count" =~ ^[1-9][0-9]*$ ]] || die "--count must be a positive integer"
+  [ "$mode" != "review" ] || [ -n "$branch" ] || die "review mode requires --branch"
+}
+
+require_environment() {
+  [ "${HERDR_ENV:-}" = 1 ] || die "not running inside Herdr"
+  command -v herdr >/dev/null || die "herdr not found in PATH"
+  command -v jq >/dev/null || die "jq not found in PATH"
+  command -v herdr-agent-name >/dev/null || die "herdr-agent-name not found in PATH"
+}
+
+# Split PANE ($1) in DIRECTION ($2) and print the new pane id.
+split_pane() {
+  herdr pane split --pane "$1" --direction "$2" --cwd "$PWD" --no-focus |
+    jq -er '.result.pane.pane_id'
+}
+
+# Print the pane the agent NAMED ($1) runs in, or nothing when it is not running.
+# (NAME ($1) のエージェントが動いているペインを出力する。いなければ何も出さない。)
+agent_pane() {
+  herdr agent list | jq -r --arg name "$1" '
+    .result.agents[] | select(.name == $name) | .pane_id' | head -n 1
+}
+
+# Start an agent NAMED ($1) in PANE ($2).
+start_agent() {
+  local name="$1" pane="$2" attempt
+
+  # A pane is not an available shell the instant it is split, so starting right
+  # after a split fails with agent_pane_busy. Try again until the shell is up.
+  # (分割直後のペインはまだシェルとして使えず、すぐ起動すると agent_pane_busy で
+  #  失敗する。シェルが立ち上がるまで試し直す。)
+  for ((attempt = 1; ; attempt++)); do
+    if herdr agent start "$name" --kind claude --pane "$pane" \
+      -- -n "$name" "${WORKER_ARGS[@]}" >/dev/null 2>&1; then
+      break
+    fi
+    [ "$attempt" -lt "$START_ATTEMPTS" ] || die "could not start $name in $pane"
+    sleep "$START_INTERVAL"
+  done
+
+  # Guard against anything that renamed the pane while it was starting; the name
+  # is how the worker is addressed and how the notify plugin tells it from a driver.
+  # (起動中にペインを改名するものがあっても打ち消す。名前はワーカーの宛先であり、
+  #  通知プラグインが driver と見分ける手掛かりでもある。)
+  herdr agent rename "$pane" "$name" >/dev/null
+
+  rows+=("$name	$pane	started")
+  kept+=("$pane")
+}
+
+# Make sure this driver's worker for ROLE ($1) is running, splitting FROM ($2)
+# toward DIRECTION ($3) when it is not. Sets `ensured_pane` to the pane it sits
+# in, so the next worker can be split off it. It reports through a variable
+# rather than stdout because a command substitution would run it in a subshell
+# and lose what it appended to `rows`.
+# (この driver の ROLE ($1) のワーカーが動いている状態にする。いなければ FROM ($2)
+#  を DIRECTION ($3) に分割して起動する。次のワーカーの分割元にできるよう、その
+#  ワーカーがいるペインを `ensured_pane` に入れる。標準出力ではなく変数で返すのは、
+#  コマンド置換だとサブシェルになり `rows` への追記が消えるため。)
+ensure_agent() {
+  local role="$1" from="$2" direction="$3" name pane
+  name=$(herdr-agent-name "$role")
+
+  pane=$(agent_pane "$name")
+  if [ -n "$pane" ]; then
+    rows+=("$name	$pane	reused")
+    kept+=("$pane")
+  else
+    pane=$(split_pane "$from" "$direction")
+    start_agent "$name" "$pane"
+  fi
+
+  ensured_pane="$pane"
+}
+
+# Print the tab this driver sits in.
+# (この driver がいるタブを出力する。)
+current_tab() {
+  herdr pane list | jq -er --arg pane "$HERDR_PANE_ID" '
+    .result.panes[] | select(.pane_id == $pane) | .tab_id'
+}
+
+# Print the drivers other than this one in TAB ($1).
+# (TAB ($1) にいる自分以外の driver を出力する。)
+other_drivers() {
+  herdr agent list | jq -r --arg tab "$1" --arg self "$HERDR_PANE_ID" '
+    .result.agents[]
+    | select(.tab_id == $tab and .pane_id != $self and (.name | endswith("-driver")))
+    | "\(.name) (\(.pane_id))"'
+}
+
+# Fail when a driver other than this one is in TAB ($1). Their workers are named
+# after them, so this run cannot tell which of the tab's panes are its to clear,
+# and a driver is what a person talks to rather than something to close on a guess.
+# (TAB ($1) に自分以外の driver がいたら止める。そのワーカーはその driver の名前を
+#  持つため、どのペインを片付けてよいか判断できない。driver は人がやりとりする
+#  相手でもあり、当て推量で閉じるものではない。)
+require_sole_driver() {
+  local drivers
+  drivers=$(other_drivers "$1")
+
+  [ -z "$drivers" ] || die "another driver shares this tab: $(tr '\n' ' ' <<<"$drivers")"
+}
+
+# Close every pane in TAB ($1) that is not one this run named, so the tab ends up
+# holding the layout and nothing else. A pane whose agent is still working is
+# reported instead of cut off mid-task.
+# (TAB ($1) のうち今回名前を付けたペイン以外を閉じ、タブをその構成だけにする。
+#  まだ作業中のエージェントが乗っているペインは、途中で切らずに報告に残す。)
+prune_tab() {
+  local pane status name
+
+  while IFS=$'\t' read -r pane status name; do
+    case " ${kept[*]} " in *" $pane "*) continue ;; esac
+
+    if [ "$status" = working ]; then
+      rows+=("${name:--}	$pane	kept (working)")
+      continue
+    fi
+
+    herdr pane close "$pane" >/dev/null
+    rows+=("${name:--}	$pane	closed")
+  done < <(herdr pane list | jq -r --arg tab "$1" '
+    .result.panes[]
+    | select(.tab_id == $tab)
+    | [.pane_id, .agent_status // "unknown", .terminal_title_stripped // ""] | @tsv')
+}
+
+layout_coding() {
+  local tab
+  tab=$(current_tab)
+  require_sole_driver "$tab"
+
+  ensure_agent coder "$HERDR_PANE_ID" right
+  ensure_agent reviewer "$ensured_pane" down
+  prune_tab "$tab"
+}
+
+# Print the highest researcher number this driver already has running, or 0.
+# (この driver が既に動かしている researcher の最大番号を出力する。いなければ 0。)
+researcher_high_water() {
+  herdr agent list | jq -r --arg prefix "$(herdr-agent-name researcher)-" '
+    [.result.agents[].name
+     | select(startswith($prefix))
+     | ltrimstr($prefix)
+     | tonumber?] | max // 0'
+}
+
+layout_research() {
+  local index tab running from direction
+  local -a placed=()
+  tab=$(current_tab)
+  require_sole_driver "$tab"
+
+  # --count asks for researchers, not for the tab to shrink to that many. A
+  # running researcher holds what it has already read, and a forgotten --count
+  # should not throw that away, so the larger of the two wins.
+  # (--count は調査役を用意するもので、タブをその数まで縮めるものではない。動いて
+  #  いる researcher は読んだ内容を抱えており、--count の付け忘れでそれを捨てさせ
+  #  ない。大きい方を採る。)
+  running=$(researcher_high_water)
+  [ "$count" -ge "$running" ] || count="$running"
+
+  [ "$count" -le 3 ] || printf 'herdr-layout: %s researchers share one rate limit\n' "$count" >&2
+
+  # The researchers fill two columns beside the driver rather than one: the first
+  # takes the right half, the second splits it into two columns, and each one
+  # after that goes under the researcher two places back. A single column would
+  # thin every pane as the count grows, and these panes are read, not glanced at.
+  # (調査役は driver の隣に1列ではなく2列で並ぶ。1人目が右半分を取り、2人目がそれを
+  #  2列に割り、3人目以降は2つ前の調査役の下に入る。1列だと人数が増えるほど1つ
+  #  あたりが薄くなるが、このペインは眺めるものではなく読むもののため。)
+  for ((index = 1; index <= count; index++)); do
+    case "$index" in
+      1) from="$HERDR_PANE_ID" direction=right ;;
+      2) from="${placed[0]}" direction=right ;;
+      *) from="${placed[index - 3]}" direction=down ;;
+    esac
+
+    ensure_agent "researcher-$index" "$from" "$direction"
+    placed+=("$ensured_pane")
+  done
+
+  prune_tab "$tab"
+}
+
+layout_review() {
+  local workspace pane tab
+
+  workspace=$(herdr worktree create --branch "$branch" --no-focus |
+    jq -er '.result.workspace.workspace_id')
+  read -r pane tab < <(herdr pane list --workspace "$workspace" |
+    jq -er '.result.panes[0] | "\(.pane_id) \(.tab_id)"')
+  # The reviewer lives in the worktree's workspace, so it is named after its pane
+  # there rather than after the driver's, and the tab to tidy is that one too.
+  # (このレビュー役は worktree 側のワークスペースにいるので、driver ではなく
+  #  そちらの自分のペインから名前を付ける。片付ける対象もそちらのタブになる。)
+  start_agent "$(herdr-agent-name reviewer "$pane")" "$pane"
+  prune_tab "$tab"
+}
+
+main() {
+  parse_args "$@"
+  require_environment
+
+  rows=()
+  kept=("$HERDR_PANE_ID")
+  ensured_pane=""
+  case "$mode" in
+    coding) layout_coding ;;
+    research) layout_research ;;
+    review) layout_review ;;
+  esac
+
+  printf '%s\n' "AGENT	PANE	STATUS"
+  printf '%s\n' "${rows[@]}"
+}
+
+main "$@"
