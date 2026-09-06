@@ -1,5 +1,5 @@
 lockfile_version: '1'
-generated_at: '2026-08-29T06:42:21.973177+00:00'
+generated_at: '2026-09-05T10:38:03.515794+00:00'
 apm_version: 0.28.0
 dependencies:
 - repo_url: alirezarezvani/claude-skills
@@ -879,12 +879,27 @@ dependencies:
   content_hash: sha256:271a20b1a1fd4324d26c1b9c7a1ff0f7a80df461b062692720d2e0cfc32380a5
   skill_subset:
   - modern-web-guidance
+- repo_url: herdrdev/herdr
+  name: herdr
+  host: github.com
+  resolved_commit: 9eb521456ac0d19d3ab3d9d7cea3cca10baa8a4c
+  resolved_ref: 9eb521456ac0d19d3ab3d9d7cea3cca10baa8a4c
+  version: unknown
+  package_type: skill_bundle
+  deployed_files:
+  - .claude/skills/herdr
+  - .claude/skills/herdr/SKILL.md
+  deployed_file_hashes:
+    .claude/skills/herdr/SKILL.md: sha256:237ad2ab2d8123e2bb37956d3a41eed141f2d22a7c36e415b7876c0397679099
+  content_hash: sha256:b7cb609fa7b886e1c93a131ddb28da7c02f8f46fe9b055f8ab2761b514fa767d
+  skill_subset:
+  - herdr
 - repo_url: icchankun/skills
   name: icchankun-skills
   host: github.com
   resolved_commit: fdc363fd079ffe29efe338a2b7aef44118343521
   resolved_ref: fdc363fd079ffe29efe338a2b7aef44118343521
-  version: fdc363f
+  version: 0.0.0
   package_type: marketplace_plugin
   deployed_files:
   - .claude/skills/git-branch
@@ -1962,6 +1977,24 @@ deployments:
   - icchankun/skills
   active_owner: icchankun/skills
   content_hash: sha256:a1d057d283de9a2a4d2b14ddd1ec6dbb6b1d060652294f5dd96b3f133facee2d
+- kind: project-relative
+  target: claude
+  value: .claude/skills/herdr
+  runtime: null
+  scope: project
+  owners:
+  - herdrdev/herdr
+  active_owner: herdrdev/herdr
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/herdr/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - herdrdev/herdr
+  active_owner: herdrdev/herdr
+  content_hash: sha256:237ad2ab2d8123e2bb37956d3a41eed141f2d22a7c36e415b7876c0397679099
 - kind: project-relative
   target: claude
   value: .claude/skills/hook-development

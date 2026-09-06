@@ -26,6 +26,11 @@ dependencies:
       ref: 14fc42ed9b6c376a53b2f999f138d3bd26dac546
       skills:
         - gh-stack
+    # skill の内容は `herdr --skill` の出力と同一。本体を更新したら ref も揃える
+    - git: herdrdev/herdr
+      ref: 9eb521456ac0d19d3ab3d9d7cea3cca10baa8a4c # v0.8.2
+      skills:
+        - herdr
     - git: cursor/plugins
       ref: e46364b8be46000b7df0f260550cd712afbb8d36
       path: pstack
