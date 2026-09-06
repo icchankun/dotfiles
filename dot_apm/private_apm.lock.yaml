@@ -1,5 +1,5 @@
 lockfile_version: '1'
-generated_at: '2026-09-05T10:38:03.515794+00:00'
+generated_at: '2026-09-06T08:55:51.256127+00:00'
 apm_version: 0.28.0
 dependencies:
 - repo_url: alirezarezvani/claude-skills
@@ -897,8 +897,8 @@ dependencies:
 - repo_url: icchankun/skills
   name: icchankun-skills
   host: github.com
-  resolved_commit: fdc363fd079ffe29efe338a2b7aef44118343521
-  resolved_ref: fdc363fd079ffe29efe338a2b7aef44118343521
+  resolved_commit: 068c04e50f273d831fdc6c947f37eafb1c681212
+  resolved_ref: 068c04e50f273d831fdc6c947f37eafb1c681212
   version: 0.0.0
   package_type: marketplace_plugin
   deployed_files:
@@ -910,20 +910,29 @@ dependencies:
   - .claude/skills/github-pr/SKILL.md
   - .claude/skills/handover
   - .claude/skills/handover/SKILL.md
+  - .claude/skills/herdr-coding
+  - .claude/skills/herdr-coding/SKILL.md
+  - .claude/skills/herdr-layout
+  - .claude/skills/herdr-layout/SKILL.md
+  - .claude/skills/herdr-research
+  - .claude/skills/herdr-research/SKILL.md
+  - .claude/skills/herdr-review
+  - .claude/skills/herdr-review/SKILL.md
   - .claude/skills/resolving-pr-reviews
   - .claude/skills/resolving-pr-reviews/SKILL.md
   - .claude/skills/resolving-pr-reviews/scripts/fetch_pr_comments.rb
-  - .claude/skills/takeover
-  - .claude/skills/takeover/SKILL.md
   deployed_file_hashes:
     .claude/skills/git-branch/SKILL.md: sha256:50571d7a8b5dc520114728422e184ea0470bc3cedf59709ee17198b23e7c9918
     .claude/skills/git-commit/SKILL.md: sha256:d3c700fd7cc15d8938ac54722666be9c2f7a619beae038a459d7b05666ab2330
     .claude/skills/github-pr/SKILL.md: sha256:285be542d2e737f7091b9a7683706b9c435947f3497a41cc1591a9a921b1057d
-    .claude/skills/handover/SKILL.md: sha256:a1d057d283de9a2a4d2b14ddd1ec6dbb6b1d060652294f5dd96b3f133facee2d
+    .claude/skills/handover/SKILL.md: sha256:610a4a20aea97611f329306aa990b7d87814a1924023ea92a4b770d1365dc549
+    .claude/skills/herdr-coding/SKILL.md: sha256:d49f652701e1a5e9eac67dfd3f97901887bbf097b895041ce8e0ec72227bf666
+    .claude/skills/herdr-layout/SKILL.md: sha256:3728d61ef26d07c0d3589f5e8e640d9e9cc99c311fb4bbde5a7d204e357f6add
+    .claude/skills/herdr-research/SKILL.md: sha256:4406642dc18753eb993df6c21143970961487040e1c86264412f9c0511f7d01b
+    .claude/skills/herdr-review/SKILL.md: sha256:8a611f871f7a046836a72f810a36c344acaf9df4c283bb748cecac8877c7a7e3
     .claude/skills/resolving-pr-reviews/SKILL.md: sha256:90794d1382143dde1510357a61d345e1cf8a8a1efb2b8aa5ba3e813a7d955276
     .claude/skills/resolving-pr-reviews/scripts/fetch_pr_comments.rb: sha256:e8ee8e44323bc4a10300382e1a0524f70d28dac0738487662639d260c62ac1e7
-    .claude/skills/takeover/SKILL.md: sha256:07f6455ade8e472bc4d561693e8dd841b88c5dc84a98adf3f0dc6c0aa6f8ec73
-  content_hash: sha256:40d188dc0b46f6904eebd1b5305858910e4c109c6ae8c19389484e58c9b568b4
+  content_hash: sha256:d80e4d37a1faa50bbd76589c0b799c9d5b1df1ad2a212c3d09009716cf17fe53
 - repo_url: microsoft/playwright-cli
   name: playwright-cli
   host: github.com
@@ -1976,7 +1985,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:a1d057d283de9a2a4d2b14ddd1ec6dbb6b1d060652294f5dd96b3f133facee2d
+  content_hash: sha256:610a4a20aea97611f329306aa990b7d87814a1924023ea92a4b770d1365dc549
 - kind: project-relative
   target: claude
   value: .claude/skills/herdr
@@ -1986,6 +1995,78 @@ deployments:
   - herdrdev/herdr
   active_owner: herdrdev/herdr
   content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/herdr-coding
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/herdr-coding/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: sha256:d49f652701e1a5e9eac67dfd3f97901887bbf097b895041ce8e0ec72227bf666
+- kind: project-relative
+  target: claude
+  value: .claude/skills/herdr-layout
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/herdr-layout/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: sha256:3728d61ef26d07c0d3589f5e8e640d9e9cc99c311fb4bbde5a7d204e357f6add
+- kind: project-relative
+  target: claude
+  value: .claude/skills/herdr-research
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/herdr-research/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: sha256:4406642dc18753eb993df6c21143970961487040e1c86264412f9c0511f7d01b
+- kind: project-relative
+  target: claude
+  value: .claude/skills/herdr-review
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/herdr-review/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: sha256:8a611f871f7a046836a72f810a36c344acaf9df4c283bb748cecac8877c7a7e3
 - kind: project-relative
   target: claude
   value: .claude/skills/herdr/SKILL.md
@@ -4056,24 +4137,6 @@ deployments:
   - anthropics/claude-plugins-official/plugins/plugin-dev
   active_owner: anthropics/claude-plugins-official/plugins/plugin-dev
   content_hash: sha256:8c0ce23bb87be91f5b0853c2e9815617c3858b63acdddfe5da47d2c2d3a60816
-- kind: project-relative
-  target: claude
-  value: .claude/skills/takeover
-  runtime: null
-  scope: project
-  owners:
-  - icchankun/skills
-  active_owner: icchankun/skills
-  content_hash: null
-- kind: project-relative
-  target: claude
-  value: .claude/skills/takeover/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - icchankun/skills
-  active_owner: icchankun/skills
-  content_hash: sha256:07f6455ade8e472bc4d561693e8dd841b88c5dc84a98adf3f0dc6c0aa6f8ec73
 - kind: project-relative
   target: claude
   value: .claude/skills/typescript-best-practices
