@@ -39,13 +39,6 @@ clipboard-write = allow
 # Optionキー→Alt扱い
 macos-option-as-alt = true
 
-# --- 起動コマンド ---
-# 新規ウィンドウ/タブでzshの代わりにherdrへ直接アタッチ。
-# GhosttyはGUIアプリのためlaunchdの最小PATHしか持たず、それがherdrサーバーに
-# 引き継がれてalerter等のHomebrew製バイナリを解決できなくなる。
-# ログインシェル経由で起動して~/.zprofileのbrew shellenvを通す
-command = /bin/zsh -lc "exec /opt/homebrew/bin/herdr"
-
 # --- キーバインド設定 ---
 # ペイン分割・移動は Herdr 側に一本化（Herdr の Ctrl+p プレフィックスで操作）
 # クイックターミナル：どこからでもCtrl+iで呼び出せるドロップダウン端末（全面表示）

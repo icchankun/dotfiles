@@ -1,1 +1,10 @@
 eval "$(/opt/homebrew/bin/brew shellenv)"
+
+# GhosttyからはHerdrへ入る。Ghosttyのcommandで起動するとウィンドウの寸法が確定する前に
+# Herdrが立ち上がり、Cmdキーを押すたびにグリッドが約1/6に縮む。
+# .zshrcの末尾だとp10kのinstant promptが掴んだ端末を解放しないままexecするため
+# キー入力が効かなくなるので、対話初期化より前のここで入る
+if [[ -o interactive && -z ${HERDR_ENV:-} && ${TERM_PROGRAM:-} == ghostty ]] \
+   && command -v herdr >/dev/null; then
+  exec herdr
+fi
