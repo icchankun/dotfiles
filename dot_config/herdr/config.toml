@@ -28,15 +28,25 @@ description = "reviewr: toggle pane"
 
 [ui]
 agent_panel_sort = "spaces"
+# タブ名は herdr-tab-rename がブランチ名で付けるため、ここで聞かれても
+# 打った名前はセッション開始時に上書きされる
+prompt_new_tab_name = false
 show_agent_labels_on_pane_borders = false
 status_indicators = "dots"
 
+# リポジトリ / worktree / そのペインが何をしているか、を上から1行ずつ。
+# エージェント名はペイン内のstatuslineに出ているので置かない。サイドバー幅では
+# 2つ並べると切れるため、1行1トークンにしている
+[ui.sidebar.agents]
+rows = [["state_icon", "workspace"], ["tab"], ["pane"]]
+
 [ui.toast]
-# OS通知センターではなくHerdr内のトーストで通知する
-delivery = "herdr"
+# エージェント単位で絞り込めずワーカーの状態変化まで通知されるため、プラグイン側に任せる
+delivery = "off"
 
 [ui.sound]
-enabled = true
+# バックグラウンドのワークスペースでしか鳴らないうえ、プラグインの音と二重になるため無効化する
+enabled = false
 
 [experimental]
 # Kitty graphics対応ツールの画像をHerdr経由でも表示する
@@ -47,6 +57,13 @@ allow_nested = true
 [theme]
 name = "nord"
 auto_switch = false
+
+# Nordの補助テキストは背景とのコントラストが低く読みにくいため明るくする。
+# 3段階の明度差を残して、主要/補助/最も薄い文字の階層を保つ
+[theme.custom]
+overlay0 = "#a8b3c8"
+overlay1 = "#cdd4e0"
+subtext0 = "#ffffff"
 
 [advanced]
 # Claude Codeの長いログを遡れるよう既定の10MBから引き上げる

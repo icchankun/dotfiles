@@ -1,0 +1,16 @@
+#!/bin/sh
+# Register locally-developed herdr plugins after chezmoi places them.
+# Plugins installed from GitHub live in plugins/github and register themselves,
+# so only the directories chezmoi manages are linked here.
+#
+# The hashes make chezmoi re-run this whenever a manifest changes:
+# herdr-pane-status-notify: {{ include "dot_config/herdr/plugins/herdr-pane-status-notify/herdr-plugin.toml" | sha256sum }}
+
+set -eu
+
+command -v herdr >/dev/null 2>&1 || exit 0
+
+for plugin in "$HOME"/.config/herdr/plugins/*/; do
+    [ -f "$plugin/herdr-plugin.toml" ] || continue
+    herdr plugin link "$plugin" >/dev/null || echo "failed to link $plugin" >&2
+done

@@ -1,0 +1,17 @@
+id = "herdr-pane-status-notify"
+name = "Pane Status Notify"
+version = "0.1.0"
+min_herdr_version = "0.7.0"
+description = "Desktop notifications that name the tab and pane whose agent became done or blocked. Click to focus that pane."
+platforms = ["macos"]
+
+# herdrサーバーはbrew servicesのlaunchd経由で起動するためPATHが/usr/bin:/bin:/usr/sbin:/sbinに
+# 固定され、Homebrewのbunを解決できない。プラグイン側でHomebrewのbinを前置してから起動する
+[[actions]]
+id = "test"
+title = "Send test pane status notification"
+command = ["sh", "-c", "PATH=/opt/homebrew/bin:$PATH exec bun notify.js --test"]
+
+[[events]]
+on = "pane.agent_status_changed"
+command = ["sh", "-c", "PATH=/opt/homebrew/bin:$PATH exec bun notify.js"]
