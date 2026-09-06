@@ -3,15 +3,26 @@
   "lines": [
     [
       {
+        "id": "0",
+        "type": "custom-command",
+        "commandPath": "bash ~/.claude/statusline-session-name.sh",
+        "timeout": 1000,
+        "color": "hex:88C0D0"
+      },
+      {
+        "id": "0b",
+        "type": "separator"
+      },
+      {
         "id": "1a",
         "type": "custom-text",
         "customText": "モデル: ",
-        "color": "cyan"
+        "color": "hex:88C0D0"
       },
       {
         "id": "1",
         "type": "model",
-        "color": "cyan",
+        "color": "hex:88C0D0",
         "rawValue": true
       },
       {
@@ -21,39 +32,7 @@
       {
         "id": "5",
         "type": "git-branch",
-        "color": "magenta"
-      },
-      {
-        "id": "8",
-        "type": "separator"
-      },
-      {
-        "id": "9a",
-        "type": "custom-text",
-        "customText": "コンテキスト: ",
-        "color": "brightBlack"
-      },
-      {
-        "id": "9",
-        "type": "context-percentage",
-        "color": "brightBlack",
-        "rawValue": true
-      },
-      {
-        "id": "10",
-        "type": "separator"
-      },
-      {
-        "id": "11a",
-        "type": "custom-text",
-        "customText": "推定API相当額: ",
-        "color": "blue"
-      },
-      {
-        "id": "11",
-        "type": "session-cost",
-        "color": "blue",
-        "rawValue": true
+        "color": "hex:88C0D0"
       }
     ],
     [
@@ -61,12 +40,12 @@
         "id": "12a",
         "type": "custom-text",
         "customText": "5時間制限: ",
-        "color": "brightBlue"
+        "color": "hex:88C0D0"
       },
       {
         "id": "12",
         "type": "session-usage",
-        "color": "brightBlue",
+        "color": "hex:88C0D0",
         "rawValue": true
       },
       {
@@ -74,15 +53,15 @@
         "type": "separator"
       },
       {
-        "id": "14a",
+        "id": "11a",
         "type": "custom-text",
-        "customText": "週次制限: ",
-        "color": "brightBlue"
+        "customText": "API相当額: ",
+        "color": "hex:88C0D0"
       },
       {
-        "id": "14",
-        "type": "weekly-usage",
-        "color": "brightBlue",
+        "id": "11",
+        "type": "session-cost",
+        "color": "hex:88C0D0",
         "rawValue": true
       }
     ],
@@ -90,7 +69,7 @@
   ],
   "flexMode": "full-minus-40",
   "compactThreshold": 60,
-  "colorLevel": 2,
+  "colorLevel": 3,
   "defaultPaddingSide": "both",
   "inheritSeparatorColors": false,
   "globalBold": false,
@@ -99,7 +78,7 @@
   "powerline": {
     "enabled": false,
     "separators": [
-      ""
+      ""
     ],
     "separatorInvertBackground": [
       false

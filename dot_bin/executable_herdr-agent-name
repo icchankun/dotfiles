@@ -1,0 +1,35 @@
+#!/bin/sh
+
+# =============================================================================
+# herdr-agent-name
+# Print the agent name for a Herdr pane. (Herdr のペインに付けるべき agent 名を
+# 出力する。)
+#
+# The name is `<pane id>-<role>`: a driver takes its own pane id (`wK:p3` + driver
+# -> `wk-p3-driver`), and the workers it starts take the *driver's* pane id
+# (`wk-p3-coder`), not their own. A worker's name therefore says whose it is, and
+# re-running herdr-layout from the same driver lands on the same name, so the
+# existing workers can be reused instead of a second set of panes appearing.
+# (名前は `<ペインID>-<役割>`。driver は自分のペインID (`wK:p3` + driver なら
+#  `wk-p3-driver`)、driver が立てたワーカーは自分ではなく driver のペインID
+#  (`wk-p3-coder`) を使う。こうするとワーカーの名前が誰のものかを語り、同じ
+#  driver から herdr-layout を再実行しても同じ名前になるので、ペインが二重に
+#  増えず既存のワーカーを再利用できる。)
+#
+# Usage / 使い方:
+#   herdr-agent-name [ROLE] [PANE_ID]
+#     ROLE     default: driver
+#     PANE_ID  default: $HERDR_PANE_ID (起点のペイン。ワーカーでも driver のもの)
+#
+#   claude -n "$(herdr-agent-name)"
+#   herdr-agent-name coder
+# =============================================================================
+
+set -eu
+
+role="${1:-driver}"
+pane="${2:-${HERDR_PANE_ID:-}}"
+
+[ -n "$pane" ] || exit 1
+
+printf '%s-%s\n' "$(printf '%s' "$pane" | tr ':' '-' | tr '[:upper:]' '[:lower:]')" "$role"

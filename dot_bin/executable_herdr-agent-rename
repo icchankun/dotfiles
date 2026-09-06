@@ -1,0 +1,54 @@
+#!/bin/sh
+
+# =============================================================================
+# herdr-agent-rename
+# SessionStart hook: match the Herdr agent name to the Claude Code session name.
+# The zsh `claude` function picks the name with herdr-agent-name and hands it over
+# in HERDR_AGENT_NAME, so reusing it makes the name shown in the sidebar the same
+# name SendMessage is addressed to.
+# (SessionStart フック: Herdr 側の agent 名を Claude Code のセッション名に揃える。
+#  zsh の claude 関数が herdr-agent-name で名前を決めて HERDR_AGENT_NAME に入れて
+#  くるので、それをそのまま使えば、サイドバーに出る名前が SendMessage の宛先になる。)
+#
+# HERDR_AGENT_NAME is missing on a session started with an explicit `-n`
+# (herdr-layout's coder / reviewer) or in a shell that never ran the function.
+# Overwriting the former with a pane-id name would erase its role, so this exits
+# without touching anything.
+# (HERDR_AGENT_NAME が無いのは、-n を明示して起動されたセッション (herdr-layout の
+#  coder / reviewer など) か、claude 関数を通っていない古いシェル。前者の名前を
+#  ペインID由来の名前で潰すと役割が消えるので、何もせずに抜ける。)
+#
+# A pane border shows the manual pane name first, then the agent label, then the
+# terminal title. rename-cc-session sets the manual pane name from the title it
+# generates, so all that is left here is clearing the previous session's one.
+# (ペインボーダーの表示は 手動ペイン名 > agent ラベル > ターミナルタイトル の順に
+#  選ばれる。手動ペイン名は rename-cc-session が生成タイトルで付けるので、ここでは
+#  前のセッションのタイトルを消すだけにする。)
+# =============================================================================
+set -eu
+
+cat >/dev/null 2>&1 || true
+
+[ "${HERDR_ENV:-}" = 1 ] || exit 0
+[ -n "${HERDR_PANE_ID:-}" ] || exit 0
+command -v herdr >/dev/null 2>&1 || exit 0
+
+# The manual pane name outlives the session that set it, so leaving it in place
+# would show the previous session's title for the whole of the new one
+# (手動ペイン名はペインに残り続けるので、消さないと新しいセッションの間ずっと前の
+#  セッションのタイトルが出たままになる)
+herdr pane rename "$HERDR_PANE_ID" --clear >/dev/null 2>&1 || true
+
+[ -n "${HERDR_AGENT_NAME:-}" ] || exit 0
+
+# Agent detection can race with SessionStart, so wait briefly and then give up
+# (agent の検出は SessionStart と競合しうるので、少しだけ待って諦める)
+i=0
+while [ "$i" -lt 5 ]; do
+  if herdr agent rename "$HERDR_PANE_ID" "$HERDR_AGENT_NAME" >/dev/null 2>&1; then
+    exit 0
+  fi
+  i=$((i + 1))
+  sleep 0.5
+done
+exit 0
