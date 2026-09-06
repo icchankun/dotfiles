@@ -66,11 +66,32 @@
             "type": "command",
             "command": "bash ~/.claude/hooks/herdr-agent-state.sh session",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "~/.bin/herdr-agent-rename",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "~/.bin/herdr-tab-rename",
+            "timeout": 10
           }
         ]
       }
     ],
     "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.bin/rename-cc-session",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "Stop": [
       {
         "hooks": [
           {

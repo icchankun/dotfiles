@@ -1,0 +1,54 @@
+#!/bin/sh
+
+# =============================================================================
+# herdr-tab-rename
+# SessionStart hook: match the name of the pane's tab to the checked-out branch.
+# (SessionStart フック: ペインが属するタブの名前を、チェックアウト中のブランチに
+#  揃える。)
+#
+# One tab is one worktree here, so what a tab stands for is the branch itself and
+# its name has no reason to shift as focus moves. The sidebar then reads in three
+# rows: workspace (repository) / tab (branch) / pane (what that session is doing).
+# The pane row is rename-cc-session's job, so this only looks at the tab.
+# (1タブ = 1 worktree で使っているので、タブが表しているものはブランチそのもので、
+#  タブ名がフォーカスの移動で揺れる理由はない。サイドバーはこの3行で読む:
+#  ワークスペース(リポジトリ名) / タブ(ブランチ) / ペイン(そのセッションの作業内容)。
+#  ペイン名は rename-cc-session が付けるので、ここはタブだけを見る。)
+#
+# The branch alone is not unique -- several tabs can sit on main -- so the tab's
+# own number leads the label. It comes from the tab id (`wK:t2` -> `[2] main`), so
+# it never shifts when a neighbouring tab is closed and the label keeps pointing
+# at the id you would type at the CLI.
+# (ブランチ名だけでは一意にならず、main のタブを複数開くこともあるため、タブ自身の
+#  番号を先頭に置く。番号はタブID (`wK:t2` -> `[2] main`) から取るので、隣のタブを
+#  閉じてもずれず、ラベルがそのままCLIで打つIDを指し続ける。)
+#
+# Workers in the same tab run this on startup too, but they sit in the same
+# worktree, so the branch is the same and repeated calls change nothing.
+# (同じタブの worker も起動時にここを通るが、同じ worktree にいる以上ブランチも
+#  同じで、何度呼ばれても結果は変わらない。)
+# =============================================================================
+set -eu
+
+cat >/dev/null 2>&1 || true
+
+[ "${HERDR_ENV:-}" = 1 ] || exit 0
+[ -n "${HERDR_TAB_ID:-}" ] || exit 0
+command -v herdr >/dev/null 2>&1 || exit 0
+
+# A detached HEAD only answers "HEAD", which names nothing as a tab
+# (detached HEAD は "HEAD" としか答えず、タブ名にしても何も指さない)
+branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || exit 0
+[ -n "$branch" ] && [ "$branch" != HEAD ] || exit 0
+
+# An id herdr did not shape as `<workspace>:t<n>` leaves nothing to strip, and the
+# label falls back to the branch on its own
+# (herdr が `<workspace>:t<n>` の形で作っていないIDからは削るものが無く、ラベルは
+#  自然とブランチ名だけになる)
+number="${HERDR_TAB_ID##*:t}"
+case "$number" in
+  '' | *[!0-9]*) label="$branch" ;;
+  *) label="[$number] $branch" ;;
+esac
+
+herdr tab rename "$HERDR_TAB_ID" "$label" >/dev/null 2>&1 || true
