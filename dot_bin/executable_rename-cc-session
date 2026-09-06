@@ -17,46 +17,74 @@
 #   2. Install the required gem
 #      gem install activesupport
 #
-#   3. Register as a Claude Code hook (SessionEnd) in ~/.claude/settings.json
+#   3. Register as a Claude Code hook (SessionEnd / Stop) in ~/.claude/settings.json
 #      "hooks": { "SessionEnd": [{ "command": "rename-cc-session" }] }
 #
 # Usage / 使い方:
-#   Intended to run automatically as a SessionEnd hook.
-#   (SessionEnd フックとして自動実行される想定。)
+#   Intended to run automatically as a SessionEnd / Stop hook.
+#   (SessionEnd と Stop のフックとして自動実行される想定。Stop は応答のたびに走る
+#    ので、一定時間あいたときだけタイトルを作り直す。)
 #   Reads JSON from stdin with session_id, transcript_path, cwd, etc.
 #   (stdin から JSON を受け取り、会話内容を元にタイトルを生成してセッションに保存する。)
 # =============================================================================
 
+require 'fileutils'
 require 'json'
 require 'shellwords'
 require 'active_support/core_ext/object/blank'
 require 'active_support/core_ext/string/inflections'
 
 class CcSessionRenamer
-  def self.call(cc_session_id:, transcript_path:, cwd:)
-    new(cc_session_id:, transcript_path:, cwd:).call
+  def self.call(cc_session_id:, transcript_path:, cwd:, throttle: false)
+    new(cc_session_id:, transcript_path:, cwd:, throttle:).call
   end
 
-  def initialize(cc_session_id:, transcript_path:, cwd:)
+  def initialize(cc_session_id:, transcript_path:, cwd:, throttle: false)
     @cc_session_id = cc_session_id
     @transcript_path = transcript_path
     @cwd = cwd
+    @throttle = throttle
   end
 
   def call
-    title = generate_title
-    return if title.blank?
+    return if throttled?
 
-    rename_cc_session(title)
+    record_attempt
+    title = generate_title
+    return unless valid_title?(title)
+
+    rename_cc_session(title) unless agent_named?
+    rename_herdr_pane(title)
   end
 
   private
 
-  attr_reader :cc_session_id, :transcript_path, :cwd
+  attr_reader :cc_session_id, :transcript_path, :cwd, :throttle
+
+  # Stop フックは応答のたびに走るので、毎回生成すると Haiku の呼び出しが積み上がる。
+  # 会話の主題はそこまで速く動かないため、前回から一定時間あいたときだけ作り直す。
+  # 生成に失敗したときも間隔を空けたいので、成否ではなく試行した時刻を記録する。
+  REGENERATE_INTERVAL = 10 * 60
+  STATE_DIR = File.expand_path('~/.cache/rename-cc-session')
+
+  def throttled?
+    return false unless throttle
+    return false unless File.exist?(state_path)
+
+    Time.now - File.mtime(state_path) < REGENERATE_INTERVAL
+  end
+
+  def record_attempt
+    FileUtils.mkdir_p(STATE_DIR)
+    FileUtils.touch(state_path)
+  end
+
+  def state_path
+    File.join(STATE_DIR, cc_session_id.to_s)
+  end
 
   def generate_title
-    messages = build_messages
-    return if messages.empty?
+    return if conversation.blank?
 
     prompt = <<~TEXT
       以下の会話について、次の形式で1行だけ出力してください。
@@ -64,15 +92,41 @@ class CcSessionRenamer
       - タイトルは日本語かつ30文字以内 (できるだけ詳しく)
       - キーワードは固有名詞(英語)または日本語で、3つまで
       - マークダウン記法やプレフィックスは不要
+      - 会話への返答や相槌ではなく、タイトルだけを出力する
 
       出力例: フックのデバッグ#{current_branch} #hook #stdin #ruby
 
-      ```会話内容
-      #{messages.join("\n")}
-      ```
+      <conversation>
+      #{conversation}
+      </conversation>
     TEXT
 
     `echo #{Shellwords.escape(prompt)} | claude -p --model claude-haiku-4-5-20251001 --setting-sources '' --no-session-persistence 2>/dev/null`.lines.first&.strip
+  end
+
+  # タイトルではなく会話の続きや断り文、CLI のエラーが返ることがあるので弾く。
+  # 書式どおりなら必ずキーワードの # が付くため、それを主な手掛かりにする。
+  MAX_TITLE_LENGTH = 120
+  INVALID_TITLE_PATTERNS = [/\A申し訳/, /\ANot logged in/, /[。！？]\z/].freeze
+  def valid_title?(title)
+    return false if title.blank?
+    return false if title.length > MAX_TITLE_LENGTH
+    return false if INVALID_TITLE_PATTERNS.any? { |pattern| title.match?(pattern) }
+
+    title.include?('#')
+  end
+
+  # 長すぎる会話はタイトル生成の精度が落ちるうえ、コマンドライン長の上限にも触れる。
+  MAX_CONVERSATION_LENGTH = 12_000
+  def conversation
+    @conversation ||= begin
+      text = build_messages.join("\n")
+      if text.length > MAX_CONVERSATION_LENGTH
+        half = MAX_CONVERSATION_LENGTH / 2
+        text = "#{text[0, half]}\n…(中略)…\n#{text[-half..]}"
+      end
+      text
+    end
   end
 
   def build_messages
@@ -113,9 +167,38 @@ class CcSessionRenamer
     branch.present? ? " [#{branch}]" : ''
   end
 
+  # Herdr の agent 名は `<ペインID>-<役割>` の形で、SendMessage の宛先であり
+  # statusline に出る名前でもある。生成タイトルで上書きすると誰に送ればよいかが
+  # 画面から読めなくなるため、その形の名前を持つセッションは改名しない。ペインの
+  # タイトルは別に更新するので、何をしているかはサイドバーで分かる。
+  # -n を明示した起動だけでなく、SessionStart のフックが名前を付けた
+  # バックグラウンドセッションもこれで守られる。
+  AGENT_NAME_PATTERN = /\A[a-z]+-p[0-9a-z]+(?:-[a-z0-9-]+)?\z/
+  SESSIONS_GLOB = File.expand_path('~/.claude/sessions/*.json')
+
+  def agent_named?
+    Dir.glob(SESSIONS_GLOB).any? do |path|
+      session = JSON.parse(File.read(path))
+      session['sessionId'] == cc_session_id && session['name'].to_s.match?(AGENT_NAME_PATTERN)
+    rescue JSON::ParserError, SystemCallError
+      false
+    end
+  end
+
   def rename_cc_session(title)
     entry = JSON.generate({ type: 'custom-title', customTitle: title, sessionId: cc_session_id })
     File.open(transcript_path, 'a') { |f| f.puts(entry) }
+  end
+
+  # Herdr のペインボーダーは 手動ペイン名 > agent ラベル > ターミナルタイトル の順に
+  # 表示を選ぶ。ターミナルタイトルは claude -n で付けたセッション名に固定されていて
+  # 生成タイトルには変わらないので、手動ペイン名として渡す。agent 名はそのまま残る
+  # ので SendMessage の宛先は壊れない。
+  def rename_herdr_pane(title)
+    return unless ENV['HERDR_ENV'] == '1'
+    return if ENV['HERDR_PANE_ID'].blank?
+
+    system('herdr', 'pane', 'rename', ENV['HERDR_PANE_ID'], title, out: File::NULL, err: File::NULL)
   end
 end
 
@@ -131,5 +214,6 @@ input = JSON.parse($stdin.read)
 CcSessionRenamer.call(
   cc_session_id: input['session_id'],
   transcript_path: input['transcript_path'],
-  cwd: input['cwd']
+  cwd: input['cwd'],
+  throttle: input['hook_event_name'] == 'Stop'
 )
