@@ -8,16 +8,12 @@
 #
 # Dependencies / 依存:
 #   - claude CLI  https://github.com/anthropics/claude-code
-#   - activesupport (gem)
 #
 # Setup / セットアップ:
 #   1. Install the claude CLI
 #      npm install -g @anthropic-ai/claude-code
 #
-#   2. Install the required gem
-#      gem install activesupport
-#
-#   3. Register as a Claude Code hook (Stop) in ~/.claude/settings.json
+#   2. Register as a Claude Code hook (Stop) in ~/.claude/settings.json
 #      "hooks": { "Stop": [{ "command": "rename-cc-session" }] }
 #
 # Usage / 使い方:
@@ -32,9 +28,6 @@
 
 require 'fileutils'
 require 'json'
-require 'shellwords'
-require 'active_support/core_ext/object/blank'
-require 'active_support/core_ext/string/inflections'
 
 class CcSessionRenamer
   def self.call(cc_session_id:, transcript_path:, cwd:, throttle: false)
@@ -79,6 +72,18 @@ class CcSessionRenamer
   def record_attempt
     FileUtils.mkdir_p(STATE_DIR)
     FileUtils.touch(state_path)
+    prune_state
+  end
+
+  # 記録はセッションIDごとに1ファイル増える一方なので、放っておくと溜まり続ける。
+  # --resume で再開されることを考えて、しばらくは残してから消す。
+  STATE_TTL = 7 * 24 * 60 * 60
+  def prune_state
+    Dir.glob(File.join(STATE_DIR, '*')).each do |path|
+      File.delete(path) if Time.now - File.mtime(path) > STATE_TTL
+    rescue SystemCallError
+      nil
+    end
   end
 
   def state_path
@@ -86,7 +91,7 @@ class CcSessionRenamer
   end
 
   def generate_title
-    return if conversation.blank?
+    return if blank?(conversation)
 
     prompt = <<~TEXT
       以下の会話について、次の形式で1行だけ出力してください。
@@ -103,7 +108,23 @@ class CcSessionRenamer
       </conversation>
     TEXT
 
-    `echo #{Shellwords.escape(prompt)} | claude -p --model claude-haiku-4-5-20251001 --setting-sources '' --no-session-persistence 2>/dev/null`.lines.first&.strip
+    ask_claude(prompt)
+  end
+
+  # プロンプトは標準入力から渡す。シェルを挟まないので引用符の心配がなく、会話の
+  # 長さがコマンドライン長の上限に触れることもない。
+  CLAUDE_CMD = ['claude', '-p',
+                '--model', 'claude-haiku-4-5-20251001',
+                '--setting-sources', '',
+                '--no-session-persistence'].freeze
+  def ask_claude(prompt)
+    IO.popen(CLAUDE_CMD, 'r+', err: File::NULL) do |io|
+      io.puts(prompt)
+      io.close_write
+      io.gets&.strip
+    end
+  rescue SystemCallError
+    nil
   end
 
   # タイトルではなく会話の続きや断り文、CLI のエラーが返ることがあるので弾く。
@@ -111,14 +132,14 @@ class CcSessionRenamer
   MAX_TITLE_LENGTH = 120
   INVALID_TITLE_PATTERNS = [/\A申し訳/, /\ANot logged in/, /[。！？]\z/].freeze
   def valid_title?(title)
-    return false if title.blank?
+    return false if blank?(title)
     return false if title.length > MAX_TITLE_LENGTH
     return false if INVALID_TITLE_PATTERNS.any? { |pattern| title.match?(pattern) }
 
     title.include?('#')
   end
 
-  # 長すぎる会話はタイトル生成の精度が落ちるうえ、コマンドライン長の上限にも触れる。
+  # 長すぎる会話はタイトル生成の精度が落ちる。
   MAX_CONVERSATION_LENGTH = 12_000
   def conversation
     @conversation ||= begin
@@ -145,9 +166,9 @@ class CcSessionRenamer
     return unless TARGET_MESSAGE_TYPES.include?(message_type)
 
     content = extract_message_content(line_hash)
-    return if content.blank?
+    return if blank?(content)
 
-    "#{message_type.titleize}: #{content}"
+    "#{message_type.capitalize}: #{content}"
   end
 
   TARGET_MESSAGE_CONTENT_TYPE = 'text'
@@ -165,8 +186,15 @@ class CcSessionRenamer
   end
 
   def current_branch
-    branch = `git -C #{Shellwords.escape(cwd)} rev-parse --abbrev-ref HEAD 2>/dev/null`.strip
-    branch.present? ? " [#{branch}]" : ''
+    branch = IO.popen(['git', '-C', cwd.to_s, 'rev-parse', '--abbrev-ref', 'HEAD'],
+                      err: File::NULL, &:read).to_s.strip
+    blank?(branch) ? '' : " [#{branch}]"
+  rescue SystemCallError
+    ''
+  end
+
+  def blank?(value)
+    value.to_s.strip.empty?
   end
 
   # ここで書くのはセッションのタイトルで、Herdr の agent 名や
@@ -182,7 +210,7 @@ class CcSessionRenamer
   # 作業内容を語る。agent 名は Herdr 側にも残るので、宛先は agent ラベルで引ける。
   def rename_herdr_pane(title)
     return unless ENV['HERDR_ENV'] == '1'
-    return if ENV['HERDR_PANE_ID'].blank?
+    return if blank?(ENV['HERDR_PANE_ID'])
 
     system('herdr', 'pane', 'rename', ENV['HERDR_PANE_ID'], title, out: File::NULL, err: File::NULL)
   end
