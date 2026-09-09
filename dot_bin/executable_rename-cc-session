@@ -17,13 +17,15 @@
 #   2. Install the required gem
 #      gem install activesupport
 #
-#   3. Register as a Claude Code hook (SessionEnd / Stop) in ~/.claude/settings.json
-#      "hooks": { "SessionEnd": [{ "command": "rename-cc-session" }] }
+#   3. Register as a Claude Code hook (Stop) in ~/.claude/settings.json
+#      "hooks": { "Stop": [{ "command": "rename-cc-session" }] }
 #
 # Usage / 使い方:
-#   Intended to run automatically as a SessionEnd / Stop hook.
-#   (SessionEnd と Stop のフックとして自動実行される想定。Stop は応答のたびに走る
-#    ので、一定時間あいたときだけタイトルを作り直す。)
+#   Intended to run automatically as a Stop hook.
+#   (Stop のフックとして自動実行される想定。Stop は応答のたびに走るので、一定時間
+#    あいたときだけタイトルを作り直す。)
+#   SessionEnd では走らせない。セッションの終了時には ~/.claude/sessions/<pid>.json
+#   がもう消えていて、セッションの素性を調べる術がなくなるため。
 #   Reads JSON from stdin with session_id, transcript_path, cwd, etc.
 #   (stdin から JSON を受け取り、会話内容を元にタイトルを生成してセッションに保存する。)
 # =============================================================================
@@ -53,7 +55,7 @@ class CcSessionRenamer
     title = generate_title
     return unless valid_title?(title)
 
-    rename_cc_session(title) unless agent_named?
+    rename_cc_session(title)
     rename_herdr_pane(title)
   end
 
@@ -167,33 +169,17 @@ class CcSessionRenamer
     branch.present? ? " [#{branch}]" : ''
   end
 
-  # Herdr の agent 名は `<ペインID>-<役割>` の形で、SendMessage の宛先であり
-  # statusline に出る名前でもある。生成タイトルで上書きすると誰に送ればよいかが
-  # 画面から読めなくなるため、その形の名前を持つセッションは改名しない。ペインの
-  # タイトルは別に更新するので、何をしているかはサイドバーで分かる。
-  # -n を明示した起動だけでなく、SessionStart のフックが名前を付けた
-  # バックグラウンドセッションもこれで守られる。
-  AGENT_NAME_PATTERN = /\A[a-z]+-p[0-9a-z]+(?:-[a-z0-9-]+)?\z/
-  SESSIONS_GLOB = File.expand_path('~/.claude/sessions/*.json')
-
-  def agent_named?
-    Dir.glob(SESSIONS_GLOB).any? do |path|
-      session = JSON.parse(File.read(path))
-      session['sessionId'] == cc_session_id && session['name'].to_s.match?(AGENT_NAME_PATTERN)
-    rescue JSON::ParserError, SystemCallError
-      false
-    end
-  end
-
+  # ここで書くのはセッションのタイトルで、Herdr の agent 名や
+  # ~/.claude/sessions/<pid>.json の name とは別物。SendMessage の宛先も statusline も
+  # 後者を読んでいるので、生成タイトルを入れても宛先は見失われない。
   def rename_cc_session(title)
     entry = JSON.generate({ type: 'custom-title', customTitle: title, sessionId: cc_session_id })
     File.open(transcript_path, 'a') { |f| f.puts(entry) }
   end
 
   # Herdr のペインボーダーは 手動ペイン名 > agent ラベル > ターミナルタイトル の順に
-  # 表示を選ぶ。ターミナルタイトルは claude -n で付けたセッション名に固定されていて
-  # 生成タイトルには変わらないので、手動ペイン名として渡す。agent 名はそのまま残る
-  # ので SendMessage の宛先は壊れない。
+  # 表示を選ぶ。手動ペイン名に生成タイトルを入れておくと、ボーダーがそのペインの
+  # 作業内容を語る。agent 名は Herdr 側にも残るので、宛先は agent ラベルで引ける。
   def rename_herdr_pane(title)
     return unless ENV['HERDR_ENV'] == '1'
     return if ENV['HERDR_PANE_ID'].blank?
