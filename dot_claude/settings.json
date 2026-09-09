@@ -58,6 +58,9 @@
     "skill-creator@claude-plugins-official": true,
     "deploy-on-aws@claude-plugins-official": true
   },
+  "attribution": {
+    "sessionUrl": false
+  },
   "hooks": {
     "SessionStart": [
       {
