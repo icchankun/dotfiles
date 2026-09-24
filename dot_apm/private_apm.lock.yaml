@@ -1,5 +1,5 @@
 lockfile_version: '1'
-generated_at: '2026-09-24T04:02:51.600904+00:00'
+generated_at: '2026-09-24T09:42:23.702271+00:00'
 apm_version: 0.31.0
 dependencies:
 - repo_url: anthropics/claude-plugins-official
@@ -137,10 +137,6 @@ dependencies:
   virtual_path: plugins/code-simplifier
   is_virtual: true
   package_type: apm_package
-  deployed_files:
-  - .claude/agents/code-simplifier.md
-  deployed_file_hashes:
-    .claude/agents/code-simplifier.md: sha256:2a51e8d210580d9f66ac2ed1226c41f9374565fc275da30d7bb95f65c2cc87bb
   content_hash: sha256:bab479724b7600d84139a95d19839274377999149f54f2d06e4a671d5cc5c5f5
 - repo_url: anthropics/claude-plugins-official
   name: commit-commands
@@ -172,12 +168,10 @@ dependencies:
   deployed_files:
   - .claude/agents/code-architect.md
   - .claude/agents/code-explorer.md
-  - .claude/agents/code-reviewer.md
   - .claude/commands/feature-dev.md
   deployed_file_hashes:
     .claude/agents/code-architect.md: sha256:c50fb08d59a4bbd19660860626a049e44cf1a2b0c1cf782e6c7a99ba7e71b0c3
     .claude/agents/code-explorer.md: sha256:3b277703de7458988ec3b8021c716f79f642e174950ed332629310f68322029a
-    .claude/agents/code-reviewer.md: sha256:a7df173bf77a00da5584c6401a1061524fdbe477b6fef5dd496d4c7a9113c78c
     .claude/commands/feature-dev.md: sha256:656a01ce40782ee849c444916362df0e4e4173afcd33313777fa86021d89994b
   content_hash: sha256:edd6683fac4dc589afbded62059d5fe533bceafc25ca65c1430abaaaeec1a878
 - repo_url: anthropics/claude-plugins-official
@@ -434,12 +428,16 @@ dependencies:
   is_virtual: true
   package_type: apm_package
   deployed_files:
+  - .claude/agents/code-reviewer.md
+  - .claude/agents/code-simplifier.md
   - .claude/agents/comment-analyzer.md
   - .claude/agents/pr-test-analyzer.md
   - .claude/agents/silent-failure-hunter.md
   - .claude/agents/type-design-analyzer.md
   - .claude/commands/review-pr.md
   deployed_file_hashes:
+    .claude/agents/code-reviewer.md: sha256:019395c3ce457460115cc703e2f4a86fed4bbe560dc58355051c4d877155d366
+    .claude/agents/code-simplifier.md: sha256:976ddb22b84bc5a714216531a75db5e73169554add6b953442beeedb49b56891
     .claude/agents/comment-analyzer.md: sha256:4a9c1f2eb8234a4b9231983e75739663d512e1aed242388964a165a719b84698
     .claude/agents/pr-test-analyzer.md: sha256:fcb1cde9ba7b21694b508766a8d6a79bc91bed9982f828f816210059934f46b4
     .claude/agents/silent-failure-hunter.md: sha256:fa9b0daec5a267e7e66435cc48b3328301fc9f70c3af259fe248881327a1babc
@@ -884,7 +882,7 @@ dependencies:
 - repo_url: icchankun/skills
   name: icchankun-skills
   host: github.com
-  resolved_commit: 05fda497e6c6d31869b14ff92c024c6f9764dbc2
+  resolved_commit: 3c2ad00fee6c774cf918431bb25f28f218c45e74
   resolved_ref: main
   version: 05fda49
   package_type: marketplace_plugin
@@ -899,27 +897,23 @@ dependencies:
   - .claude/skills/handover/SKILL.md
   - .claude/skills/herdr-coding
   - .claude/skills/herdr-coding/SKILL.md
-  - .claude/skills/herdr-layout
-  - .claude/skills/herdr-layout/SKILL.md
-  - .claude/skills/herdr-research
-  - .claude/skills/herdr-research/SKILL.md
-  - .claude/skills/herdr-review
-  - .claude/skills/herdr-review/SKILL.md
+  - .claude/skills/humanizer-ja
+  - .claude/skills/humanizer-ja/SKILL.md
   - .claude/skills/resolving-pr-reviews
   - .claude/skills/resolving-pr-reviews/SKILL.md
   - .claude/skills/resolving-pr-reviews/scripts/fetch_pr_comments.rb
+  - .claude/skills/resolving-pr-reviews/scripts/wait_for_copilot_review.rb
   deployed_file_hashes:
-    .claude/skills/git-branch/SKILL.md: sha256:50571d7a8b5dc520114728422e184ea0470bc3cedf59709ee17198b23e7c9918
-    .claude/skills/git-commit/SKILL.md: sha256:3d11336fb6f53a3bf8e7c99d875ee1d2548dde37b76764edd4575a681df0facb
-    .claude/skills/github-pr/SKILL.md: sha256:285be542d2e737f7091b9a7683706b9c435947f3497a41cc1591a9a921b1057d
-    .claude/skills/handover/SKILL.md: sha256:610a4a20aea97611f329306aa990b7d87814a1924023ea92a4b770d1365dc549
-    .claude/skills/herdr-coding/SKILL.md: sha256:d49f652701e1a5e9eac67dfd3f97901887bbf097b895041ce8e0ec72227bf666
-    .claude/skills/herdr-layout/SKILL.md: sha256:3728d61ef26d07c0d3589f5e8e640d9e9cc99c311fb4bbde5a7d204e357f6add
-    .claude/skills/herdr-research/SKILL.md: sha256:4406642dc18753eb993df6c21143970961487040e1c86264412f9c0511f7d01b
-    .claude/skills/herdr-review/SKILL.md: sha256:8a611f871f7a046836a72f810a36c344acaf9df4c283bb748cecac8877c7a7e3
-    .claude/skills/resolving-pr-reviews/SKILL.md: sha256:90794d1382143dde1510357a61d345e1cf8a8a1efb2b8aa5ba3e813a7d955276
-    .claude/skills/resolving-pr-reviews/scripts/fetch_pr_comments.rb: sha256:e8ee8e44323bc4a10300382e1a0524f70d28dac0738487662639d260c62ac1e7
-  content_hash: sha256:107f54296569a913b9a2e4487513574eb477b8b72b9b60123624096f4d231796
+    .claude/skills/git-branch/SKILL.md: sha256:f106a85f7b0471e9c863e745832ba9a6269b5ed99c56035fe8ed494a5f5a9adc
+    .claude/skills/git-commit/SKILL.md: sha256:680c5368b16d5ee1b934e34484e37336755a2a5ef2baa77ee72d5af05c7fa0b4
+    .claude/skills/github-pr/SKILL.md: sha256:f56ee2852b21d3bd1e9983f6476e2f0959854a116d27c9873a8b942e438f8c05
+    .claude/skills/handover/SKILL.md: sha256:18fa9707d00ef766f9fac43bfff30c9c877368260f3ef7fc5f5311175b51d07e
+    .claude/skills/herdr-coding/SKILL.md: sha256:39d2fdab5e8904c909ef19aacacd86b78eaaf8900afbfb0627ecfb8f1b751d02
+    .claude/skills/humanizer-ja/SKILL.md: sha256:b92caf4505ef2a33eec628d864fbef0ff7442f276a00c537a18df14ff201173a
+    .claude/skills/resolving-pr-reviews/SKILL.md: sha256:5303c3381802f7a6c99e731df058dab190591d80cee295bc3eedbad237d8119a
+    .claude/skills/resolving-pr-reviews/scripts/fetch_pr_comments.rb: sha256:2d68d070b24d6f5728fe7be507dbeaf90ab7116fa6a7726ef45f050552a1ac6e
+    .claude/skills/resolving-pr-reviews/scripts/wait_for_copilot_review.rb: sha256:0fde18387ec5f1880bc7f1d428b0c5e01f19d3b67359b71eef2f62c904cbfcfa
+  content_hash: sha256:f62f65832bac08595fa89251b948b8c2bd808b3eda54886a4960e07e5ffed462
 - repo_url: microsoft/playwright-cli
   name: playwright-cli
   host: github.com
@@ -1025,18 +1019,18 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - anthropics/claude-plugins-official/plugins/feature-dev
-  active_owner: anthropics/claude-plugins-official/plugins/feature-dev
-  content_hash: sha256:a7df173bf77a00da5584c6401a1061524fdbe477b6fef5dd496d4c7a9113c78c
+  - anthropics/claude-plugins-official/plugins/pr-review-toolkit
+  active_owner: anthropics/claude-plugins-official/plugins/pr-review-toolkit
+  content_hash: sha256:019395c3ce457460115cc703e2f4a86fed4bbe560dc58355051c4d877155d366
 - kind: project-relative
   target: claude
   value: .claude/agents/code-simplifier.md
   runtime: null
   scope: project
   owners:
-  - anthropics/claude-plugins-official/plugins/code-simplifier
-  active_owner: anthropics/claude-plugins-official/plugins/code-simplifier
-  content_hash: sha256:2a51e8d210580d9f66ac2ed1226c41f9374565fc275da30d7bb95f65c2cc87bb
+  - anthropics/claude-plugins-official/plugins/pr-review-toolkit
+  active_owner: anthropics/claude-plugins-official/plugins/pr-review-toolkit
+  content_hash: sha256:976ddb22b84bc5a714216531a75db5e73169554add6b953442beeedb49b56891
 - kind: project-relative
   target: claude
   value: .claude/agents/comment-analyzer.md
@@ -1900,7 +1894,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:50571d7a8b5dc520114728422e184ea0470bc3cedf59709ee17198b23e7c9918
+  content_hash: sha256:f106a85f7b0471e9c863e745832ba9a6269b5ed99c56035fe8ed494a5f5a9adc
 - kind: project-relative
   target: claude
   value: .claude/skills/git-commit
@@ -1918,7 +1912,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:3d11336fb6f53a3bf8e7c99d875ee1d2548dde37b76764edd4575a681df0facb
+  content_hash: sha256:680c5368b16d5ee1b934e34484e37336755a2a5ef2baa77ee72d5af05c7fa0b4
 - kind: project-relative
   target: claude
   value: .claude/skills/github-pr
@@ -1936,7 +1930,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:285be542d2e737f7091b9a7683706b9c435947f3497a41cc1591a9a921b1057d
+  content_hash: sha256:f56ee2852b21d3bd1e9983f6476e2f0959854a116d27c9873a8b942e438f8c05
 - kind: project-relative
   target: claude
   value: .claude/skills/handover
@@ -1954,7 +1948,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:610a4a20aea97611f329306aa990b7d87814a1924023ea92a4b770d1365dc549
+  content_hash: sha256:18fa9707d00ef766f9fac43bfff30c9c877368260f3ef7fc5f5311175b51d07e
 - kind: project-relative
   target: claude
   value: .claude/skills/herdr
@@ -1981,61 +1975,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:d49f652701e1a5e9eac67dfd3f97901887bbf097b895041ce8e0ec72227bf666
-- kind: project-relative
-  target: claude
-  value: .claude/skills/herdr-layout
-  runtime: null
-  scope: project
-  owners:
-  - icchankun/skills
-  active_owner: icchankun/skills
-  content_hash: null
-- kind: project-relative
-  target: claude
-  value: .claude/skills/herdr-layout/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - icchankun/skills
-  active_owner: icchankun/skills
-  content_hash: sha256:3728d61ef26d07c0d3589f5e8e640d9e9cc99c311fb4bbde5a7d204e357f6add
-- kind: project-relative
-  target: claude
-  value: .claude/skills/herdr-research
-  runtime: null
-  scope: project
-  owners:
-  - icchankun/skills
-  active_owner: icchankun/skills
-  content_hash: null
-- kind: project-relative
-  target: claude
-  value: .claude/skills/herdr-research/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - icchankun/skills
-  active_owner: icchankun/skills
-  content_hash: sha256:4406642dc18753eb993df6c21143970961487040e1c86264412f9c0511f7d01b
-- kind: project-relative
-  target: claude
-  value: .claude/skills/herdr-review
-  runtime: null
-  scope: project
-  owners:
-  - icchankun/skills
-  active_owner: icchankun/skills
-  content_hash: null
-- kind: project-relative
-  target: claude
-  value: .claude/skills/herdr-review/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - icchankun/skills
-  active_owner: icchankun/skills
-  content_hash: sha256:8a611f871f7a046836a72f810a36c344acaf9df4c283bb748cecac8877c7a7e3
+  content_hash: sha256:39d2fdab5e8904c909ef19aacacd86b78eaaf8900afbfb0627ecfb8f1b751d02
 - kind: project-relative
   target: claude
   value: .claude/skills/herdr/SKILL.md
@@ -2153,6 +2093,24 @@ deployments:
   - anthropics/claude-plugins-official/plugins/plugin-dev
   active_owner: anthropics/claude-plugins-official/plugins/plugin-dev
   content_hash: sha256:e7785d6c61d368f5ea5270c979753aea02f776f5b6aa220137ec4585abd720c2
+- kind: project-relative
+  target: claude
+  value: .claude/skills/humanizer-ja
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/humanizer-ja/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: sha256:b92caf4505ef2a33eec628d864fbef0ff7442f276a00c537a18df14ff201173a
 - kind: project-relative
   target: claude
   value: .claude/skills/mcp-integration
@@ -3862,7 +3820,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:90794d1382143dde1510357a61d345e1cf8a8a1efb2b8aa5ba3e813a7d955276
+  content_hash: sha256:5303c3381802f7a6c99e731df058dab190591d80cee295bc3eedbad237d8119a
 - kind: project-relative
   target: claude
   value: .claude/skills/resolving-pr-reviews/scripts/fetch_pr_comments.rb
@@ -3871,7 +3829,16 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:e8ee8e44323bc4a10300382e1a0524f70d28dac0738487662639d260c62ac1e7
+  content_hash: sha256:2d68d070b24d6f5728fe7be507dbeaf90ab7116fa6a7726ef45f050552a1ac6e
+- kind: project-relative
+  target: claude
+  value: .claude/skills/resolving-pr-reviews/scripts/wait_for_copilot_review.rb
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: sha256:0fde18387ec5f1880bc7f1d428b0c5e01f19d3b67359b71eef2f62c904cbfcfa
 - kind: project-relative
   target: claude
   value: .claude/skills/session-report
