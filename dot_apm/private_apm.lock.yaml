@@ -1,6 +1,6 @@
 lockfile_version: '1'
-generated_at: '2026-09-06T08:55:51.256127+00:00'
-apm_version: 0.28.0
+generated_at: '2026-09-24T03:38:50.451575+00:00'
+apm_version: 0.31.0
 dependencies:
 - repo_url: alirezarezvani/claude-skills
   name: engineering-skills
@@ -34,7 +34,7 @@ dependencies:
     .claude/agents/agent-sdk-verifier-py.md: sha256:a72c50412f4f9940932cac0f3ca61d6ced7354b8ac8892e3f1507bcd2957006e
     .claude/agents/agent-sdk-verifier-ts.md: sha256:68fe98341656fa242a5de9272165481d62b5670b2fff294961bc45a5c4ee57ea
     .claude/commands/new-sdk-app.md: sha256:d10bb91b1e71b43e34719a29bd8ce1cd9d3a340439d0be9abaec26540b9e0c12
-  content_hash: sha256:77f385c5cf28918fdb1dccfdf43140414d08b96562c747e8b37324fd7d811ef5
+  content_hash: sha256:172e22ebed363736d7fe243e3dc7b0ca1ee2ecfc5499d8437f330aa4d1f470ec
 - repo_url: anthropics/claude-plugins-official
   name: claude-code-setup
   host: github.com
@@ -59,7 +59,7 @@ dependencies:
     .claude/skills/claude-automation-recommender/references/plugins-reference.md: sha256:6570ff4c853253b3f15fb62e5d540cbf0ce3371936437791dde8fb53b7d444f3
     .claude/skills/claude-automation-recommender/references/skills-reference.md: sha256:b4b57d953526a07146d5757ca5332034b9b4b4eeba839e4bb08111398c94556f
     .claude/skills/claude-automation-recommender/references/subagent-templates.md: sha256:7f9a107d8619ff96fea07d5a17da31b269cec0ee343e5a9ff643c0d6cb4ba944
-  content_hash: sha256:11fd786ba7edf6ed23b81ea22b9e36cc37df6feb03b97365f90ba857681fdfb8
+  content_hash: sha256:0d5e04178f68e6b309317411227873ce7715086cd96f30281be1f2b2abd1ce79
 - repo_url: anthropics/claude-plugins-official
   name: claude-md-management
   host: github.com
@@ -82,7 +82,7 @@ dependencies:
     .claude/skills/claude-md-improver/references/quality-criteria.md: sha256:383def16b05dca948297dd1acb33f007cb1b1b2c368454d424c5634348a8bab1
     .claude/skills/claude-md-improver/references/templates.md: sha256:de0aa3ac30120a0c77f9cd82738a75ed8326864f98feb89356a253f2deaf3ab0
     .claude/skills/claude-md-improver/references/update-guidelines.md: sha256:02a158d6ca41a0ab702a67a213e92205f09c073cea53796633251bc62fd7ec55
-  content_hash: sha256:eef0aa5a71845be937066ef304fbd152d523d2574587474d342def4c3e8514d4
+  content_hash: sha256:7fcdd91cd4c5ff063663a201eb570c2a7037d1ae047aaa518f176efc6a63632a
 - repo_url: anthropics/claude-plugins-official
   name: code-modernization
   host: github.com
@@ -128,7 +128,7 @@ dependencies:
     .claude/commands/modernize-status.md: sha256:67a39b4a8b8e552ce95e13768a6a02a7e0a0b780a82800c987ae4d0f4f66543e
     .claude/commands/modernize-transform.md: sha256:39d03f9d92066d0df27a15814b6ee5fd0f6c8fb11ec9cb5fefdc61e266502af0
     .claude/commands/modernize-uplift.md: sha256:c300d193c841acb45245eac07953a324681587981aa0049871af5c36c3b28398
-  content_hash: sha256:79f8f89401b40dbe65fcf39677a59f3fcf0e2330e4a00fe70d71e4ac01b4c47f
+  content_hash: sha256:be48b4d5242835a01a032f1598300c28934788cf7f9258ed233369eeda5f0f44
 - repo_url: anthropics/claude-plugins-official
   name: code-review
   host: github.com
@@ -142,7 +142,7 @@ dependencies:
   - .claude/commands/code-review.md
   deployed_file_hashes:
     .claude/commands/code-review.md: sha256:8520c75ee89a853b88a11822c50d96a9db8dae6f40776870240a82441f7451e0
-  content_hash: sha256:cb9d921f1af650fe9fdd59ee9f78cb3c4833d46322d3b6937a2e14588124b96a
+  content_hash: sha256:50ef86d4ab3e7629a9bba91e79a17c563239fbf097650fbfea40d67f4e8c6afe
 - repo_url: anthropics/claude-plugins-official
   name: code-simplifier
   host: github.com
@@ -152,7 +152,7 @@ dependencies:
   virtual_path: plugins/code-simplifier
   is_virtual: true
   package_type: marketplace_plugin
-  content_hash: sha256:17829c1e01585fdaac1ff7de902433fca42517c678ed627640617ef9492bc6e8
+  content_hash: sha256:bab479724b7600d84139a95d19839274377999149f54f2d06e4a671d5cc5c5f5
 - repo_url: anthropics/claude-plugins-official
   name: commit-commands
   host: github.com
@@ -170,7 +170,7 @@ dependencies:
     .claude/commands/clean_gone.md: sha256:24ce5c79da87b481d346d26b297cbe327862f1e4bbee05406589f4b5468c7fa3
     .claude/commands/commit-push-pr.md: sha256:63ee94bcf2a60101d542ec46bf2afa18b31565105ebfc63f1a38e4d308d3cd2f
     .claude/commands/commit.md: sha256:366740b9d9f45e05bf7cc5b703156f95fe28180012899ceb90d89d34d4110e47
-  content_hash: sha256:6d51547a7480fd2e8967fb5fb0aa1e91baf30c33c5e685675c3f1fb2265d40fd
+  content_hash: sha256:8d3c770f927bc33b06762f5883c8148ff34fce2881fc550a82360980d8bb1571
 - repo_url: anthropics/claude-plugins-official
   name: feature-dev
   host: github.com
@@ -188,7 +188,7 @@ dependencies:
     .claude/agents/code-architect.md: sha256:c50fb08d59a4bbd19660860626a049e44cf1a2b0c1cf782e6c7a99ba7e71b0c3
     .claude/agents/code-explorer.md: sha256:3b277703de7458988ec3b8021c716f79f642e174950ed332629310f68322029a
     .claude/commands/feature-dev.md: sha256:656a01ce40782ee849c444916362df0e4e4173afcd33313777fa86021d89994b
-  content_hash: sha256:a2418714c221d9c60aacb744884b82bf172aa48829df3421c5dfb2ce884cea2b
+  content_hash: sha256:edd6683fac4dc589afbded62059d5fe533bceafc25ca65c1430abaaaeec1a878
 - repo_url: anthropics/claude-plugins-official
   name: frontend-design
   host: github.com
@@ -205,7 +205,7 @@ dependencies:
   deployed_file_hashes:
     .claude/skills/frontend-design/LICENSE.txt: sha256:0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594
     .claude/skills/frontend-design/SKILL.md: sha256:1608ea77fbb6fc30d13a97d12cfa8ebf31358d40f0dd97beed24829d6b3f45dd
-  content_hash: sha256:110f3b5dd1c077861a5d0ef42035c7d0dd0209d87a783b8e973f6000579c3be4
+  content_hash: sha256:de72f358260d07457ae909ef9771b80fa32ab027ea3d1ebd28b0e51ef1b22a6a
 - repo_url: anthropics/claude-plugins-official
   name: mcp-server-dev
   host: github.com
@@ -258,7 +258,7 @@ dependencies:
     .claude/skills/build-mcpb/SKILL.md: sha256:6bb90afd0415754e13f353ee5982d13857c14826edbcbdf5f1481fa5563cd56b
     .claude/skills/build-mcpb/references/local-security.md: sha256:7813aae1084e050537241956ba835adceb710804871894b53a9adcdeb3736241
     .claude/skills/build-mcpb/references/manifest-schema.md: sha256:6a97f9481107ebdbe8a75f06a5e126ba28021e1e8652677109e53d63a5793c72
-  content_hash: sha256:3d7bab9a8a16cc37defa6bbff6069227a871ffa287e853b56361bc26b217b57e
+  content_hash: sha256:cd5cabc26b9bac08ad0080f82fb617c1956356dc40fab1c12e91dd817ddeb05d
 - repo_url: anthropics/claude-plugins-official
   name: mcp-tunnels
   host: github.com
@@ -272,7 +272,7 @@ dependencies:
   - .claude/commands/create-docker-mcp-tunnel.md
   deployed_file_hashes:
     .claude/commands/create-docker-mcp-tunnel.md: sha256:436054833b40e5729dc11a0585701bd7df507d96c391544c48932ab74fee88cc
-  content_hash: sha256:72545c7b24a3c26d35c643b87479b78225ee554d24c2d0aa580b2f1dbb3ffef0
+  content_hash: sha256:b28562f623c991328cb077470155c91c04d6011fe9e0c26366a6c17d6c69f1f2
 - repo_url: anthropics/claude-plugins-official
   name: playground
   host: github.com
@@ -299,7 +299,7 @@ dependencies:
     .claude/skills/playground/templates/design-playground.md: sha256:190f7da424ebd3226a679045420b64171a98d081b7d84e26be4553de13c91fe7
     .claude/skills/playground/templates/diff-review.md: sha256:32112ba4e82fbb8b656af166d1e21f8461cedbb4fdb5d2c314c43d210ea7e37d
     .claude/skills/playground/templates/document-critique.md: sha256:c5bd7a68a53f2075d127e482c93b5f3d0b51c24bf8d301c1124801cca7be2d41
-  content_hash: sha256:53d1e742ef8ed5dcc7dc50429ba2b3e6e6dc108bc170843418ad8e10288f8028
+  content_hash: sha256:e5dc759c9ef85ed12c15f7be87bbb41576b0cde72f8faef04f85e9faba8510cf
 - repo_url: anthropics/claude-plugins-official
   name: plugin-dev
   host: github.com
@@ -432,7 +432,7 @@ dependencies:
     .claude/skills/plugin-structure/references/manifest-reference.md: sha256:d0ff8ffece4754df92c543266b8d0b689fb85473f51fbb57e215f2d235ee9782
     .claude/skills/skill-development/SKILL.md: sha256:d51b4e20043b13e462aa86c47ea82d43e216eb292871538127f4b12a54e4944f
     .claude/skills/skill-development/references/skill-creator-original.md: sha256:8c0ce23bb87be91f5b0853c2e9815617c3858b63acdddfe5da47d2c2d3a60816
-  content_hash: sha256:098af2daaf5c83b1e629ff1ae8f82c2bfe7750a2eab1ecacfdd56f4c6b80cec3
+  content_hash: sha256:22dc5298e5b537494de491a7be8d076c843c6544db1b4a33d12aacc87dc444d4
 - repo_url: anthropics/claude-plugins-official
   name: pr-review-toolkit
   host: github.com
@@ -458,7 +458,7 @@ dependencies:
     .claude/agents/silent-failure-hunter.md: sha256:fa9b0daec5a267e7e66435cc48b3328301fc9f70c3af259fe248881327a1babc
     .claude/agents/type-design-analyzer.md: sha256:c1cf67843d3c4fd27ddf6b24aa92521414b16c01610e7f7e87212c7b8681198d
     .claude/commands/review-pr.md: sha256:1c3ca6f18f9851ac88ffdc3f98b45e9bd19fb139eb14850f2c22cd18c7a167b2
-  content_hash: sha256:b9c3b2508dbae3008eda4b8f5818471873743bffe3786032df576cbe01c9ec58
+  content_hash: sha256:9fd63fb25b32cadf9343a7bb7bd2976537d622f905d2806bf801c458918546ab
 - repo_url: anthropics/claude-plugins-official
   name: project-artifact
   host: github.com
@@ -477,7 +477,7 @@ dependencies:
     .claude/skills/project-artifact/SKILL.md: sha256:5417e25c920250af113b8e3fe7bf749be71a5d32769a0120e61cd4be8e0ff54f
     .claude/skills/project-artifact/swe.md: sha256:396b7cfa9c99b78b44326cf4add4f7ac8e07d07d76c56697b84b44197c77b4ce
     .claude/skills/project-artifact/template.html: sha256:467b8ec1ad799591e099012711e072352395c0b897029200661e852374be9764
-  content_hash: sha256:aca5cc1603da5e138a34154afcbd56d19d2d72e2832d333060ac9cf7516c313f
+  content_hash: sha256:d015b09b57dd6b018137d7ff3a4d81f6726e6273e48d05c371ac113105b7b7f5
 - repo_url: anthropics/claude-plugins-official
   name: claude-plugins-official
   host: github.com
@@ -545,7 +545,7 @@ dependencies:
     .claude/skills/skill-creator/scripts/run_eval.py: sha256:43e3b8f80dbf69c343967ba77e268fae991d9fa3ed68b32a0ff02532cd48657f
     .claude/skills/skill-creator/scripts/run_loop.py: sha256:7bd6f674203168520517eec94c55f493c0d154339b061b4d7c0f0dad187d0f21
     .claude/skills/skill-creator/scripts/utils.py: sha256:3af8ae62c40c73ab712207436a0d9a981e845f25c5a7040229eb189cc8e45bb1
-  content_hash: sha256:c162e318dd2dd4ce3b647c46b0cbd8c30f89b15b929ce6940fab43f70c428ee4
+  content_hash: sha256:15ae5cfa99a44734e5e6624f6c169d938302f80ab811eab7b7defd9c477381b0
 - repo_url: cursor/plugins
   name: pstack
   host: github.com
@@ -564,7 +564,7 @@ dependencies:
     .claude/agents/poteto-agent.md: sha256:d9c01a5222acf8310ea8f5ee5034a5aa07c9c559d244cc0e76f45b7769767c2f
     .claude/skills/typescript-best-practices/SKILL.md: sha256:b6c9af16c4accbe6385eec297a0dff9327c0a2cff27ae4b3b31e79deae6631a8
     .claude/skills/typescript-best-practices/references/patterns.md: sha256:76b5fb15312f6d6d4113b29594323044fae7e5754e0f407d3eb9e49cf3566ad6
-  content_hash: sha256:612be3b324d5a5b7eb487d4f98fceaac10a81384d577f60e1e54df03257a2a2f
+  content_hash: sha256:c6446d71a33b6a9e685782a8c22c0dfcf96a0eacd949a07118bd75c1852e8d3b
   skill_subset:
   - typescript-best-practices
   declared_license: MIT
@@ -876,7 +876,7 @@ dependencies:
     .claude/skills/modern-web-guidance/guides/webmcp/agentic-forms.md: sha256:c9210a53221ae230c3820b94b75f4b7b21196d9b0b6b0979b789866c2f2a8396
     .claude/skills/modern-web-guidance/guides/webmcp/agentic-javascript-tools.md: sha256:2ec01ee5f86b00ce69f487e13141258da8cc751d0917eeb43e94386ac7612ff3
     .claude/skills/modern-web-guidance/guides/webmcp/webmcp.md: sha256:78b80afc94fcdc0177345d7cbd0abb83660f309a400266ff408325142db41b2c
-  content_hash: sha256:271a20b1a1fd4324d26c1b9c7a1ff0f7a80df461b062692720d2e0cfc32380a5
+  content_hash: sha256:8fd06061b4d8d23922a2e1e00dc48b66d93a87795c59f64ed70b93f060c7a8ae
   skill_subset:
   - modern-web-guidance
 - repo_url: herdrdev/herdr
@@ -897,9 +897,9 @@ dependencies:
 - repo_url: icchankun/skills
   name: icchankun-skills
   host: github.com
-  resolved_commit: 068c04e50f273d831fdc6c947f37eafb1c681212
-  resolved_ref: 068c04e50f273d831fdc6c947f37eafb1c681212
-  version: 0.0.0
+  resolved_commit: 05fda497e6c6d31869b14ff92c024c6f9764dbc2
+  resolved_ref: main
+  version: 05fda49
   package_type: marketplace_plugin
   deployed_files:
   - .claude/skills/git-branch
@@ -932,7 +932,7 @@ dependencies:
     .claude/skills/herdr-review/SKILL.md: sha256:8a611f871f7a046836a72f810a36c344acaf9df4c283bb748cecac8877c7a7e3
     .claude/skills/resolving-pr-reviews/SKILL.md: sha256:90794d1382143dde1510357a61d345e1cf8a8a1efb2b8aa5ba3e813a7d955276
     .claude/skills/resolving-pr-reviews/scripts/fetch_pr_comments.rb: sha256:e8ee8e44323bc4a10300382e1a0524f70d28dac0738487662639d260c62ac1e7
-  content_hash: sha256:d80e4d37a1faa50bbd76589c0b799c9d5b1df1ad2a212c3d09009716cf17fe53
+  content_hash: sha256:107f54296569a913b9a2e4487513574eb477b8b72b9b60123624096f4d231796
 - repo_url: microsoft/playwright-cli
   name: playwright-cli
   host: github.com

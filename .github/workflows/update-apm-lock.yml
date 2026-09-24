@@ -1,0 +1,50 @@
+name: Update APM lockfile
+
+on:
+  schedule:
+    - cron: "0 21 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-apm-lock
+
+jobs:
+  update:
+    runs-on: ubuntu-slim
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install apm
+        run: |
+          version=$(sed -n 's|^"github:microsoft/apm" = "\(.*\)"$|\1|p' dot_config/mise/config.toml)
+          asset=apm-linux-x86_64.tar.gz
+          cd "$RUNNER_TEMP"
+          curl -fsSLO "https://github.com/microsoft/apm/releases/download/v${version}/${asset}"
+          curl -fsSLO "https://github.com/microsoft/apm/releases/download/v${version}/${asset}.sha256"
+          sha256sum -c "${asset}.sha256"
+          tar -xzf "$asset"
+          echo "$RUNNER_TEMP/apm-linux-x86_64" >> "$GITHUB_PATH"
+
+      - name: Update lock
+        working-directory: dot_apm
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          mv private_apm.lock.yaml apm.lock.yaml
+          apm lock --update
+          mv apm.lock.yaml private_apm.lock.yaml
+
+      - name: Commit and push
+        run: |
+          if git diff --quiet -I '^generated_at:' -- dot_apm/private_apm.lock.yaml; then
+            echo "No dependency changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dot_apm/private_apm.lock.yaml
+          git commit -m "chore: Update apm.lock"
+          git push
