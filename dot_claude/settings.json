@@ -55,7 +55,16 @@
     "frontend-design@claude-plugins-official": true,
     "pr-review-toolkit@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true,
-    "deploy-on-aws@claude-plugins-official": true
+    "deploy-on-aws@claude-plugins-official": true,
+    "humanizer@humanizer": true
+  },
+  "extraKnownMarketplaces": {
+    "humanizer": {
+      "source": {
+        "source": "github",
+        "repo": "blader/humanizer"
+      }
+    }
   },
   "attribution": {
     "sessionUrl": false
