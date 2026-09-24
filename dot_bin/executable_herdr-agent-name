@@ -7,13 +7,13 @@
 #
 # The name is `<pane id>-<role>`: a driver takes its own pane id (`wK:p3` + driver
 # -> `wk-p3-driver`), and the workers it starts take the *driver's* pane id
-# (`wk-p3-coder`), not their own. A worker's name therefore says whose it is, and
-# re-running herdr-layout from the same driver lands on the same name, so the
+# (`wk-p3-reviewer`), not their own. A worker's name therefore says whose it is, and
+# re-running herdr-coding from the same driver lands on the same name, so the
 # existing workers can be reused instead of a second set of panes appearing.
 # (名前は `<ペインID>-<役割>`。driver は自分のペインID (`wK:p3` + driver なら
 #  `wk-p3-driver`)、driver が立てたワーカーは自分ではなく driver のペインID
-#  (`wk-p3-coder`) を使う。こうするとワーカーの名前が誰のものかを語り、同じ
-#  driver から herdr-layout を再実行しても同じ名前になるので、ペインが二重に
+#  (`wk-p3-reviewer`) を使う。こうするとワーカーの名前が誰のものかを語り、同じ
+#  driver から herdr-coding を再実行しても同じ名前になるので、ペインが二重に
 #  増えず既存のワーカーを再利用できる。)
 #
 # Usage / 使い方:
@@ -22,7 +22,7 @@
 #     PANE_ID  default: $HERDR_PANE_ID (起点のペイン。ワーカーでも driver のもの)
 #
 #   claude -n "$(herdr-agent-name)"
-#   herdr-agent-name coder
+#   herdr-agent-name reviewer
 # =============================================================================
 
 set -eu

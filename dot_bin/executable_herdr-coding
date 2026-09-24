@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 # =============================================================================
-# herdr-layout
-# Build a Herdr pane layout for a task type and start the named agents in it.
-# (タスクの種類に応じた Herdr のペイン構成を作り、名前付きのエージェントを起動する。)
+# herdr-coding
+# Start a reviewer beside the calling pane, which does the coding itself.
+# (呼び出し元のペインが実装役を兼ね、その隣にレビュー役を立てる。)
 #
 # Dependencies / 依存:
 #   - herdr  https://herdr.dev
@@ -11,19 +11,9 @@
 #   - herdr-agent-name
 #
 # Usage / 使い方:
-#   herdr-layout <mode> [options]
-#
-#   Modes / モード:
-#     coding    coder + reviewer  (実装役とレビュー役を分ける)
-#     research  researcher-1..N   (コードベースを並列で調べる)
-#     review    worktree + reviewer (PR を別ブランチでレビューする)
+#   herdr-coding
 #
 #   Options / オプション:
-#     -n, --count N      Researchers for research mode, as a floor: the ones
-#                        already running are kept and only the shortfall starts.
-#                        (research モードの調査役の下限。既に動いているものは
-#                         残り、足りない分だけ起動する。default: 2)
-#     -b, --branch NAME  Branch for review mode. (review モードのブランチ。必須)
 #     -h, --help         Show this help. (このヘルプを表示する。)
 #
 # Notes / 補足:
@@ -35,22 +25,16 @@
 #     (`-n <agent名>` 付きで起動するので、Herdr の agent 名と Claude のセッション名が
 #      一致する。ワーカーへは `herdr agent prompt` ではなく、その名前で SendMessage
 #      を送る。)
-#   - Workers are named after the *calling driver's* pane, not their own, so
-#     re-running a mode reuses this driver's workers (see herdr-agent-name).
-#     (ワーカーの名前は自分ではなく呼び出した driver のペインから付くので、再実行
-#      すればその driver のワーカーが再利用される。詳細は herdr-agent-name。)
-#   - A mode leaves its tab holding only the panes it named: any other pane is
+#   - The reviewer is named after the *calling driver's* pane, not its own, so
+#     re-running reuses this driver's reviewer (see herdr-agent-name).
+#     (レビュー役の名前は自分ではなく呼び出した driver のペインから付くので、再実行
+#      すればその driver のレビュー役が再利用される。詳細は herdr-agent-name。)
+#   - The tab ends up holding only the driver and its reviewer: any other pane is
 #     closed, and another driver sharing the tab is an error rather than
 #     something to close, since a driver is what a person talks to.
-#     (どのモードもタブを自分が名前を付けたペインだけにする。それ以外のペインは
-#      閉じるが、同じタブに別の driver がいるときは閉じずにエラーで止める。driver は
-#      人がやりとりする相手のため。)
-#   - `review` is the exception: its worker lives in the worktree's own workspace,
-#     so it is named after its own pane there and is created fresh every time.
-#     Each branch under review is a separate thing to read.
-#     (例外は review。ワーカーは worktree 側のワークスペースにいるので、そちらの
-#      自分のペイン由来の名前を使い、毎回新しく作る。読む対象はブランチごとに
-#      別物のため。)
+#     (タブは driver とそのレビュー役だけになる。それ以外のペインは閉じるが、同じ
+#      タブに別の driver がいるときは閉じずにエラーで止める。driver は人がやりとり
+#      する相手のため。)
 # =============================================================================
 
 set -euo pipefail
@@ -75,12 +59,8 @@ readonly WORKER_ARGS=(
 readonly START_ATTEMPTS=20
 readonly START_INTERVAL=0.25
 
-mode=""
-count=2
-branch=""
-
 die() {
-  printf 'herdr-layout: %s\n' "$1" >&2
+  printf 'herdr-coding: %s\n' "$1" >&2
   exit 1
 }
 
@@ -89,25 +69,12 @@ usage() {
 }
 
 parse_args() {
-  [ $# -gt 0 ] || { usage; exit 1; }
-
-  case "$1" in
-    coding | research | review) mode="$1"; shift ;;
-    -h | --help) usage; exit 0 ;;
-    *) die "unknown mode: $1" ;;
-  esac
-
   while [ $# -gt 0 ]; do
     case "$1" in
-      -n | --count) count="${2:-}"; shift 2 ;;
-      -b | --branch) branch="${2:-}"; shift 2 ;;
       -h | --help) usage; exit 0 ;;
       *) die "unknown option: $1" ;;
     esac
   done
-
-  [[ "$count" =~ ^[1-9][0-9]*$ ]] || die "--count must be a positive integer"
-  [ "$mode" != "review" ] || [ -n "$branch" ] || die "review mode requires --branch"
 }
 
 require_environment() {
@@ -158,14 +125,9 @@ start_agent() {
 }
 
 # Make sure this driver's worker for ROLE ($1) is running, splitting FROM ($2)
-# toward DIRECTION ($3) when it is not. Sets `ensured_pane` to the pane it sits
-# in, so the next worker can be split off it. It reports through a variable
-# rather than stdout because a command substitution would run it in a subshell
-# and lose what it appended to `rows`.
+# toward DIRECTION ($3) when it is not.
 # (この driver の ROLE ($1) のワーカーが動いている状態にする。いなければ FROM ($2)
-#  を DIRECTION ($3) に分割して起動する。次のワーカーの分割元にできるよう、その
-#  ワーカーがいるペインを `ensured_pane` に入れる。標準出力ではなく変数で返すのは、
-#  コマンド置換だとサブシェルになり `rows` への追記が消えるため。)
+#  を DIRECTION ($3) に分割して起動する。)
 ensure_agent() {
   local role="$1" from="$2" direction="$3" name pane
   name=$(herdr-agent-name "$role")
@@ -178,8 +140,6 @@ ensure_agent() {
     pane=$(split_pane "$from" "$direction")
     start_agent "$name" "$pane"
   fi
-
-  ensured_pane="$pane"
 }
 
 # Print the tab this driver sits in.
@@ -212,9 +172,9 @@ require_sole_driver() {
 }
 
 # Close every pane in TAB ($1) that is not one this run named, so the tab ends up
-# holding the layout and nothing else. A pane whose agent is still working is
-# reported instead of cut off mid-task.
-# (TAB ($1) のうち今回名前を付けたペイン以外を閉じ、タブをその構成だけにする。
+# holding the driver and its reviewer and nothing else. A pane whose agent is
+# still working is reported instead of cut off mid-task.
+# (TAB ($1) のうち今回名前を付けたペイン以外を閉じ、タブを driver とレビュー役だけにする。
 #  まだ作業中のエージェントが乗っているペインは、途中で切らずに報告に残す。)
 prune_tab() {
   local pane status name
@@ -235,76 +195,12 @@ prune_tab() {
     | [.pane_id, .agent_status // "unknown", .terminal_title_stripped // ""] | @tsv')
 }
 
-layout_coding() {
+start_reviewer() {
   local tab
   tab=$(current_tab)
   require_sole_driver "$tab"
 
-  ensure_agent coder "$HERDR_PANE_ID" right
-  ensure_agent reviewer "$ensured_pane" down
-  prune_tab "$tab"
-}
-
-# Print the highest researcher number this driver already has running, or 0.
-# (この driver が既に動かしている researcher の最大番号を出力する。いなければ 0。)
-researcher_high_water() {
-  herdr agent list | jq -r --arg prefix "$(herdr-agent-name researcher)-" '
-    [.result.agents[].name
-     | select(startswith($prefix))
-     | ltrimstr($prefix)
-     | tonumber?] | max // 0'
-}
-
-layout_research() {
-  local index tab running from direction
-  local -a placed=()
-  tab=$(current_tab)
-  require_sole_driver "$tab"
-
-  # --count asks for researchers, not for the tab to shrink to that many. A
-  # running researcher holds what it has already read, and a forgotten --count
-  # should not throw that away, so the larger of the two wins.
-  # (--count は調査役を用意するもので、タブをその数まで縮めるものではない。動いて
-  #  いる researcher は読んだ内容を抱えており、--count の付け忘れでそれを捨てさせ
-  #  ない。大きい方を採る。)
-  running=$(researcher_high_water)
-  [ "$count" -ge "$running" ] || count="$running"
-
-  [ "$count" -le 3 ] || printf 'herdr-layout: %s researchers share one rate limit\n' "$count" >&2
-
-  # The researchers fill two columns beside the driver rather than one: the first
-  # takes the right half, the second splits it into two columns, and each one
-  # after that goes under the researcher two places back. A single column would
-  # thin every pane as the count grows, and these panes are read, not glanced at.
-  # (調査役は driver の隣に1列ではなく2列で並ぶ。1人目が右半分を取り、2人目がそれを
-  #  2列に割り、3人目以降は2つ前の調査役の下に入る。1列だと人数が増えるほど1つ
-  #  あたりが薄くなるが、このペインは眺めるものではなく読むもののため。)
-  for ((index = 1; index <= count; index++)); do
-    case "$index" in
-      1) from="$HERDR_PANE_ID" direction=right ;;
-      2) from="${placed[0]}" direction=right ;;
-      *) from="${placed[index - 3]}" direction=down ;;
-    esac
-
-    ensure_agent "researcher-$index" "$from" "$direction"
-    placed+=("$ensured_pane")
-  done
-
-  prune_tab "$tab"
-}
-
-layout_review() {
-  local workspace pane tab
-
-  workspace=$(herdr worktree create --branch "$branch" --no-focus |
-    jq -er '.result.workspace.workspace_id')
-  read -r pane tab < <(herdr pane list --workspace "$workspace" |
-    jq -er '.result.panes[0] | "\(.pane_id) \(.tab_id)"')
-  # The reviewer lives in the worktree's workspace, so it is named after its pane
-  # there rather than after the driver's, and the tab to tidy is that one too.
-  # (このレビュー役は worktree 側のワークスペースにいるので、driver ではなく
-  #  そちらの自分のペインから名前を付ける。片付ける対象もそちらのタブになる。)
-  start_agent "$(herdr-agent-name reviewer "$pane")" "$pane"
+  ensure_agent reviewer "$HERDR_PANE_ID" right
   prune_tab "$tab"
 }
 
@@ -314,12 +210,7 @@ main() {
 
   rows=()
   kept=("$HERDR_PANE_ID")
-  ensured_pane=""
-  case "$mode" in
-    coding) layout_coding ;;
-    research) layout_research ;;
-    review) layout_review ;;
-  esac
+  start_reviewer
 
   printf '%s\n' "AGENT	PANE	STATUS"
   printf '%s\n' "${rows[@]}"

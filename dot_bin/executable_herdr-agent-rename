@@ -11,11 +11,11 @@
 #  くるので、それをそのまま使えば、サイドバーに出る名前が SendMessage の宛先になる。)
 #
 # HERDR_AGENT_NAME is missing on a session started with an explicit `-n`
-# (herdr-layout's coder / reviewer) or in a shell that never ran the function.
+# (herdr-coding's reviewer) or in a shell that never ran the function.
 # Overwriting the former with a pane-id name would erase its role, so this exits
 # without touching anything.
-# (HERDR_AGENT_NAME が無いのは、-n を明示して起動されたセッション (herdr-layout の
-#  coder / reviewer など) か、claude 関数を通っていない古いシェル。前者の名前を
+# (HERDR_AGENT_NAME が無いのは、-n を明示して起動されたセッション (herdr-coding の
+#  reviewer など) か、claude 関数を通っていない古いシェル。前者の名前を
 #  ペインID由来の名前で潰すと役割が消えるので、何もせずに抜ける。)
 #
 # A pane border shows the manual pane name first, then the agent label, then the
