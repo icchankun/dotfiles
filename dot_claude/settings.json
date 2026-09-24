@@ -56,13 +56,20 @@
     "pr-review-toolkit@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true,
     "deploy-on-aws@claude-plugins-official": true,
-    "humanizer@humanizer": true
+    "humanizer@humanizer": true,
+    "caveman@caveman": true
   },
   "extraKnownMarketplaces": {
     "humanizer": {
       "source": {
         "source": "github",
         "repo": "blader/humanizer"
+      }
+    },
+    "caveman": {
+      "source": {
+        "source": "github",
+        "repo": "JuliusBrussee/caveman"
       }
     }
   },
