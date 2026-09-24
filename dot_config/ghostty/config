@@ -41,6 +41,8 @@ macos-option-as-alt = true
 
 # --- キーバインド設定 ---
 # ペイン分割・移動は Herdr 側に一本化（Herdr の Ctrl+p プレフィックスで操作）
+# Herdr の中では Ghostty に scrollback が残らず検索できないため、Cmd+f で Herdr の copy mode 検索に入る（\x10 = Ctrl+p、[ = copy mode、/ = 前方検索）
+keybind = cmd+f=text:\x10[/
 # クイックターミナル：どこからでもCtrl+iで呼び出せるドロップダウン端末（全面表示）
 keybind = global:ctrl+i=toggle_quick_terminal
 quick-terminal-position = top
