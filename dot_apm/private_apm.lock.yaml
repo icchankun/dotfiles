@@ -1,22 +1,7 @@
 lockfile_version: '1'
-generated_at: '2026-09-24T03:38:50.451575+00:00'
+generated_at: '2026-09-24T04:02:51.600904+00:00'
 apm_version: 0.31.0
 dependencies:
-- repo_url: alirezarezvani/claude-skills
-  name: engineering-skills
-  host: github.com
-  resolved_commit: 4a3c05b69e64f4925f7fc65c88890f614f79caf0
-  resolved_ref: 4a3c05b69e64f4925f7fc65c88890f614f79caf0
-  version: unknown
-  virtual_path: engineering-team/skills/engineering-skills
-  is_virtual: true
-  package_type: claude_skill
-  deployed_files:
-  - .claude/skills/engineering-skills
-  - .claude/skills/engineering-skills/SKILL.md
-  deployed_file_hashes:
-    .claude/skills/engineering-skills/SKILL.md: sha256:99c775af2aa507257a7dce7e3cb2b13c7976a20b04c8655f12d70cad40eaa132
-  content_hash: sha256:16ff6e1ea5914ae7deb3631d2e8a6b7386fe8e79aba98ee82d28ef369f431133
 - repo_url: anthropics/claude-plugins-official
   name: agent-sdk-dev
   host: github.com
@@ -25,7 +10,7 @@ dependencies:
   version: '5744695'
   virtual_path: plugins/agent-sdk-dev
   is_virtual: true
-  package_type: marketplace_plugin
+  package_type: apm_package
   deployed_files:
   - .claude/agents/agent-sdk-verifier-py.md
   - .claude/agents/agent-sdk-verifier-ts.md
@@ -43,7 +28,7 @@ dependencies:
   version: 1.0.0
   virtual_path: plugins/claude-code-setup
   is_virtual: true
-  package_type: marketplace_plugin
+  package_type: skill_bundle
   deployed_files:
   - .claude/skills/claude-automation-recommender
   - .claude/skills/claude-automation-recommender/SKILL.md
@@ -68,7 +53,7 @@ dependencies:
   version: 1.0.0
   virtual_path: plugins/claude-md-management
   is_virtual: true
-  package_type: marketplace_plugin
+  package_type: skill_bundle
   deployed_files:
   - .claude/commands/revise-claude-md.md
   - .claude/skills/claude-md-improver
@@ -91,7 +76,7 @@ dependencies:
   version: '5744695'
   virtual_path: plugins/code-modernization
   is_virtual: true
-  package_type: marketplace_plugin
+  package_type: apm_package
   deployed_files:
   - .claude/agents/architecture-critic.md
   - .claude/agents/business-rules-extractor.md
@@ -137,7 +122,7 @@ dependencies:
   version: '5744695'
   virtual_path: plugins/code-review
   is_virtual: true
-  package_type: marketplace_plugin
+  package_type: apm_package
   deployed_files:
   - .claude/commands/code-review.md
   deployed_file_hashes:
@@ -151,7 +136,11 @@ dependencies:
   version: 1.0.0
   virtual_path: plugins/code-simplifier
   is_virtual: true
-  package_type: marketplace_plugin
+  package_type: apm_package
+  deployed_files:
+  - .claude/agents/code-simplifier.md
+  deployed_file_hashes:
+    .claude/agents/code-simplifier.md: sha256:2a51e8d210580d9f66ac2ed1226c41f9374565fc275da30d7bb95f65c2cc87bb
   content_hash: sha256:bab479724b7600d84139a95d19839274377999149f54f2d06e4a671d5cc5c5f5
 - repo_url: anthropics/claude-plugins-official
   name: commit-commands
@@ -161,7 +150,7 @@ dependencies:
   version: '5744695'
   virtual_path: plugins/commit-commands
   is_virtual: true
-  package_type: marketplace_plugin
+  package_type: apm_package
   deployed_files:
   - .claude/commands/clean_gone.md
   - .claude/commands/commit-push-pr.md
@@ -179,14 +168,16 @@ dependencies:
   version: '5744695'
   virtual_path: plugins/feature-dev
   is_virtual: true
-  package_type: marketplace_plugin
+  package_type: apm_package
   deployed_files:
   - .claude/agents/code-architect.md
   - .claude/agents/code-explorer.md
+  - .claude/agents/code-reviewer.md
   - .claude/commands/feature-dev.md
   deployed_file_hashes:
     .claude/agents/code-architect.md: sha256:c50fb08d59a4bbd19660860626a049e44cf1a2b0c1cf782e6c7a99ba7e71b0c3
     .claude/agents/code-explorer.md: sha256:3b277703de7458988ec3b8021c716f79f642e174950ed332629310f68322029a
+    .claude/agents/code-reviewer.md: sha256:a7df173bf77a00da5584c6401a1061524fdbe477b6fef5dd496d4c7a9113c78c
     .claude/commands/feature-dev.md: sha256:656a01ce40782ee849c444916362df0e4e4173afcd33313777fa86021d89994b
   content_hash: sha256:edd6683fac4dc589afbded62059d5fe533bceafc25ca65c1430abaaaeec1a878
 - repo_url: anthropics/claude-plugins-official
@@ -197,7 +188,7 @@ dependencies:
   version: '5744695'
   virtual_path: plugins/frontend-design
   is_virtual: true
-  package_type: marketplace_plugin
+  package_type: skill_bundle
   deployed_files:
   - .claude/skills/frontend-design
   - .claude/skills/frontend-design/LICENSE.txt
@@ -214,7 +205,7 @@ dependencies:
   version: '5744695'
   virtual_path: plugins/mcp-server-dev
   is_virtual: true
-  package_type: marketplace_plugin
+  package_type: skill_bundle
   deployed_files:
   - .claude/skills/build-mcp-app
   - .claude/skills/build-mcp-app/SKILL.md
@@ -267,7 +258,7 @@ dependencies:
   version: '5744695'
   virtual_path: plugins/mcp-tunnels
   is_virtual: true
-  package_type: marketplace_plugin
+  package_type: apm_package
   deployed_files:
   - .claude/commands/create-docker-mcp-tunnel.md
   deployed_file_hashes:
@@ -281,7 +272,7 @@ dependencies:
   version: '5744695'
   virtual_path: plugins/playground
   is_virtual: true
-  package_type: marketplace_plugin
+  package_type: skill_bundle
   deployed_files:
   - .claude/skills/playground
   - .claude/skills/playground/SKILL.md
@@ -441,18 +432,14 @@ dependencies:
   version: '5744695'
   virtual_path: plugins/pr-review-toolkit
   is_virtual: true
-  package_type: marketplace_plugin
+  package_type: apm_package
   deployed_files:
-  - .claude/agents/code-reviewer.md
-  - .claude/agents/code-simplifier.md
   - .claude/agents/comment-analyzer.md
   - .claude/agents/pr-test-analyzer.md
   - .claude/agents/silent-failure-hunter.md
   - .claude/agents/type-design-analyzer.md
   - .claude/commands/review-pr.md
   deployed_file_hashes:
-    .claude/agents/code-reviewer.md: sha256:019395c3ce457460115cc703e2f4a86fed4bbe560dc58355051c4d877155d366
-    .claude/agents/code-simplifier.md: sha256:976ddb22b84bc5a714216531a75db5e73169554add6b953442beeedb49b56891
     .claude/agents/comment-analyzer.md: sha256:4a9c1f2eb8234a4b9231983e75739663d512e1aed242388964a165a719b84698
     .claude/agents/pr-test-analyzer.md: sha256:fcb1cde9ba7b21694b508766a8d6a79bc91bed9982f828f816210059934f46b4
     .claude/agents/silent-failure-hunter.md: sha256:fa9b0daec5a267e7e66435cc48b3328301fc9f70c3af259fe248881327a1babc
@@ -467,7 +454,7 @@ dependencies:
   version: '5744695'
   virtual_path: plugins/project-artifact
   is_virtual: true
-  package_type: marketplace_plugin
+  package_type: skill_bundle
   deployed_files:
   - .claude/skills/project-artifact
   - .claude/skills/project-artifact/SKILL.md
@@ -554,7 +541,7 @@ dependencies:
   version: 0.9.2
   virtual_path: pstack
   is_virtual: true
-  package_type: marketplace_plugin
+  package_type: skill_bundle
   deployed_files:
   - .claude/agents/poteto-agent.md
   - .claude/skills/typescript-best-practices
@@ -596,7 +583,7 @@ dependencies:
   resolved_commit: 5733cdd9f89b0f19119e855532f8b8ac7997ecb6
   resolved_ref: 5733cdd9f89b0f19119e855532f8b8ac7997ecb6
   version: 0.0.172
-  package_type: marketplace_plugin
+  package_type: skill_bundle
   deployed_files:
   - .claude/skills/modern-web-guidance
   - .claude/skills/modern-web-guidance/SKILL.md
@@ -923,7 +910,7 @@ dependencies:
   - .claude/skills/resolving-pr-reviews/scripts/fetch_pr_comments.rb
   deployed_file_hashes:
     .claude/skills/git-branch/SKILL.md: sha256:50571d7a8b5dc520114728422e184ea0470bc3cedf59709ee17198b23e7c9918
-    .claude/skills/git-commit/SKILL.md: sha256:d3c700fd7cc15d8938ac54722666be9c2f7a619beae038a459d7b05666ab2330
+    .claude/skills/git-commit/SKILL.md: sha256:3d11336fb6f53a3bf8e7c99d875ee1d2548dde37b76764edd4575a681df0facb
     .claude/skills/github-pr/SKILL.md: sha256:285be542d2e737f7091b9a7683706b9c435947f3497a41cc1591a9a921b1057d
     .claude/skills/handover/SKILL.md: sha256:610a4a20aea97611f329306aa990b7d87814a1924023ea92a4b770d1365dc549
     .claude/skills/herdr-coding/SKILL.md: sha256:d49f652701e1a5e9eac67dfd3f97901887bbf097b895041ce8e0ec72227bf666
@@ -1038,18 +1025,18 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - anthropics/claude-plugins-official/plugins/pr-review-toolkit
-  active_owner: anthropics/claude-plugins-official/plugins/pr-review-toolkit
-  content_hash: sha256:019395c3ce457460115cc703e2f4a86fed4bbe560dc58355051c4d877155d366
+  - anthropics/claude-plugins-official/plugins/feature-dev
+  active_owner: anthropics/claude-plugins-official/plugins/feature-dev
+  content_hash: sha256:a7df173bf77a00da5584c6401a1061524fdbe477b6fef5dd496d4c7a9113c78c
 - kind: project-relative
   target: claude
   value: .claude/agents/code-simplifier.md
   runtime: null
   scope: project
   owners:
-  - anthropics/claude-plugins-official/plugins/pr-review-toolkit
-  active_owner: anthropics/claude-plugins-official/plugins/pr-review-toolkit
-  content_hash: sha256:976ddb22b84bc5a714216531a75db5e73169554add6b953442beeedb49b56891
+  - anthropics/claude-plugins-official/plugins/code-simplifier
+  active_owner: anthropics/claude-plugins-official/plugins/code-simplifier
+  content_hash: sha256:2a51e8d210580d9f66ac2ed1226c41f9374565fc275da30d7bb95f65c2cc87bb
 - kind: project-relative
   target: claude
   value: .claude/agents/comment-analyzer.md
@@ -1826,24 +1813,6 @@ deployments:
   content_hash: sha256:e6ccf78d85c23bc58582dbc8b91731c4e412568705ed2c87ac699a1ded9adc67
 - kind: project-relative
   target: claude
-  value: .claude/skills/engineering-skills
-  runtime: null
-  scope: project
-  owners:
-  - alirezarezvani/claude-skills/engineering-team/skills/engineering-skills
-  active_owner: alirezarezvani/claude-skills/engineering-team/skills/engineering-skills
-  content_hash: null
-- kind: project-relative
-  target: claude
-  value: .claude/skills/engineering-skills/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - alirezarezvani/claude-skills/engineering-team/skills/engineering-skills
-  active_owner: alirezarezvani/claude-skills/engineering-team/skills/engineering-skills
-  content_hash: sha256:99c775af2aa507257a7dce7e3cb2b13c7976a20b04c8655f12d70cad40eaa132
-- kind: project-relative
-  target: claude
   value: .claude/skills/frontend-design
   runtime: null
   scope: project
@@ -1949,7 +1918,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:d3c700fd7cc15d8938ac54722666be9c2f7a619beae038a459d7b05666ab2330
+  content_hash: sha256:3d11336fb6f53a3bf8e7c99d875ee1d2548dde37b76764edd4575a681df0facb
 - kind: project-relative
   target: claude
   value: .claude/skills/github-pr
@@ -4175,52 +4144,7 @@ deployments:
   content_hash: null
 - kind: uri
   target: mcp
-  value: chrome-devtools
-  runtime: claude
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: null
-- kind: uri
-  target: mcp
-  value: desktop-commander
-  runtime: claude
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: null
-- kind: uri
-  target: mcp
-  value: git
-  runtime: claude
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: null
-- kind: uri
-  target: mcp
   value: gitmcp
-  runtime: claude
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: null
-- kind: uri
-  target: mcp
-  value: homebrew
-  runtime: claude
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: null
-- kind: uri
-  target: mcp
-  value: playwright
   runtime: claude
   scope: project
   owners:
@@ -4229,12 +4153,7 @@ deployments:
   content_hash: null
 mcp_servers:
 - aws-documentation
-- chrome-devtools
-- desktop-commander
-- git
 - gitmcp
-- homebrew
-- playwright
 mcp_configs:
   aws-documentation:
     name: aws-documentation
@@ -4246,54 +4165,12 @@ mcp_configs:
     - awslabs.aws-documentation-mcp-server@latest
     registry: false
     command: uvx
-  chrome-devtools:
-    name: chrome-devtools
-    transport: stdio
-    args:
-    - -y
-    - chrome-devtools-mcp@latest
-    registry: false
-    command: npx
-  desktop-commander:
-    name: desktop-commander
-    transport: stdio
-    args:
-    - -y
-    - '@wonderwhy-er/desktop-commander@latest'
-    registry: false
-    command: npx
-  git:
-    name: git
-    transport: stdio
-    args:
-    - mcp-server-git
-    registry: false
-    command: uvx
   gitmcp:
     name: gitmcp
     transport: http
     registry: false
     url: https://gitmcp.io/docs
-  homebrew:
-    name: homebrew
-    transport: stdio
-    args:
-    - mcp-server
-    registry: false
-    command: /opt/homebrew/bin/brew
-  playwright:
-    name: playwright
-    transport: stdio
-    args:
-    - '@playwright/mcp@latest'
-    registry: false
-    command: npx
 mcp_target_servers:
   claude:
   - aws-documentation
-  - chrome-devtools
-  - desktop-commander
-  - git
   - gitmcp
-  - homebrew
-  - playwright
