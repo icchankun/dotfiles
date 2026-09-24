@@ -11,9 +11,10 @@
 #   - herdr-agent-name
 #
 # Usage / 使い方:
-#   herdr-coding
+#   herdr-coding [options]
 #
 #   Options / オプション:
+#     -m, --model NAME   Model for the reviewer. (レビュー役のモデル。default: sonnet)
 #     -h, --help         Show this help. (このヘルプを表示する。)
 #
 # Notes / 補足:
@@ -59,6 +60,14 @@ readonly WORKER_ARGS=(
 readonly START_ATTEMPTS=20
 readonly START_INTERVAL=0.25
 
+# The reviewer runs every round until the findings clear, so it defaults to the
+# cheaper model. The bug-finding agent inside the review command pins its own
+# model, so this mainly sets who sorts the findings and runs the lighter checks.
+# (レビュー役は指摘がなくなるまで毎ラウンド動くので、既定は安いモデルにする。
+#  レビューコマンド内でバグを探すエージェントは自分でモデルを固定しているため、
+#  ここで決まるのは主に指摘の仕分けと軽い観点のチェックを担うモデル。)
+model=sonnet
+
 die() {
   printf 'herdr-coding: %s\n' "$1" >&2
   exit 1
@@ -71,6 +80,7 @@ usage() {
 parse_args() {
   while [ $# -gt 0 ]; do
     case "$1" in
+      -m | --model) [ -n "${2:-}" ] || die "--model requires a name"; model="$2"; shift 2 ;;
       -h | --help) usage; exit 0 ;;
       *) die "unknown option: $1" ;;
     esac
@@ -107,7 +117,7 @@ start_agent() {
   #  失敗する。シェルが立ち上がるまで試し直す。)
   for ((attempt = 1; ; attempt++)); do
     if herdr agent start "$name" --kind claude --pane "$pane" \
-      -- -n "$name" "${WORKER_ARGS[@]}" >/dev/null 2>&1; then
+      -- -n "$name" --model "$model" "${WORKER_ARGS[@]}" >/dev/null 2>&1; then
       break
     fi
     [ "$attempt" -lt "$START_ATTEMPTS" ] || die "could not start $name in $pane"
