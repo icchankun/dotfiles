@@ -2,11 +2,11 @@
 
 # =============================================================================
 # prune-merged-worktrees
-# Delete git worktrees/branches whose remote branch is already gone (merged).
-# (リモートブランチが削除済み = マージ済みの worktree/branch を削除する。)
+# Delete git worktrees/branches that are merged and gone from the remote.
+# (マージ済みかつリモートから消えている worktree/branch を削除する。)
 #
 # Dependencies / 依存:
-#   - git only / git のみ
+#   - git, pgrep (macOS 標準)
 #
 # Usage / 使い方:
 #   prune-merged-worktrees [-n] [-q] [--root DIR] [--depth N]
@@ -18,11 +18,22 @@
 #       --root DIR  Directory to scan for repositories. (default: ~/workspace)
 #       --depth N   Max search depth under --root. (default: 3)
 #
+# Criteria / 削除条件 (AND):
+#   - The same-named remote branch does not exist. / 同名のリモートブランチが無い。
+#   - The branch is merged into the remote default branch.
+#     (デフォルトブランチにマージ済み。)
+#   - The branch tip is not on the first-parent history of the default branch.
+#     (先端がデフォルトブランチの first-parent 上に無い。)
+#   1 つ目だけだと未 push の作業ブランチを、2 つ目だけだとリモートに残っている
+#   ブランチを消してしまう。3 つ目はコミット前の新規ブランチを守るためのもの。
+#
 # Safety / 安全策:
 #   - A worktree with uncommitted or untracked changes is skipped.
 #     (未コミット・未追跡の変更がある worktree はスキップする。)
 #   - The default branch and the main worktree are never touched.
 #     (デフォルトブランチとメイン worktree には触れない。)
+#   - Squash and fast-forward merges are not detected, so those branches are
+#     left behind. (squash / fast-forward でマージしたものは消し残しになる。)
 # =============================================================================
 
 set -uo pipefail
@@ -38,10 +49,15 @@ fi
 
 # Never block on credential prompts / 認証プロンプトで固まらないようにする
 export GIT_TERMINAL_PROMPT=0
-export GIT_SSH_COMMAND="${GIT_SSH_COMMAND:-ssh -o BatchMode=yes -o ConnectTimeout=10}"
+# ConnectTimeout は接続確立までにしか効かない。確立後にスリープや回線切り替えで
+# 応答が止まると ssh が永久に待つので、ServerAlive* で無通信を検出して落とす。
+export GIT_SSH_COMMAND="${GIT_SSH_COMMAND:-ssh -o BatchMode=yes -o ConnectTimeout=10 -o ServerAliveInterval=5 -o ServerAliveCountMax=3}"
 
 ROOT="$HOME/workspace"
 DEPTH=3
+# 1 リポジトリの fetch に許す秒数。launchd は同じラベルのジョブが実行中だと次回を
+# 起動しないため、1 つの fetch が固まると以降の毎時実行がすべて止まる。
+FETCH_TIMEOUT=120
 DRY_RUN=false
 QUIET=false
 
@@ -49,8 +65,8 @@ usage() {
   cat <<'USAGE'
 Usage: prune-merged-worktrees [-n] [-q] [--root DIR] [--depth N]
 
-Delete git worktrees/branches whose remote branch is already gone (merged).
-(リモートブランチが削除済み = マージ済みの worktree/branch を削除する。)
+Delete git worktrees/branches that are merged and gone from the remote.
+(マージ済みかつリモートから消えている worktree/branch を削除する。)
 
   -n, --dry-run   Show what would be deleted without deleting.
                   (削除せず対象を表示するだけ。)
@@ -75,10 +91,69 @@ done
 
 log() { printf '%s %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"; }
 
-# Branches whose upstream is gone / upstream が削除済みのブランチを列挙
-gone_branches() {
-  git -C "$1" for-each-ref --format='%(refname:short) %(upstream:track)' refs/heads \
-    | awk '$2 == "[gone]" { print $1 }'
+# Send a signal to a process and all its descendants
+# git を落としても ssh が孤児として残ることがあるので子孫までたどる。
+kill_tree() {
+  local sig="$1" pid="$2" child
+  for child in $(pgrep -P "$pid" 2>/dev/null); do
+    kill_tree "$sig" "$child"
+  done
+  kill "-$sig" "$pid" 2>/dev/null
+}
+
+# Run a command with a timeout, returning 124 on expiry
+# coreutils の timeout(1) は macOS に標準で入っていないため自前で用意する。
+run_with_timeout() {
+  local secs="$1"; shift
+  "$@" &
+  local pid=$! waited=0
+  while kill -0 "$pid" 2>/dev/null; do
+    if (( waited >= secs )); then
+      kill_tree TERM "$pid"
+      sleep 2
+      kill_tree KILL "$pid"
+      wait "$pid" 2>/dev/null
+      return 124
+    fi
+    sleep 1
+    waited=$((waited + 1))
+  done
+  wait "$pid"
+}
+
+# Branches that are merged and no longer on the remote
+# upstream (branch.<name>.merge) は push -u したブランチにしか付かず、
+# `git push origin HEAD` などで作ったブランチには付かない。upstream:track が
+# [gone] かどうかで判定すると、それらを永久に拾えないので同名のリモートブランチの
+# 有無で判定する。fetch --prune 済みなので refs/remotes を見れば足りる。
+prunable_branches() {
+  local repo="$1" default="$2" branch
+  [[ -z "$default" ]] && return 0
+  # デフォルトブランチのリモート側が無いとマージ済み判定ができない
+  git -C "$repo" show-ref --verify --quiet "refs/remotes/origin/$default" || return 0
+
+  # first-parent 上のコミット。作ったばかりでまだコミットの無いブランチは先端が
+  # ここに乗るので「マージ済み」と区別できない。merge commit でマージされた
+  # ブランチの先端は 2 番目の親側にあるため、ここには乗らない。
+  local -A mainline=()
+  local loaded=false tip commit
+
+  while IFS= read -r branch; do
+    [[ "$branch" == "$default" ]] && continue
+    git -C "$repo" show-ref --verify --quiet "refs/remotes/origin/$branch" && continue
+    git -C "$repo" merge-base --is-ancestor "$branch" "refs/remotes/origin/$default" || continue
+
+    if ! "$loaded"; then
+      while IFS= read -r commit; do
+        mainline[$commit]=1
+      done < <(git -C "$repo" rev-list --first-parent "refs/remotes/origin/$default")
+      loaded=true
+    fi
+    tip="$(git -C "$repo" rev-parse "refs/heads/$branch")"
+    [[ -n "${mainline[$tip]:-}" ]] && continue
+
+    printf '%s\n' "$branch"
+  done < <(git -C "$repo" for-each-ref --format='%(refname:short)' refs/heads)
 }
 
 # Worktree path for a branch, empty if none / ブランチに対応する worktree のパス
@@ -150,16 +225,21 @@ skipped_total=0
 while IFS= read -r gitdir; do
   repo="$(dirname "$gitdir")"
 
-  if ! git -C "$repo" fetch --prune --quiet 2>/dev/null; then
+  run_with_timeout "$FETCH_TIMEOUT" git -C "$repo" fetch --prune --quiet 2>/dev/null
+  fetch_status=$?
+  if (( fetch_status == 124 )); then
+    log "WARN  $repo: fetch timed out after ${FETCH_TIMEOUT}s, skipped"
+    continue
+  elif (( fetch_status != 0 )); then
     log "WARN  $repo: fetch failed, skipped"
     continue
   fi
 
-  mapfile -t branches < <(gone_branches "$repo")
-  [[ ${#branches[@]} -eq 0 ]] && continue
-
   default="$(default_branch "$repo")"
   main_wt="$(main_worktree "$repo")"
+
+  mapfile -t branches < <(prunable_branches "$repo" "$default")
+  [[ ${#branches[@]} -eq 0 ]] && continue
 
   "$QUIET" || log "REPO  $repo"
 
