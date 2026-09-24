@@ -1,5 +1,5 @@
 lockfile_version: '1'
-generated_at: '2026-09-24T09:42:23.702271+00:00'
+generated_at: '2026-09-24T23:36:58.827015+00:00'
 apm_version: 0.31.0
 dependencies:
 - repo_url: anthropics/claude-plugins-official
@@ -884,7 +884,7 @@ dependencies:
   host: github.com
   resolved_commit: 3c2ad00fee6c774cf918431bb25f28f218c45e74
   resolved_ref: main
-  version: 05fda49
+  version: 3c2ad00
   package_type: marketplace_plugin
   deployed_files:
   - .claude/skills/git-branch
