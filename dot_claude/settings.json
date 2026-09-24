@@ -102,6 +102,7 @@
   },
   "language": "Japanese",
   "effortLevel": "medium",
+  "autoMemoryEnabled": false,
   "remoteControlAtStartup": true,
   "voiceEnabled": true
 }
