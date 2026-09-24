@@ -28,4 +28,17 @@ command -v herdr >/dev/null 2>&1 || exit 0
 
 # A failure to open must not turn a successful `git wt` into an error
 # (開けなかったことで、成功した `git wt` をエラーにしない)
-herdr worktree open --path "$PWD" --no-focus >/dev/null 2>&1 || true
+opened=$(herdr worktree open --path "$PWD" --no-focus 2>/dev/null) || exit 0
+
+# lazygit gets a tab of its own in the worktree's workspace, so the git state is
+# one tab away from the start. A worktree that was already open has its lazygit
+# tab already, and opening another would stack them up.
+# (worktree のワークスペースに lazygit 用のタブを別に開き、最初から git の状態を
+#  タブ1つ分の移動で見られるようにする。すでに開いていた worktree には
+#  lazygit のタブも既にあり、もう1つ開くと重なっていく。)
+command -v lazygit >/dev/null 2>&1 || exit 0
+workspace=$(printf '%s' "$opened" | jq -r 'select(.result.already_open != true) | .result.workspace.workspace_id // empty' 2>/dev/null) || exit 0
+[ -n "$workspace" ] || exit 0
+pane=$(herdr tab create --workspace "$workspace" --cwd "$PWD" --label lazygit --no-focus 2>/dev/null | jq -r '.result.root_pane.pane_id // empty' 2>/dev/null) || exit 0
+[ -n "$pane" ] || exit 0
+herdr pane run "$pane" lazygit >/dev/null 2>&1 || true
