@@ -1,0 +1,31 @@
+#!/bin/sh
+
+# =============================================================================
+# herdr-worktree-open
+# git-wt hook: open a worktree in Herdr right after `git wt` creates it.
+# (git-wt フック: `git wt` が worktree を作った直後に、Herdr でそれを開く。)
+#
+# One tab is one worktree here, and a worktree created by /git-branch otherwise
+# stays invisible until it is opened by hand. git-wt runs wt.hook in the new
+# worktree directory, so $PWD is the checkout to open.
+# (1タブ = 1 worktree で使っているが、/git-branch が作った worktree は手で
+#  open worktree するまでタブに出てこない。git-wt は wt.hook を新しい worktree の
+#  ディレクトリで実行するので、$PWD がそのまま開く対象になる。)
+#
+# Focus stays where it is: the worktree is usually created from a Claude session
+# that is still talking to you, and jumping away would cut that conversation off.
+# (フォーカスは動かさない。worktree はたいてい会話中の Claude セッションから作られ、
+#  そこで画面が切り替わると会話が途切れるため。)
+#
+# git-wt does not run hooks when switching to an existing worktree, so this only
+# fires on creation.
+# (既存の worktree への切り替えでは git-wt はフックを実行しないため、作成時にだけ走る。)
+# =============================================================================
+set -eu
+
+[ "${HERDR_ENV:-}" = 1 ] || exit 0
+command -v herdr >/dev/null 2>&1 || exit 0
+
+# A failure to open must not turn a successful `git wt` into an error
+# (開けなかったことで、成功した `git wt` をエラーにしない)
+herdr worktree open --path "$PWD" --no-focus >/dev/null 2>&1 || true

@@ -3,6 +3,9 @@
 [core]
 	commentChar = ^
 	editor = code --wait
+[wt]
+	# worktree を作ったら Herdr のタブに自動で開く
+	hook = ~/.bin/herdr-worktree-open
 [hook "betterleaks"]
 	# 全リポジトリでコミット前にシークレットを検出する
 	command = mise exec -- betterleaks git --pre-commit --redact --staged --verbose
