@@ -34,8 +34,10 @@ dependencies:
       skills:
         - typescript-best-practices
     # official plugins（skills/commands/agents のみ）
-    # hooks 系（hookify, security-guidance, ralph-loop）と LSP 系（ruby-lsp,
-    # typescript-lsp）は settings.json の enabledPlugins で管理。
+    # hooks 系（security-guidance）と LSP 系（ruby-lsp, typescript-lsp）は
+    # settings.json の enabledPlugins で管理。pr-review-toolkit も同様で、
+    # herdr-coding が /pr-review-toolkit:review-pr の名前で呼ぶうえ、
+    # apm で入れると agents/code-reviewer.md が feature-dev のものとぶつかる。
     # hooks: apm は hooks/ 内のスクリプトのみ展開し core/ 等の依存を含めない。
     # LSP: 空リポジトリのため展開物がない。
     - git: anthropics/claude-plugins-official
@@ -54,19 +56,10 @@ dependencies:
       path: plugins/code-review
       ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
     - git: anthropics/claude-plugins-official
-      path: plugins/code-simplifier
-      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-    - git: anthropics/claude-plugins-official
-      path: plugins/commit-commands
-      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-    - git: anthropics/claude-plugins-official
       path: plugins/feature-dev
       ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
     - git: anthropics/claude-plugins-official
       path: plugins/frontend-design
-      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-    - git: anthropics/claude-plugins-official
-      path: plugins/mcp-server-dev
       ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
     - git: anthropics/claude-plugins-official
       path: plugins/mcp-tunnels
@@ -75,19 +68,10 @@ dependencies:
       path: plugins/playground
       ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
     - git: anthropics/claude-plugins-official
-      path: plugins/plugin-dev
-      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-    - git: anthropics/claude-plugins-official
-      path: plugins/pr-review-toolkit
-      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-    - git: anthropics/claude-plugins-official
       path: plugins/project-artifact
       ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
     - git: anthropics/claude-plugins-official
       path: plugins/session-report
-      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-    - git: anthropics/claude-plugins-official
-      path: plugins/skill-creator
       ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
   mcp:
     - name: aws-documentation
