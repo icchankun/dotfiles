@@ -1,5 +1,5 @@
 lockfile_version: '1'
-generated_at: '2026-09-30T16:50:49.625108+00:00'
+generated_at: '2026-09-30T17:12:42.533905+00:00'
 apm_version: 0.31.0
 dependencies:
 - repo_url: anthropics/claude-plugins-official
@@ -595,9 +595,9 @@ dependencies:
 - repo_url: icchankun/skills
   name: icchankun-skills
   host: github.com
-  resolved_commit: 3c2ad00fee6c774cf918431bb25f28f218c45e74
+  resolved_commit: aa0bf1ad2accb777eb2471a33c9e97c6e1693d18
   resolved_ref: main
-  version: 3c2ad00
+  version: aa0bf1a
   package_type: marketplace_plugin
   deployed_files:
   - .claude/skills/git-branch
@@ -616,17 +616,20 @@ dependencies:
   - .claude/skills/resolving-pr-reviews/SKILL.md
   - .claude/skills/resolving-pr-reviews/scripts/fetch_pr_comments.rb
   - .claude/skills/resolving-pr-reviews/scripts/wait_for_copilot_review.rb
+  - .claude/skills/review-diff
+  - .claude/skills/review-diff/SKILL.md
   deployed_file_hashes:
     .claude/skills/git-branch/SKILL.md: sha256:f106a85f7b0471e9c863e745832ba9a6269b5ed99c56035fe8ed494a5f5a9adc
     .claude/skills/git-commit/SKILL.md: sha256:680c5368b16d5ee1b934e34484e37336755a2a5ef2baa77ee72d5af05c7fa0b4
     .claude/skills/github-pr/SKILL.md: sha256:f56ee2852b21d3bd1e9983f6476e2f0959854a116d27c9873a8b942e438f8c05
     .claude/skills/handover/SKILL.md: sha256:18fa9707d00ef766f9fac43bfff30c9c877368260f3ef7fc5f5311175b51d07e
-    .claude/skills/herdr-coding/SKILL.md: sha256:39d2fdab5e8904c909ef19aacacd86b78eaaf8900afbfb0627ecfb8f1b751d02
+    .claude/skills/herdr-coding/SKILL.md: sha256:c0609ee6a29ad4202e962a22111879bdf574a876a2901b185e1cf5ab1231a2b9
     .claude/skills/humanizer-ja/SKILL.md: sha256:b92caf4505ef2a33eec628d864fbef0ff7442f276a00c537a18df14ff201173a
     .claude/skills/resolving-pr-reviews/SKILL.md: sha256:5303c3381802f7a6c99e731df058dab190591d80cee295bc3eedbad237d8119a
     .claude/skills/resolving-pr-reviews/scripts/fetch_pr_comments.rb: sha256:2d68d070b24d6f5728fe7be507dbeaf90ab7116fa6a7726ef45f050552a1ac6e
     .claude/skills/resolving-pr-reviews/scripts/wait_for_copilot_review.rb: sha256:0fde18387ec5f1880bc7f1d428b0c5e01f19d3b67359b71eef2f62c904cbfcfa
-  content_hash: sha256:f62f65832bac08595fa89251b948b8c2bd808b3eda54886a4960e07e5ffed462
+    .claude/skills/review-diff/SKILL.md: sha256:d38af01a3560817104a0f96a8d6effc12d1bf3a710023ff06e68cf84db161bd9
+  content_hash: sha256:6e11e89309d9a629eb901fc14145a3e7b43e7ffa53ac9414ee87696d5e12fa4b
 - repo_url: microsoft/playwright-cli
   name: playwright-cli
   host: github.com
@@ -1193,7 +1196,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:39d2fdab5e8904c909ef19aacacd86b78eaaf8900afbfb0627ecfb8f1b751d02
+  content_hash: sha256:c0609ee6a29ad4202e962a22111879bdf574a876a2901b185e1cf5ab1231a2b9
 - kind: project-relative
   target: claude
   value: .claude/skills/herdr/SKILL.md
@@ -2724,6 +2727,24 @@ deployments:
   - icchankun/skills
   active_owner: icchankun/skills
   content_hash: sha256:0fde18387ec5f1880bc7f1d428b0c5e01f19d3b67359b71eef2f62c904cbfcfa
+- kind: project-relative
+  target: claude
+  value: .claude/skills/review-diff
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/review-diff/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: sha256:d38af01a3560817104a0f96a8d6effc12d1bf3a710023ff06e68cf84db161bd9
 - kind: project-relative
   target: claude
   value: .claude/skills/session-report
