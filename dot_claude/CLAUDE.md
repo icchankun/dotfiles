@@ -1,6 +1,6 @@
 # セッション開始時の手順
 
-以下のいずれかが渡された場合は `/git-branch` で branch・worktree を作成してから作業を開始する：
+以下のいずれかが渡された場合は `/creating-git-branches` で branch・worktree を作成してから作業を開始する：
 - GitHub Issue のリンク
 - Notion チケットのリンク
 - PR を前提とした実装方針
@@ -17,7 +17,7 @@ worktree の作成・削除は `git wt` で行う。`git worktree add` / `git wo
 
 # 文章を書くとき
 
-会話の外に残る文章（コミットメッセージ、PR、レビューへの返信、ドキュメント、コードコメント、Notion）は、不要な文を省き、冗長な文は簡潔にしてから出す。そのうえで AI が書いたように見える癖を避ける。日本語は `humanizer-ja`、英語は `humanizer:humanizer` の観点で見直す。
+会話の外に残る文章（コミットメッセージ、PR、レビューへの返信、ドキュメント、コードコメント、Notion）は、`reviewing-writing` で見直してから出す。
 
 この会話での返答は対象外で、caveman の書き方に従う。
 
