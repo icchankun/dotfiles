@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+# =============================================================================
+# check-prs
+# Review the PRs I am asked to review and write the results to Notion, then
+# approve the ones approve-ready may approve. Run by launchd every 15 minutes.
+# (レビューを頼まれた PR を確かめて Notion に書き、approve-ready で押せるものを
+#  押す。launchd が15分ごとに動かす。)
+#
+# Dependencies / 依存:
+#   - claude (with the Notion connector / Notion のコネクタ付き), approve-ready
+#
+# The review runs only on weekdays from 9:00 to 20:00, when the cloud task is
+# off. approve-ready --auto runs on every call and checks the day itself.
+# (確かめるのは、クラウドの定期タスクが止まっている平日 9:00〜20:00 だけ。
+#  approve-ready --auto は毎回動かし、曜日は approve-ready が見る。)
+#
+# The review gets read-only gh commands only. It must not be able to approve
+# or comment, and `gh api` could do both.
+# (確かめる側には、読むだけの gh しか渡さない。approve もコメントもできては
+#  いけないので、どちらもできる gh api は渡さない。)
+# =============================================================================
+
+set -euo pipefail
+
+[[ -f "$HOME/.config/dev-flow/env" ]] && source "$HOME/.config/dev-flow/env"
+
+dow=$(date +%u); hour=$((10#$(date +%H)))
+if [[ "$dow" -le 5 && "$hour" -ge 9 && "$hour" -lt 20 ]]; then
+  cd "$HOME"
+  # Connectors come from the claude.ai login, which an API key would override.
+  # (コネクタは claude.ai のログインで使える。API キーがあるとそちらが優先される。)
+  env -u ANTHROPIC_API_KEY claude -p --allowedTools \
+    Read Grep Glob Agent Skill \
+    "Bash(gh pr list:*)" "Bash(gh pr view:*)" "Bash(gh pr diff:*)" "Bash(gh pr checks:*)" \
+    mcp__claude_ai_Notion__notion-fetch mcp__claude_ai_Notion__notion-query-data-sources \
+    mcp__claude_ai_Notion__notion-create-pages mcp__claude_ai_Notion__notion-update-page \
+    mcp__claude_ai_Notion__notion-update-data-source \
+    -- "/reviewing-pull-requests" </dev/null || echo "reviewing-pull-requests failed: $?" >&2
+fi
+
+approve-ready --auto
