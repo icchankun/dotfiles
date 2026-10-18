@@ -2,11 +2,12 @@
 
 # =============================================================================
 # prune-merged-worktrees
-# Delete git worktrees/branches that are merged and gone from the remote.
-# (マージ済みかつリモートから消えている worktree/branch を削除する。)
+# Delete git worktrees/branches whose pull request has been merged.
+# (PR がマージ済みの worktree/branch を削除する。)
 #
 # Dependencies / 依存:
-#   - git, pgrep (macOS 標準)
+#   - git, git-wt, gh（認証済み）, pgrep (macOS 標準)
+#   - herdr (optional / 任意。失敗を通知する)
 #
 # Usage / 使い方:
 #   prune-merged-worktrees [-n] [-q] [--root DIR] [--depth N]
@@ -19,21 +20,22 @@
 #       --depth N   Max search depth under --root. (default: 3)
 #
 # Criteria / 削除条件 (AND):
-#   - The same-named remote branch does not exist. / 同名のリモートブランチが無い。
-#   - The branch is merged into the remote default branch.
-#     (デフォルトブランチにマージ済み。)
-#   - The branch tip is not on the first-parent history of the default branch.
-#     (先端がデフォルトブランチの first-parent 上に無い。)
-#   1 つ目だけだと未 push の作業ブランチを、2 つ目だけだとリモートに残っている
-#   ブランチを消してしまう。3 つ目はコミット前の新規ブランチを守るためのもの。
+#   - A merged pull request has this branch as its head. / このブランチを head にした PR がマージ済み。
+#   - The branch tip is that PR's last commit or one of its ancestors.
+#     (ブランチの先端が、その PR の最後のコミットかその祖先。)
+#   git の履歴ではなく PR の状態で判定するので、squash / rebase でマージしたものも拾える。
+#   2 つ目は、マージ済みの PR と同じ名前で作り直したブランチの作業を消さないためのもの。
 #
 # Safety / 安全策:
 #   - A worktree with uncommitted or untracked changes is skipped.
 #     (未コミット・未追跡の変更がある worktree はスキップする。)
 #   - The default branch and the main worktree are never touched.
 #     (デフォルトブランチとメイン worktree には触れない。)
-#   - Squash and fast-forward merges are not detected, so those branches are
-#     left behind. (squash / fast-forward でマージしたものは消し残しになる。)
+#   - A repository where gh fails (no network, no auth) is skipped.
+#     (gh が失敗したリポジトリはスキップする。)
+#
+# Also removes the Claude Code sessions recorded for each deleted worktree.
+# (消した worktree の Claude Code のセッションも消す。)
 # =============================================================================
 
 set -uo pipefail
@@ -56,7 +58,7 @@ export GIT_SSH_COMMAND="${GIT_SSH_COMMAND:-ssh -o BatchMode=yes -o ConnectTimeou
 ROOT="$HOME/workspace"
 DEPTH=3
 # 1 リポジトリの fetch に許す秒数。launchd は同じラベルのジョブが実行中だと次回を
-# 起動しないため、1 つの fetch が固まると以降の毎時実行がすべて止まる。
+# 起動しないため、1 つの fetch が固まると以降の定期実行がすべて止まる。
 FETCH_TIMEOUT=120
 DRY_RUN=false
 QUIET=false
@@ -121,37 +123,18 @@ run_with_timeout() {
   wait "$pid"
 }
 
-# Branches that are merged and no longer on the remote
-# upstream (branch.<name>.merge) は push -u したブランチにしか付かず、
-# `git push origin HEAD` などで作ったブランチには付かない。upstream:track が
-# [gone] かどうかで判定すると、それらを永久に拾えないので同名のリモートブランチの
-# 有無で判定する。fetch --prune 済みなので refs/remotes を見れば足りる。
+# Branches whose pull request has been merged / PR がマージ済みのブランチ
+# gh が失敗したら 1 を返し、そのリポジトリを飛ばさせる。
 prunable_branches() {
-  local repo="$1" default="$2" branch
-  [[ -z "$default" ]] && return 0
-  # デフォルトブランチのリモート側が無いとマージ済み判定ができない
-  git -C "$repo" show-ref --verify --quiet "refs/remotes/origin/$default" || return 0
-
-  # first-parent 上のコミット。作ったばかりでまだコミットの無いブランチは先端が
-  # ここに乗るので「マージ済み」と区別できない。merge commit でマージされた
-  # ブランチの先端は 2 番目の親側にあるため、ここには乗らない。
-  local -A mainline=()
-  local loaded=false tip commit
-
+  local repo="$1" default="$2" branch tip head
   while IFS= read -r branch; do
     [[ "$branch" == "$default" ]] && continue
-    git -C "$repo" show-ref --verify --quiet "refs/remotes/origin/$branch" && continue
-    git -C "$repo" merge-base --is-ancestor "$branch" "refs/remotes/origin/$default" || continue
-
-    if ! "$loaded"; then
-      while IFS= read -r commit; do
-        mainline[$commit]=1
-      done < <(git -C "$repo" rev-list --first-parent "refs/remotes/origin/$default")
-      loaded=true
-    fi
+    head="$(cd "$repo" && gh pr list --head "$branch" --state merged --limit 1 \
+      --json headRefOid --jq '.[0].headRefOid // empty' 2>/dev/null)" || return 1
+    [[ -z "$head" ]] && continue
     tip="$(git -C "$repo" rev-parse "refs/heads/$branch")"
-    [[ -n "${mainline[$tip]:-}" ]] && continue
-
+    # PR の先端がローカルに無ければ祖先か判定できないので、安全側に倒して残す
+    [[ "$tip" == "$head" ]] || git -C "$repo" merge-base --is-ancestor "$tip" "$head" 2>/dev/null || continue
     printf '%s\n' "$branch"
   done < <(git -C "$repo" for-each-ref --format='%(refname:short)' refs/heads)
 }
@@ -203,20 +186,32 @@ prune_empty_dirs() {
   done
 }
 
-# Delete the worktree (if any) and the branch / worktree があれば消してからブランチを消す
+# Claude Code keeps a worktree's sessions under ~/.claude/projects/<path with
+# every non-alphanumeric character replaced by "-">
+# (Claude Code はセッションを、パスの英数字以外を "-" にした名前のディレクトリに置く)
+remove_claude_sessions() {
+  local dir="$HOME/.claude/projects/${1//[^a-zA-Z0-9]/-}"
+  [[ -d "$dir" ]] && rm -rf "$dir"
+}
+
+# Delete the worktree (if any) and the branch with git wt, so its hooks run
+# (git wt で worktree とブランチを消す。git wt のフックを走らせるため)
+# 未コミットの変更は呼び出し側で確かめているので、-D で消す。
 delete_branch() {
   local repo="$1" branch="$2" wt="$3" out
-  if [[ -n "$wt" ]]; then
-    if ! out="$(git -C "$repo" worktree remove "$wt" 2>&1)"; then
-      printf '%s' "$out"
-      return 1
-    fi
-    prune_empty_dirs "$(dirname "$wt")" "$repo"
-  fi
-  if ! out="$(git -C "$repo" branch -D "$branch" 2>&1)"; then
+  if ! out="$(cd "$repo" && git wt -D "$branch" 2>&1)"; then
     printf '%s' "$out"
     return 1
   fi
+  if [[ -n "$wt" ]]; then
+    prune_empty_dirs "$(dirname "$wt")" "$repo"
+    remove_claude_sessions "$wt"
+  fi
+}
+
+notify_failure() {
+  command -v herdr >/dev/null 2>&1 || return 0
+  herdr notification show "🧹 prune-merged-worktrees" --body "$1" --sound request >/dev/null 2>&1 || true
 }
 
 deleted_total=0
@@ -238,8 +233,12 @@ while IFS= read -r gitdir; do
   default="$(default_branch "$repo")"
   main_wt="$(main_worktree "$repo")"
 
-  mapfile -t branches < <(prunable_branches "$repo" "$default")
-  [[ ${#branches[@]} -eq 0 ]] && continue
+  if ! branches_out="$(prunable_branches "$repo" "$default")"; then
+    log "WARN  $repo: gh failed, skipped"
+    continue
+  fi
+  [[ -z "$branches_out" ]] && continue
+  mapfile -t branches <<<"$branches_out"
 
   "$QUIET" || log "REPO  $repo"
 
@@ -275,6 +274,7 @@ while IFS= read -r gitdir; do
       ((deleted_total++))
     else
       log "FAIL  $repo: $branch -- ${out//$'\n'/ }"
+      notify_failure "$(basename "$repo"): $branch を消せませんでした"
       ((skipped_total++))
     fi
   done

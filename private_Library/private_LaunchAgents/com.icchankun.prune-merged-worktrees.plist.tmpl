@@ -17,12 +17,14 @@
     <string>{{ .chezmoi.homeDir }}/.bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
   </dict>
 
-  <!-- Run every hour, on the hour / 毎時 0 分に実行 -->
+  <!-- Every 15 minutes / 15分ごと -->
   <key>StartCalendarInterval</key>
-  <dict>
-    <key>Minute</key>
-    <integer>0</integer>
-  </dict>
+  <array>
+    <dict><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Minute</key><integer>15</integer></dict>
+    <dict><key>Minute</key><integer>30</integer></dict>
+    <dict><key>Minute</key><integer>45</integer></dict>
+  </array>
 
   <key>RunAtLoad</key>
   <false/>
