@@ -1,0 +1,238 @@
+#!/usr/bin/env bash
+
+# =============================================================================
+# approve-ready
+# Approve the PRs that reviewing-pull-requests checked and wrote to Notion,
+# with the user's own gh. The review only writes to Notion; approving stays
+# here, so a PR that misleads the review can still not approve itself.
+# (reviewing-pull-requests が確かめて Notion に書いた PR を、自分の gh で approve
+#  する。確かめる側は Notion に書くまでで、approve はここに分けてある。PR の中身に
+#  誘導されても、自分を approve させることはできない。)
+#
+# Dependencies / 依存:
+#   - gh, jq, claude (with the Notion connector / Notion のコネクタ付き)
+#   - herdr (optional, for --auto / --auto で任意)
+#   - NOTION_PR_REVIEW_DB in ~/.config/dev-flow/env or the environment
+#
+# Usage / 使い方:
+#   approve-ready          List 🟡 PRs and approve the chosen ones.
+#                          (🟡 の PR を一覧にし、選んだものを approve する。)
+#   approve-ready --auto   Approve 🟢 PRs that pass the checks below. Open the
+#                          list in a Herdr workspace and notify when new 🟡
+#                          PRs arrive (weekdays 9:00-20:00 only).
+#                          (下の条件を満たす 🟢 を approve する。新しい 🟡 が
+#                           あれば、Herdr の workspace に一覧を出して知らせる。
+#                           知らせるのは平日 9:00〜20:00 だけ。)
+#
+# 🟢 is approved only when gh confirms all of these again, because the row
+# was written by a model that read the PR, and the PR author controls its
+# title and files. A row that fails any of them is listed with the 🟡 ones.
+# (🟢 を押すのは、gh で次をすべて確かめ直せたときだけ。行は PR を読んだモデルが
+#  書いたもので、タイトルやファイルは PR の作者が決められるため。1つでも外れたら
+#  🟡 と一緒に一覧に出す。)
+#   - open, not draft, head commit equals the reviewed commit
+#   - every status check succeeded
+#   - library update: opened by Dependabot or Renovate, only manifests and
+#     lockfiles changed, the major version kept (minor for 0.x)
+#   - tests and docs: only test and doc files changed
+#   - anything else, small internal fixes included, is never automatic
+#     because its files cannot tell whether users are affected
+# =============================================================================
+
+set -euo pipefail
+
+readonly STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/dev-flow"
+readonly NOTIFIED="$STATE_DIR/approve-notified"
+readonly PANE_FILE="$STATE_DIR/approve-pane"
+readonly LOG="$STATE_DIR/approve-ready.log"
+readonly BOTS='app/dependabot|app/renovate'
+readonly DEP_FILES='(^|/)(package(-lock)?\.json|yarn\.lock|pnpm-lock\.yaml|Gemfile(\.lock)?|go\.(mod|sum)|Cargo\.(toml|lock)|requirements[^/]*\.txt|poetry\.lock|pyproject\.toml|uv\.lock|composer\.(json|lock))$'
+readonly DOC_TEST_FILES='\.(md|mdx|rst)$|^(docs?|spec|specs|tests?|__tests__)/|([._-](spec|test))\.[a-z]+$'
+
+auto=false
+[[ "${1:-}" == "--auto" ]] && auto=true
+
+mkdir -p "$STATE_DIR"
+touch "$NOTIFIED"
+[[ -f "$HOME/.config/dev-flow/env" ]] && source "$HOME/.config/dev-flow/env"
+: "${NOTION_PR_REVIEW_DB:?NOTION_PR_REVIEW_DB が設定されていません（~/.config/dev-flow/env）}"
+
+log() { printf '%s %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >>"$LOG"; }
+
+# The Notion connector is a claude.ai login feature, and an API key in the
+# environment takes precedence over that login and turns the connectors off.
+# (Notion のコネクタは claude.ai のログインで使える。API キーが環境にあると
+#  そちらが優先され、コネクタが無効になる。)
+ask_notion() {
+  env -u ANTHROPIC_API_KEY claude -p --model claude-haiku-5-5 --output-format json \
+    --allowedTools mcp__claude_ai_Notion__notion-fetch mcp__claude_ai_Notion__notion-query-data-sources mcp__claude_ai_Notion__notion-update-page \
+    -- "$1" </dev/null 2>/dev/null | jq -r '.result'
+}
+
+read_rows() {
+  ask_notion "Notion の DB $NOTION_PR_REVIEW_DB を開き、approve が「未」で、区分が「🟢 軽微」か「🟡 ユーザー影響あり」の行を読む。JSON の配列だけを出力する。前後に文章やコードブロックを付けない。各要素は {\"page\":ページの URL,\"kind\":区分,\"type\":種類,\"pr\":PR,\"commit\":確認したコミット,\"summary\":要約}。行がなければ []。" |
+    jq -c '.[]'
+}
+
+mark_approved() { # $1: 自動 / 手動, rest: page URLs
+  local value="$1"; shift
+  [[ $# -gt 0 ]] || return 0
+  ask_notion "次の Notion のページの「approve」を「$value」に、「確認日」を $(date +%F) に書き換える。ほかの列と本文は変えない。終わったら done とだけ出力する。$(printf '\n- %s' "$@")" >/dev/null ||
+    log "WARN Notion の approve 列を更新できませんでした: $*"
+}
+
+# The row is model output: accept only a PR URL in a listed repository.
+# (行はモデルの出力なので、許可リストのリポジトリの PR の URL だけを受け付ける。)
+why_not_listed() {
+  [[ "$1" =~ ^https://github\.com/([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)/pull/[0-9]+$ ]] || { echo "PR の URL ではない"; return 0; }
+  grep -qxF "${BASH_REMATCH[1]}" <(tr ' ' '\n' <<<"${DEV_FLOW_REPOS:-}"; cat "$HOME/.config/dev-flow/repos" 2>/dev/null) || { echo "許可リストにないリポジトリ"; return 0; }
+  return 1
+}
+
+# Prints why the PR cannot be approved automatically, or nothing when it can.
+# (自動で押せない理由を出す。押せるなら何も出さない。)
+why_not_auto() {
+  local row="$1" pr commit type pr_json title allowed
+  pr=$(jq -r .pr <<<"$row"); commit=$(jq -r .commit <<<"$row"); type=$(jq -r .type <<<"$row")
+  why_not_listed "$pr" && return
+  case "$type" in
+    ライブラリ更新) allowed="$DEP_FILES" ;;
+    テスト・ドキュメント) allowed="$DOC_TEST_FILES" ;;
+    *) echo "自動で押せる種類ではない（${type}）"; return ;;
+  esac
+  pr_json=$(gh pr view "$pr" --json author,state,isDraft,headRefOid,title,files,changedFiles,statusCheckRollup </dev/null 2>/dev/null) || { echo "PR を読めない"; return; }
+  jq -e '.state == "OPEN" and (.isDraft | not)' <<<"$pr_json" >/dev/null || { echo "開いていないか draft"; return; }
+  [[ "$(jq -r .headRefOid <<<"$pr_json")" == "$commit" ]] || { echo "確かめたあとにコミットが積まれた"; return; }
+  jq -e '(.statusCheckRollup | length) > 0 and all(.statusCheckRollup[]; (.conclusion // .state) as $s | $s == "SUCCESS" or $s == "NEUTRAL" or $s == "SKIPPED")' <<<"$pr_json" >/dev/null ||
+    { echo "CI が通っていない"; return; }
+  # gh returns at most 100 files, so a longer list may hide some.
+  # (gh が返すファイルは100件までなので、それより多いと見えないファイルがある。)
+  jq -e '.changedFiles == (.files | length)' <<<"$pr_json" >/dev/null || { echo "ファイルが多すぎて全部を確かめられない"; return; }
+  jq -r '.files[].path' <<<"$pr_json" | grep -Evq "$allowed" && { echo "${type}のファイル以外にも触れている"; return; }
+  if [[ "$type" == "ライブラリ更新" ]]; then
+    [[ "$(jq -r .author.login <<<"$pr_json")" =~ ^($BOTS)$ ]] || { echo "Dependabot・Renovate 以外が作った"; return; }
+    # Anyone with push access can add a commit to the bot's branch, and a git
+    # author can be faked, so every commit must be the bot's and signed.
+    # (bot のブランチには push できる人なら誰でもコミットを足せ、git の作者は偽れる。
+    #  そのため、すべてのコミットが bot のもので、署名が検証されていることを見る。)
+    local api="${pr#https://github.com/}"
+    gh api "repos/${api/\/pull\//\/pulls\/}/commits" --paginate </dev/null 2>/dev/null |
+      jq -se 'add | length > 0 and all(.[]; (.author.login // "" | test("^(dependabot|renovate)\\[bot\\]$")) and .commit.verification.verified)' >/dev/null ||
+      { echo "bot 以外のコミットか、署名のないコミットがある"; return; }
+    title=$(jq -r .title <<<"$pr_json")
+    [[ "$title" =~ from\ v?([0-9]+)\.([0-9]+)[^\ ]*\ to\ v?([0-9]+)\.([0-9]+) ]] || { echo "タイトルから更新前後の版を読めない"; return; }
+    local from_major="${BASH_REMATCH[1]}" from_minor="${BASH_REMATCH[2]}" to_major="${BASH_REMATCH[3]}" to_minor="${BASH_REMATCH[4]}"
+    [[ "$from_major" == "$to_major" ]] || { echo "メジャー更新"; return; }
+    [[ "$from_major" != 0 || "$from_minor" == "$to_minor" ]] || { echo "0.x のマイナー更新"; return; }
+  fi
+}
+
+# Approve the reviewed commit, not whatever the head is by then. A commit pushed
+# between the checks and this call would otherwise be approved unchecked.
+# (確かめたコミットを approve する。そのときの最新ではない。確かめてからここまでに
+#  積まれたコミットが、確かめないまま approve されないため。)
+# Unless the repository dismisses stale approvals, an approval of an older
+# commit still lets newer commits merge, so a push that lands during the call is
+# reported loudly.
+# (古いコミットへの approve を取り消す設定がリポジトリにないと、その approve で新しい
+#  コミットまでマージできる。そのため、押している間に積まれた push は大きく知らせる。)
+approve() { # $1: PR URL, $2: commit
+  local api="${1#https://github.com/}" head
+  api="repos/${api/\/pull\//\/pulls\/}"
+  gh api "$api/reviews" -f event=APPROVE -f commit_id="$2" </dev/null >/dev/null || return 1
+  head=$(gh api "$api" --jq .head.sha </dev/null 2>/dev/null) || head=""
+  if [[ "$head" != "$2" ]]; then
+    log "WARN $1 approve の間にコミットが積まれた。approve を取り消すか確かめる"
+    command -v herdr >/dev/null 2>&1 &&
+      herdr notification show "⚠️ approve の間にコミットが積まれました" --body "$1" --sound request >/dev/null 2>&1
+    echo "⚠️ approve の間にコミットが積まれました。approve を取り消すか確かめてください: $1" >&2
+  fi
+  return 0
+}
+
+# Run the list in a dedicated Herdr workspace, reusing the one from last time.
+# A previous list still waiting for input is interrupted first.
+# (専用の Herdr の workspace で一覧を出す。前回のものがあれば使い回し、入力待ちの
+#  一覧は止めてから出し直す。)
+open_list_in_herdr() {
+  command -v herdr >/dev/null 2>&1 || return 0
+  local pane=""
+  [[ -f "$PANE_FILE" ]] && pane=$(<"$PANE_FILE")
+  if [[ -n "$pane" ]] && herdr pane get "$pane" >/dev/null 2>&1; then
+    herdr pane send-keys "$pane" C-c >/dev/null 2>&1 || true
+  else
+    pane=$(herdr workspace create --label "✅ approve" --no-focus 2>/dev/null | jq -r '.result.root_pane.pane_id // empty') || pane=""
+    [[ -n "$pane" ]] || return 0
+    printf '%s' "$pane" >"$PANE_FILE"
+  fi
+  herdr pane run "$pane" approve-ready >/dev/null 2>&1 || true
+}
+
+rows=$(read_rows) || { log "ERROR Notion の DB を読めませんでした"; echo "❌ Notion の DB を読めませんでした: $NOTION_PR_REVIEW_DB" >&2; exit 1; }
+
+if "$auto"; then
+  dow=$(date +%u); hour=$((10#$(date +%H)))
+  [[ "$dow" -le 5 ]] || exit 0
+
+  approved=() new_yellow=0
+  while IFS= read -r row; do
+    [[ -n "$row" ]] || continue
+    key="$(jq -r '.pr + "@" + .commit' <<<"$row")"
+    if [[ "$(jq -r .kind <<<"$row")" == "🟢 軽微" ]]; then
+      reason=$(why_not_auto "$row")
+      if [[ -z "$reason" ]] && approve "$(jq -r .pr <<<"$row")" "$(jq -r .commit <<<"$row")" 2>/dev/null; then
+        log "APPROVE $(jq -r '.pr + "  " + .summary' <<<"$row")"
+        approved+=("$(jq -r .page <<<"$row")")
+        continue
+      fi
+      log "SKIP $(jq -r .pr <<<"$row")  ${reason:-approve に失敗}"
+    fi
+    grep -qxF "$key" "$NOTIFIED" || { new_yellow=$((new_yellow + 1)); echo "$key" >>"$NOTIFIED.pending"; }
+  done <<<"$rows"
+  mark_approved 自動 "${approved[@]+"${approved[@]}"}"
+
+  if [[ "$new_yellow" -gt 0 && "$hour" -ge 9 && "$hour" -lt 20 ]]; then
+    open_list_in_herdr
+    herdr notification show "🟡 確認待ち ${new_yellow}件" --body "Herdr の workspace「✅ approve」で選んでください" --sound request >/dev/null 2>&1 || true
+    cat "$NOTIFIED.pending" >>"$NOTIFIED"
+  fi
+  rm -f "$NOTIFIED.pending"
+  exit 0
+fi
+
+# 対話: 🟡 と、自動で押せなかった 🟢 を並べる
+list=()
+while IFS= read -r row; do
+  [[ -n "$row" ]] || continue
+  reason=""
+  [[ "$(jq -r .kind <<<"$row")" == "🟢 軽微" ]] && { reason=$(why_not_auto "$row"); reason="${reason:-自動で押せる状態}"; }
+  list+=("$(jq -c --arg r "$reason" '. + {reason: $r}' <<<"$row")")
+done <<<"$rows"
+
+if [[ ${#list[@]} -eq 0 ]]; then
+  echo "確認待ちの PR はありません"
+  exit 0
+fi
+
+for i in "${!list[@]}"; do
+  jq -r --arg n "$((i + 1))" '"\($n). \(.kind)  \(.summary)\(if .reason != "" then "（🟢 から: \(.reason)）" else "" end)\n   PR: \(.pr)\n   Notion: \(.page)"' <<<"${list[$i]}"
+done
+printf '\napprove する番号（空白区切り、何もなければ Enter）: '
+read -r -a picks || true
+
+approved=()
+for n in "${picks[@]+"${picks[@]}"}"; do
+  [[ "$n" =~ ^[0-9]+$ && "$n" -ge 1 && "$n" -le ${#list[@]} ]] || { echo "⚠️ 番号ではないので飛ばします: $n"; continue; }
+  row="${list[$((n - 1))]}"
+  pr=$(jq -r .pr <<<"$row")
+  reason=$(why_not_listed "$pr") && { echo "⚠️ 飛ばします（${reason}）: $pr"; continue; }
+  # Approve only what was reviewed. A commit pushed after the review is not in the summary.
+  # (確かめたコミットだけを押す。確かめたあとのコミットは要約に入っていない。)
+  head=$(gh pr view "$pr" --json headRefOid --jq .headRefOid 2>/dev/null) || { echo "⚠️ PR を読めないので飛ばします: $pr"; continue; }
+  if [[ "$head" != "$(jq -r .commit <<<"$row")" ]]; then
+    echo "⚠️ 確かめたあとにコミットが積まれたので飛ばします: $pr"
+    continue
+  fi
+  approve "$pr" "$head" && approved+=("$(jq -r .page <<<"$row")") && log "APPROVE(手動) $pr"
+done
+mark_approved 手動 "${approved[@]+"${approved[@]}"}"
