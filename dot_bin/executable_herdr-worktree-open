@@ -5,10 +5,10 @@
 # git-wt hook: open a worktree in Herdr right after `git wt` creates it.
 # (git-wt フック: `git wt` が worktree を作った直後に、Herdr でそれを開く。)
 #
-# One tab is one worktree here, and a worktree created by /git-branch otherwise
+# One tab is one worktree here, and a worktree created by /creating-git-branches otherwise
 # stays invisible until it is opened by hand. git-wt runs wt.hook in the new
 # worktree directory, so $PWD is the checkout to open.
-# (1タブ = 1 worktree で使っているが、/git-branch が作った worktree は手で
+# (1タブ = 1 worktree で使っているが、/creating-git-branches が作った worktree は手で
 #  open worktree するまでタブに出てこない。git-wt は wt.hook を新しい worktree の
 #  ディレクトリで実行するので、$PWD がそのまま開く対象になる。)
 #
