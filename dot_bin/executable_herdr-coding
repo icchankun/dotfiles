@@ -53,6 +53,14 @@ readonly WORKER_ARGS=(
   # (通知は無効。ユーザーとやりとりするのは driver だけなので、ワーカーが手を
   #  空けたことでユーザーを中断させない。)
   --settings '{"inputNeededNotifEnabled":false,"agentPushNotifEnabled":false}'
+  # Read-only commands pre-approved: with notifications off, a reviewer stopped at
+  # a permission prompt goes unnoticed and the review loop stalls.
+  # (読むだけのコマンドは事前に許可する。通知を切っているので、許可待ちで止まった
+  #  reviewer には誰も気づかず、往復が止まる。)
+  --allowedTools Read Grep Glob Agent Skill SendMessage
+  "Bash(git diff:*)" "Bash(git status:*)" "Bash(git log:*)" "Bash(git show:*)"
+  "Bash(git config --get:*)" "Bash(git rev-parse:*)" "Bash(gh repo view:*)"
+  "Bash(sh ~/.claude/skills/reviewing-git-diffs/scripts/snapshot.sh)"
 )
 
 # How long to wait for a freshly split pane to become a usable shell.
