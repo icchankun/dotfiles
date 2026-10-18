@@ -67,6 +67,11 @@
             "type": "command",
             "command": "~/.bin/herdr-tab-rename",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "~/.bin/dev-flow-hook context",
+            "timeout": 10
           }
         ]
       }
@@ -78,6 +83,22 @@
             "type": "command",
             "command": "~/.bin/rename-cc-session",
             "async": true
+          },
+          {
+            "type": "command",
+            "command": "~/.bin/dev-flow-hook stop",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.bin/dev-flow-hook prompt",
+            "timeout": 10
           }
         ]
       }
