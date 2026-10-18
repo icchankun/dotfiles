@@ -1,0 +1,50 @@
+#!/bin/sh
+
+# =============================================================================
+# dev-flow-hook
+# Claude Code hook for the running-dev-flow skill's state file.
+# (running-dev-flow の状態ファイル dev-flow.md を扱う Claude Code の hook。)
+#
+# The file lives in the worktree's own git dir, so it is never committed and goes
+# away with `git wt -D`.
+# (ファイルは worktree ごとの git dir に置くので commit されず、git wt -D で消える。)
+#
+# Usage / 使い方:
+#   dev-flow-hook context   SessionStart: print the file so the session resumes from it
+#                           (中身を出力し、コンパクトや /clear の後も続きから動けるようにする)
+#   dev-flow-hook stop      Stop: block while the state is 作業中 and steps remain
+#                           (状態が「作業中」で未完了の手順があれば、終わらせない)
+#   dev-flow-hook prompt    UserPromptSubmit: turn ユーザー待ち back into 作業中
+#                           (ユーザーが返事をしたら「ユーザー待ち」を「作業中」に戻す)
+#
+# Stop only blocks on 作業中: a driver waiting for its reviewer or for the user has
+# to end its turn to receive the reply.
+# (止めるのは「作業中」のときだけ。reviewer やユーザーの返事を待つ driver は、
+#  ターンを終えないと返事を受け取れないため。)
+# =============================================================================
+
+set -eu
+
+input=$(cat)
+dir=$(git rev-parse --absolute-git-dir 2>/dev/null) || exit 0
+file="$dir/dev-flow.md"
+[ -f "$file" ] || exit 0
+
+case "${1:-}" in
+  context)
+    printf '%s\n\n' "この worktree の dev-flow.md（${file}）。手順と状態を読み、続きから進める。"
+    cat "$file"
+    ;;
+  stop)
+    # 一度止めたあとの Stop では止めない。止め続けると抜け出せなくなる
+    printf '%s' "$input" | grep -q '"stop_hook_active": *true' && exit 0
+    state=$(sed -n 's/^状態: *//p' "$file" | head -n 1)
+    [ "$state" = "作業中" ] || exit 0
+    grep -q '^- \[ \]' "$file" || exit 0
+    printf '{"decision":"block","reason":"dev-flow.md の手順が残っています。次の手順に進むか、待つなら状態を「reviewer 待ち」か「ユーザー待ち」に書き換えてください。ユーザーの承認を得ていない確認があるなら、先へ進まず「ユーザー待ち」にして止まってください: %s"}\n' "$file"
+    ;;
+  prompt)
+    # エージェントに戻させると忘れ、Stop で止められずに後続の手順を飛ばして終わるため、ここで戻す
+    sed -i '' 's/^状態: *ユーザー待ち$/状態: 作業中/' "$file"
+    ;;
+esac
