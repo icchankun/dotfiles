@@ -1,6 +1,6 @@
 # セッション開始時の手順
 
-以下のいずれかが渡された場合は `/creating-git-branches` で branch・worktree を作成してから作業を開始する：
+以下のいずれかが渡された場合は `/dispatching-tasks` で branch・worktree を作り、その worktree の driver に引き継ぐ：
 - GitHub Issue のリンク
 - Notion チケットのリンク
 - PR を前提とした実装方針
