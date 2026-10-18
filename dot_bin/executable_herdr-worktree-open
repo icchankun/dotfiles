@@ -2,8 +2,10 @@
 
 # =============================================================================
 # herdr-worktree-open
-# git-wt hook: open a worktree in Herdr right after `git wt` creates it.
-# (git-wt フック: `git wt` が worktree を作った直後に、Herdr でそれを開く。)
+# git-wt hook: open a worktree in Herdr right after `git wt` creates it, with a
+# Claude driver in its first pane.
+# (git-wt フック: `git wt` が worktree を作った直後に、Herdr でそれを開き、
+#  最初のペインで Claude を driver として起動する。)
 #
 # One tab is one worktree here, and a worktree created by /creating-git-branches otherwise
 # stays invisible until it is opened by hand. git-wt runs wt.hook in the new
@@ -30,6 +32,33 @@ command -v herdr >/dev/null 2>&1 || exit 0
 # (開けなかったことで、成功した `git wt` をエラーにしない)
 opened=$(herdr worktree open --path "$PWD" --no-focus 2>/dev/null) || exit 0
 
+workspace=$(printf '%s' "$opened" | jq -r 'select(.result.already_open != true) | .result.workspace.workspace_id // empty' 2>/dev/null) || exit 0
+[ -n "$workspace" ] || exit 0
+
+# A Claude session starts in the workspace's first pane as its driver, so the
+# session that created the worktree can hand the task over (/handover) and step
+# back. The name follows herdr-agent-name, which is how the handover addresses it.
+# A freshly opened pane is not a usable shell yet, so the start is retried.
+# (worktree を作ったセッションが /handover で作業を渡して手を離せるよう、
+#  ワークスペースの最初のペインで Claude を driver として起動する。名前は
+#  herdr-agent-name に従い、handover の宛先になる。開いた直後のペインはまだ
+#  シェルとして使えないので、起動を試し直す。)
+if command -v claude >/dev/null 2>&1 && command -v herdr-agent-name >/dev/null 2>&1; then
+  root=$(herdr pane list --workspace "$workspace" 2>/dev/null | jq -r '.result.panes[0].pane_id // empty' 2>/dev/null) || root=
+  if [ -n "$root" ]; then
+    name=$(herdr-agent-name driver "$root")
+    # start は Claude の起動を待つうちに失敗を返すことがあるので、立ったかは get で見る
+    attempt=0
+    while [ "$attempt" -lt 20 ]; do
+      herdr agent start "$name" --kind claude --pane "$root" -- -n "$name" >/dev/null 2>&1 && break
+      herdr agent get "$name" >/dev/null 2>&1 && break
+      attempt=$((attempt + 1))
+      sleep 0.25
+    done
+    herdr agent get "$name" >/dev/null 2>&1 && printf 'driver: %s\n' "$name"
+  fi
+fi
+
 # lazygit gets a tab of its own in the worktree's workspace, so the git state is
 # one tab away from the start. A worktree that was already open has its lazygit
 # tab already, and opening another would stack them up.
@@ -37,8 +66,6 @@ opened=$(herdr worktree open --path "$PWD" --no-focus 2>/dev/null) || exit 0
 #  タブ1つ分の移動で見られるようにする。すでに開いていた worktree には
 #  lazygit のタブも既にあり、もう1つ開くと重なっていく。)
 command -v lazygit >/dev/null 2>&1 || exit 0
-workspace=$(printf '%s' "$opened" | jq -r 'select(.result.already_open != true) | .result.workspace.workspace_id // empty' 2>/dev/null) || exit 0
-[ -n "$workspace" ] || exit 0
 pane=$(herdr tab create --workspace "$workspace" --cwd "$PWD" --label lazygit --no-focus 2>/dev/null | jq -r '.result.root_pane.pane_id // empty' 2>/dev/null) || exit 0
 [ -n "$pane" ] || exit 0
 herdr pane run "$pane" lazygit >/dev/null 2>&1 || true
