@@ -10,3 +10,5 @@ python = "latest"
 ruby = "latest"
 betterleaks = "latest"
 "github:microsoft/apm" = "0.31.0"
+# capturing-screens が画面の撮影に使う
+"npm:@playwright/cli" = "latest"
