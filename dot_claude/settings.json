@@ -124,5 +124,6 @@
   "remoteControlAtStartup": true,
   "voiceEnabled": true,
   "agentPushNotifEnabled": true,
-  "inputNeededNotifEnabled": true
+  "inputNeededNotifEnabled": true,
+  "cleanupPeriodDays": 14
 }
