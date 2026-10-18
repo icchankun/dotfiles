@@ -7,6 +7,8 @@
 
 上記に該当しない場合（調査・質問・簡単な設定変更など）は、branch を作成せずそのまま対応する。
 
+worktree の作成・削除は `git wt` で行う。`git worktree add` / `git worktree remove` を直接使うと、Herdr で開くフックが走らない。
+
 # Herdr のペイン間でやりとりする手順
 
 相手が Claude セッションなら `SendMessage` を使う。宛先は `ListAgents` に出る名前で、Herdr の pane ID に役割を付けた形（`wC:p2` の driver なら `wc-p2-driver`、その reviewer なら `wc-p2-reviewer`）に揃えてある。
