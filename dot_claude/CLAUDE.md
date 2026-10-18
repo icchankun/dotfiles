@@ -18,3 +18,7 @@
 会話の外に残る文章（コミットメッセージ、PR、レビューへの返信、ドキュメント、コードコメント、Notion）は、不要な文を省き、冗長な文は簡潔にしてから出す。そのうえで AI が書いたように見える癖を避ける。日本語は `humanizer-ja`、英語は `humanizer:humanizer` の観点で見直す。
 
 この会話での返答は対象外で、caveman の書き方に従う。
+
+# skill を入れるとき
+
+`find-skills` で見つけた skill は `npx skills add` で入れず、dotfiles の `dot_apm/apm.yml` に追記して apm で入れる。

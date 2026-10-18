@@ -28,6 +28,11 @@ dependencies:
       ref: 9eb521456ac0d19d3ab3d9d7cea3cca10baa8a4c # v0.8.2
       skills:
         - herdr
+    # インストールは `npx skills add` を使わず、この apm.yml に追記する
+    - git: vercel-labs/skills
+      ref: 13e4063a1cf913f5606d57d42ab83a86f5001e04
+      skills:
+        - find-skills
     - git: cursor/plugins
       ref: e46364b8be46000b7df0f260550cd712afbb8d36
       path: pstack
