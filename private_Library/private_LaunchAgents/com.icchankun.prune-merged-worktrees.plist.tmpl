@@ -14,7 +14,7 @@
   <key>EnvironmentVariables</key>
   <dict>
     <key>PATH</key>
-    <string>{{ .chezmoi.homeDir }}/.bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <string>{{ .chezmoi.homeDir }}/.bin:{{ .chezmoi.homeDir }}/.local/share/mise/shims:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
   </dict>
 
   <!-- Every 15 minutes / 15分ごと -->
