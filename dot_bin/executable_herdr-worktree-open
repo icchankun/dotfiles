@@ -28,9 +28,26 @@ set -eu
 [ "${HERDR_ENV:-}" = 1 ] || exit 0
 command -v herdr >/dev/null 2>&1 || exit 0
 
-# A failure to open must not turn a successful `git wt` into an error
-# (開けなかったことで、成功した `git wt` をエラーにしない)
-opened=$(herdr worktree open --path "$PWD" --no-focus 2>/dev/null) || exit 0
+# Herdr looks the worktree up from the repository it is called from, which is
+# the calling session's repository when `git wt` ran in another one. Passing
+# the worktree's own repository makes it findable; the worktree itself is
+# refused, since a linked worktree opens from its parent's workspace.
+# (Herdr は呼び出し元のリポジトリから worktree を探す。別のリポジトリで `git wt`
+#  したときは、呼び出したセッションのリポジトリから探してしまう。worktree の元の
+#  リポジトリを渡せば見つかる。worktree 自身を渡すと、親のワークスペースから開く
+#  必要があるとして断られる。)
+repo_root=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)") || exit 0
+
+# A failure to open must not turn a successful `git wt` into an error, but it
+# is reported so a missing workspace does not go unnoticed.
+# (開けなかったことで、成功した `git wt` をエラーにしない。ただ、ワークスペースが
+#  開かなかったことに気づけるよう、1行で知らせる。)
+err=$(mktemp) || exit 0
+trap 'rm -f "$err"' EXIT
+opened=$(herdr worktree open --cwd "$repo_root" --path "$PWD" --no-focus 2>"$err") || {
+  printf 'herdr-worktree-open: could not open %s in Herdr: %s\n' "$PWD" "$(cat "$err")" >&2
+  exit 0
+}
 
 workspace=$(printf '%s' "$opened" | jq -r 'select(.result.already_open != true) | .result.workspace.workspace_id // empty' 2>/dev/null) || exit 0
 [ -n "$workspace" ] || exit 0
