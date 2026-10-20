@@ -1,5 +1,5 @@
 lockfile_version: '1'
-generated_at: '2026-10-20T17:37:10.724510+00:00'
+generated_at: '2026-10-20T23:31:00.211119+00:00'
 apm_version: 0.31.0
 dependencies:
 - repo_url: anthropics/claude-plugins-official
@@ -595,9 +595,9 @@ dependencies:
 - repo_url: icchankun/skills
   name: icchankun-skills
   host: github.com
-  resolved_commit: 94c568de3dc5ad0dd241016bb3017ca023028097
+  resolved_commit: 944eabe11eb5b178a0c8473071180de573da6efc
   resolved_ref: main
-  version: 94c568d
+  version: 944eabe
   package_type: marketplace_plugin
   deployed_files:
   - .claude/skills/capturing-screens
@@ -687,7 +687,7 @@ dependencies:
     .claude/skills/reviewing-writing/textlintrc.json: sha256:2005a62818e93015b12b4095c211fc0628e15c3e7f778b37133197f9db5285bf
     .claude/skills/running-dev-flow/SKILL.md: sha256:130940866dca0e80cdd68f17b8b1a2f071189fa3b3ec54f1f9986c2fee98b22f
     .claude/skills/uploading-pr-media/SKILL.md: sha256:8e4f47e571ee6672151f7ed7c1b4edc604080da8cc70c8de8990d7ef7a3e6d23
-  content_hash: sha256:8d345e92e0ff68a9fa6b1c5c430d215ec639357f9bd112566e264722a6279f9b
+  content_hash: sha256:81c472a42555cbfa3d7e9df82eadf286240625e57fa39def4cbfcc0c59e7561d
 - repo_url: microsoft/playwright-cli
   name: playwright-cli
   host: github.com
