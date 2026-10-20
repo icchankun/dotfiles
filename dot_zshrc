@@ -38,6 +38,9 @@ source ~/.zsh/functions.zsh
 # aliases
 source ~/.zsh/aliases.zsh
 
+# keep develop / main current when entering a repository
+source ~/.zsh/git-auto-sync.zsh
+
 # machine-local config (chezmoi-unmanaged, loaded only if present)
 [ -f ~/.zsh/local.zsh ] && source ~/.zsh/local.zsh
 
