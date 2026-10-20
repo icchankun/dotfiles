@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+
+# =============================================================================
+# git-auto-sync
+# Fast-forward the local base branch (develop, or else the default branch) to
+# origin when it is safe. Run in the background by the zsh chpwd hook.
+# (ベースのブランチ（develop、なければデフォルトブランチ）を、安全なときだけ
+#  origin まで fast-forward する。zsh の chpwd フックが裏で動かす。)
+#
+# Usage / 使い方:
+#   git-auto-sync [REPORT_FILE]
+#     REPORT_FILE  A one-line result is appended here for the shell to print.
+#                  (結果の1行をここに書く。シェルが次のプロンプトで表示する。)
+#
+# Only fast-forwards, so local commits are never rewritten. A checkout of the
+# base branch is moved only when it has no changes to tracked files; a base
+# branch that is not checked out anywhere only has its ref moved. Feature
+# branches are never touched.
+# (fast-forward だけなので、手元のコミットは書き換えない。ベースのブランチの
+#  checkout は、追跡しているファイルに変更がないときだけ進める。どこにも checkout
+#  されていなければ、ref だけを進める。作業用のブランチには触らない。)
+#
+# Runs at most once every 10 minutes per repository, and never waits for a
+# password: a fetch that would ask for one fails and nothing happens.
+# (同じリポジトリでは10分に1回まで。パスワードは待たない。聞かれる fetch は
+#  失敗させ、何もしない。)
+#
+# It runs just because a directory was entered, so a repository that came from
+# somewhere else must not get to run code: only repositories under
+# GIT_AUTO_SYNC_ROOTS whose origin is on GitHub are synced, a repository whose
+# own config has any key outside a short list of plain settings is skipped (a
+# denylist of command keys can never be complete), and fsmonitor, hooks and the
+# configured ssh command are turned off for every git call.
+# (ディレクトリに入っただけで動くので、よそから来たリポジトリにコードを動かさせない。
+#  GIT_AUTO_SYNC_ROOTS の下で origin が GitHub のリポジトリだけを対象にする。
+#  リポジトリの設定に、決めた普通の設定以外の項目が1つでもあれば飛ばす（コマンドを
+#  指す項目を並べる方式では抜けが出る）。どの git の呼び出しでも fsmonitor・hook・
+#  設定された ssh のコマンドを切る。)
+# =============================================================================
+
+set -euo pipefail
+
+report="${1:-/dev/null}"
+readonly INTERVAL=600
+read -r -a roots <<<"${GIT_AUTO_SYNC_ROOTS:-$HOME/workspace $HOME/.local/share/chezmoi}"
+
+# Every worktree that git is run in must pass: under a root, and with nothing
+# but plain settings in its config.
+# (git を動かす worktree は、どれも通す必要がある: ルートの下にあり、設定が普通の
+#  項目だけであること。)
+under_roots() {
+  local root
+  for root in "${roots[@]}"; do
+    [[ "$1/" == "$root/"* ]] && return 0
+  done
+  return 1
+}
+plain_config() {
+  local keys
+  keys="$(git -C "$1" config --local --name-only --list 2>/dev/null; git -C "$1" config --worktree --name-only --list 2>/dev/null || true)"
+  ! grep -Eviq "$PLAIN" <<<"$keys"
+}
+readonly PLAIN='^(core\.(repositoryformatversion|filemode|bare|logallrefupdates|ignorecase|precomposeunicode|commentchar)|remote\.origin\.(url|fetch|pushurl)|branch\..+\.(remote|merge|gh-merge-base|vscode-merge-base|github-pr-owner-number)|extensions\.worktreeconfig|user\.(name|email))$'
+
+under_roots "$PWD" || exit 0
+
+git() {
+  GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND="ssh -o BatchMode=yes -o ConnectTimeout=5" \
+    command git -c core.fsmonitor=false -c core.hooksPath=/dev/null -c core.sshCommand= "$@"
+}
+
+common="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || exit 0
+url="$(git remote get-url origin 2>/dev/null)" || exit 0
+[[ "$url" =~ ^(https://github\.com/|git@github\.com:|ssh://git@github\.com/) ]] || exit 0
+plain_config "$PWD" || exit 0
+
+stamp="$common/auto-sync-at"
+if [[ -f "$stamp" ]] && (( $(date +%s) - $(stat -f %m "$stamp") < INTERVAL )); then
+  exit 0
+fi
+touch "$stamp"
+
+if git show-ref --verify --quiet refs/remotes/origin/develop; then
+  base=develop
+else
+  base="$(git symbolic-ref --quiet refs/remotes/origin/HEAD 2>/dev/null)" || base=refs/remotes/origin/main
+  base="${base#refs/remotes/origin/}"
+fi
+# The name comes from the repository, so it must be a plain branch name and not
+# something git would read as an option.
+# (名前はリポジトリから来るので、git がオプションとして読むものではなく、普通の
+#  ブランチ名であることを確かめる。)
+[[ "$base" =~ ^[A-Za-z0-9._/][A-Za-z0-9._/-]*$ ]] && git check-ref-format --branch "$base" >/dev/null 2>&1 || exit 0
+
+git fetch --quiet origin -- "refs/heads/$base:refs/remotes/origin/$base" 2>/dev/null || exit 0
+
+# Full ref names, since a tag or a branch named like origin/main would make the
+# short names point somewhere else.
+# (完全な ref の名前を使う。main という名前のタグや origin/main という名前の
+#  ブランチがあると、短い名前は別のものを指すため。)
+git show-ref --verify --quiet "refs/heads/$base" || exit 0
+local_ref="refs/heads/$base" remote_ref="refs/remotes/origin/$base"
+behind="$(git rev-list --count "$local_ref..$remote_ref")"
+(( behind > 0 )) || exit 0
+git merge-base --is-ancestor "$local_ref" "$remote_ref" || exit 0
+
+# The directory name is printed to the terminal, so drop anything that is not printable.
+# (ディレクトリ名は端末に出すので、表示できない文字を取り除く。)
+name="$(basename "$(dirname "$common")" | LC_ALL=C tr -cd '[:alnum:]._-')"
+checkout="$(git worktree list --porcelain | awk -v b="branch refs/heads/$base" '/^worktree /{p=substr($0,10)} $0==b{print p}')"
+
+if [[ -n "$checkout" ]]; then
+  under_roots "$checkout" && plain_config "$checkout" || exit 0
+  [[ -z "$(git -C "$checkout" status --porcelain --untracked-files=no)" ]] || exit 0
+  git -C "$checkout" merge --ff-only --quiet "$remote_ref"
+else
+  git update-ref "$local_ref" "$remote_ref"
+fi
+printf '⬇️ %s: %s を %d コミット進めました\n' "$name" "$base" "$behind" >>"$report"
