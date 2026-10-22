@@ -15,22 +15,22 @@ dependencies:
       skills:
         - modern-web-guidance
     - git: microsoft/playwright-cli
-      ref: 9b118a1a737662fa118d591b5687340b86005d5c
+      ref: b85c7a736bb473bf55b584e54a09ffa698d6d871 # v0.1.22
       skills:
         - playwright-cli
     # 拡張本体は `gh extension install github/gh-stack` が別途必要
     - git: github/gh-stack
-      ref: 14fc42ed9b6c376a53b2f999f138d3bd26dac546
+      ref: 29a36d314be664583705f18e41cebdf2b61ad514 # v0.2.1
       skills:
         - gh-stack
     # skill の内容は `herdr --skill` の出力と同一。本体を更新したら ref も揃える
     - git: herdrdev/herdr
-      ref: 9eb521456ac0d19d3ab3d9d7cea3cca10baa8a4c # v0.8.2
+      ref: 065ef9d6a531c49fb8bee7e818ef837065b21ee9 # v0.9.1
       skills:
         - herdr
     # インストールは `npx skills add` を使わず、この apm.yml に追記する
     - git: vercel-labs/skills
-      ref: 13e4063a1cf913f5606d57d42ab83a86f5001e04
+      ref: a80e4c9d12d607631249d4d7d059f835d4b2f13a # v1.7.4
       skills:
         - find-skills
     - git: cursor/plugins
