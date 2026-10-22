@@ -13,3 +13,5 @@ betterleaks = "latest"
 # capturing-screens が画面の撮影に使う
 "npm:@playwright/cli" = "latest"
 lazygit = "latest"
+ffmpeg = "latest"
+gh = "latest"
