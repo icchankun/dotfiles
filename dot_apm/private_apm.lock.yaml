@@ -1,5 +1,5 @@
 lockfile_version: '2'
-generated_at: '2026-10-24T22:46:15.791761+00:00'
+generated_at: '2026-10-25T05:23:56.903500+00:00'
 apm_version: 0.31.0
 dependencies:
 - repo_url: anthropics/claude-plugins-official
@@ -271,7 +271,7 @@ dependencies:
   host: github.com
   resolved_commit: 29a36d314be664583705f18e41cebdf2b61ad514
   resolved_ref: 29a36d314be664583705f18e41cebdf2b61ad514
-  version: unknown
+  version: 0.0.0
   package_type: skill_bundle
   deployed_files:
   - .claude/skills/gh-stack
@@ -595,9 +595,9 @@ dependencies:
 - repo_url: icchankun/skills
   name: icchankun-skills
   host: github.com
-  resolved_commit: 27f7665a863e57729dadbacc59536b5a092872a1
+  resolved_commit: 940f7177d36b717855330f7a39f3cfcaf6986ada
   resolved_ref: main
-  version: 27f7665
+  version: 940f717
   package_type: marketplace_plugin
   deployed_files:
   - .claude/skills/capturing-screens
@@ -615,6 +615,7 @@ dependencies:
   - .claude/skills/checking-pr-checklists/checklists/ui.md
   - .claude/skills/committing-git-changes
   - .claude/skills/committing-git-changes/SKILL.md
+  - .claude/skills/committing-git-changes/references/diagrams.md
   - .claude/skills/committing-git-changes/references/templates.md
   - .claude/skills/committing-git-changes/scripts/check_gitmoji.py
   - .claude/skills/creating-git-branches
@@ -633,10 +634,14 @@ dependencies:
   - .claude/skills/humanizer-ja/SKILL.md
   - .claude/skills/planning-manual-checks
   - .claude/skills/planning-manual-checks/SKILL.md
+  - .claude/skills/planning-manual-checks/references/viewpoints.md
+  - .claude/skills/recording-browser-videos
+  - .claude/skills/recording-browser-videos/SKILL.md
+  - .claude/skills/recording-browser-videos/scripts/decor.js
+  - .claude/skills/recording-browser-videos/scripts/lib.sh
+  - .claude/skills/recording-browser-videos/scripts/record-scenes.sh
   - .claude/skills/recording-manual-checks
   - .claude/skills/recording-manual-checks/SKILL.md
-  - .claude/skills/recording-manual-checks/scripts/lib.sh
-  - .claude/skills/recording-manual-checks/scripts/record-checks.sh
   - .claude/skills/resolving-pr-reviews
   - .claude/skills/resolving-pr-reviews/SKILL.md
   - .claude/skills/resolving-pr-reviews/scripts/fetch_pr_comments.rb
@@ -660,7 +665,7 @@ dependencies:
   - .claude/skills/uploading-pr-media
   - .claude/skills/uploading-pr-media/SKILL.md
   deployed_file_hashes:
-    .claude/skills/capturing-screens/SKILL.md: sha256:07b8aec58579a5e653f7fe9f64a0434d27b90ae42c6bc8dfcefa96c79127390c
+    .claude/skills/capturing-screens/SKILL.md: sha256:a1b8531c1cac7f049580aebbbf21034196c3de8644f5cfceffec2a9751f2d07d
     .claude/skills/checking-pr-checklists/SKILL.md: sha256:3acb7e9775380013cc39f8e947bff11c374b2b02623fd927fde29a48d3b493d0
     .claude/skills/checking-pr-checklists/checklists/api.md: sha256:20b929d47f74cf402f65e3d6c1850a6966b63d330394a969aeb139023ad61a1e
     .claude/skills/checking-pr-checklists/checklists/auth.md: sha256:77086a34a33a80975a753cb950702974203748933def7e0837154475ed09f58d
@@ -671,21 +676,25 @@ dependencies:
     .claude/skills/checking-pr-checklists/checklists/feature-flag.md: sha256:fedbd3d7c13215af6034dc0c0b0a6f1006a156235b3fcf9a290be18ec312573d
     .claude/skills/checking-pr-checklists/checklists/migration.md: sha256:2ae9d2266a73b0d431b47eb9cc231445288551523573b05de17e224f841e4e5e
     .claude/skills/checking-pr-checklists/checklists/ui.md: sha256:9b3e2cc53035e55e72eb03a0c64f92ecb8840bf296419e238525cb8a82750a04
-    .claude/skills/committing-git-changes/SKILL.md: sha256:222c3f28f391da3c8fe9b0624ddcd1c1cbe6088aff1f49916dcad182ca22c5f3
-    .claude/skills/committing-git-changes/references/templates.md: sha256:5a92a9e2b95672806fcab6174d3bf9139bce121ba6b97c3a2cb64ffee417c52b
+    .claude/skills/committing-git-changes/SKILL.md: sha256:b601d1f31abcb21b89a92f1a4ee56dc787d6d6e055a653ad3e4efb7ee26249c6
+    .claude/skills/committing-git-changes/references/diagrams.md: sha256:e33a7318917a02f5355762ec5376fbee9f6dcaeb4c1f4f8ed5d8e871dbb51ed2
+    .claude/skills/committing-git-changes/references/templates.md: sha256:0988a443069cba095d05edb122083f9bd42cfbcec2bbf9a6206b86bfaa195b3f
     .claude/skills/committing-git-changes/scripts/check_gitmoji.py: sha256:1fce5b77808742433de08d123fe745a383bc9b10aad43b1decad53be31607a92
     .claude/skills/creating-git-branches/SKILL.md: sha256:c01209b5eb8982e353fd438752b19c0b3621beed34e5b660defd8008b59acf0a
-    .claude/skills/creating-pull-requests/SKILL.md: sha256:649faf0fab3586f2d75e08a2477f9e2f43138a2d0750d13979eed0f8739d2179
+    .claude/skills/creating-pull-requests/SKILL.md: sha256:ac10c5b87d8e7bb74ed60c069032c48bd86b5e5f4f43363e45ac5a7247f26ead
     .claude/skills/dispatching-tasks/SKILL.md: sha256:c76653acbf06b69d9533458e077916d916ca3f601ad6174299e8dafa481da09c
     .claude/skills/following-repo-conventions/SKILL.md: sha256:f5826d3d51a32f40330b40ddbfc13f92198989c039bad10f7246a1bffea9039b
     .claude/skills/handover/SKILL.md: sha256:589d522fa333994a2a7776c4d75bc90f4d7b97ad965e5aaf4d2b9ff3cfd51e76
-    .claude/skills/herdr-coding/SKILL.md: sha256:326db50ea6d9c92f57290019ea2b48b152feb6a9b5554ff6fd70e5bd5c2835b2
+    .claude/skills/herdr-coding/SKILL.md: sha256:be082ef0da1ee2b66e578c40f785f1b5baf3d469d1ed6632e819dadba7fcc420
     .claude/skills/humanizer-ja/SKILL.md: sha256:f4990e76f70de18897242a7f6f1ba4cbcb8d24d059ce18ea4d1ff800f9fb1ae7
-    .claude/skills/planning-manual-checks/SKILL.md: sha256:9ebfebabd1b11b003164ae9114827febd679695a0742e2b277b17d18c38c5f53
-    .claude/skills/recording-manual-checks/SKILL.md: sha256:5c6fe1dfaf3dbe506ef8b27f12c4e5be0bc3f95b5f7e34b5fe0d8041963f87ba
-    .claude/skills/recording-manual-checks/scripts/lib.sh: sha256:d02224ff8d34638d14c1acd9bbffcd119d66d7936c87fc7be6fa61ce2d4402a3
-    .claude/skills/recording-manual-checks/scripts/record-checks.sh: sha256:440dc26e8853dc65413b0b6e95b1aefbbbf1c65ebaadbd22a939dce533ce581c
-    .claude/skills/resolving-pr-reviews/SKILL.md: sha256:2d12c419486863980c647e35be1e42bd13c8d003cdce0eaaab1fa90e0d377d4b
+    .claude/skills/planning-manual-checks/SKILL.md: sha256:8b04e813ed99a54b0d8f6cf181f0707fe151e5860d659a6e49e80384d6ce8cb7
+    .claude/skills/planning-manual-checks/references/viewpoints.md: sha256:9fb8ba7eead294d2be98f39c0cd9b0cf839c32e70cd9d6cc03e4920ab5ab5969
+    .claude/skills/recording-browser-videos/SKILL.md: sha256:a93524b3f58e68ea772d9fb46a53bbdace7814ac96606ddf9bff97315e0cffd4
+    .claude/skills/recording-browser-videos/scripts/decor.js: sha256:eaee0a5eff0981e2e1085bd541e5e86bcc09cf77221b928863d1ad6b8171a13c
+    .claude/skills/recording-browser-videos/scripts/lib.sh: sha256:33841b7367b85178d8cb5e729f79c2b5c7c5a511081328c544873b2dafec74b2
+    .claude/skills/recording-browser-videos/scripts/record-scenes.sh: sha256:88186d8b38427130e3e207093db2dd93e1109a0a37efb392f4f1339e771d1b63
+    .claude/skills/recording-manual-checks/SKILL.md: sha256:27609c1db8128390af09c2540373abb1e0718bc29cda196c3ceeedf1f746eb21
+    .claude/skills/resolving-pr-reviews/SKILL.md: sha256:be5a483d8b267401dee5cf517de74a1e800ca98ac46d15ea77775aef37f76a20
     .claude/skills/resolving-pr-reviews/scripts/fetch_pr_comments.rb: sha256:2d68d070b24d6f5728fe7be507dbeaf90ab7116fa6a7726ef45f050552a1ac6e
     .claude/skills/resolving-pr-reviews/scripts/wait_for_copilot_review.rb: sha256:e6fd6368c40449daccaf85274b3f9c9de9e1eef0c8b733c228c90976f52b576e
     .claude/skills/reviewing-git-diffs/SKILL.md: sha256:ef7c9f6a00aa586f59ba799152062523cae5d561d0861b54558933721dc75e35
@@ -695,18 +704,18 @@ dependencies:
     .claude/skills/reviewing-pull-requests/notion/templates/feature.md: sha256:cf2764a271043bb411d5730f9ebe0a00449399644bbc729366ab6a81d88ca740
     .claude/skills/reviewing-pull-requests/notion/templates/library.md: sha256:a656dba268f5bde5ca90a8f8407657a174259aad30c9ad25cbc0660a7efdb0ea
     .claude/skills/reviewing-pull-requests/notion/templates/stopped.md: sha256:a16e7fc379eb476500297f7a680e6effe83ca866a0911b1f392c43703a592259
-    .claude/skills/reviewing-writing/SKILL.md: sha256:ab064d23cf0bd8c466501ebd48b7e7c908311eec1af99325af9389c8156a4ca0
+    .claude/skills/reviewing-writing/SKILL.md: sha256:0e5243c2f808987049ccf5d00c1d4cc43faa0bd882eba693f5f50425705645de
     .claude/skills/reviewing-writing/textlintrc.json: sha256:2005a62818e93015b12b4095c211fc0628e15c3e7f778b37133197f9db5285bf
-    .claude/skills/running-dev-flow/SKILL.md: sha256:c8dc4f2497a437fe3bedc58859accbff59a5fb01e941216cfd16e9cb4ed16137
-    .claude/skills/stacking-pull-requests/SKILL.md: sha256:86a049fab26a1d476553d778063741b9d4295193031efc6470d9e26ebb348b12
+    .claude/skills/running-dev-flow/SKILL.md: sha256:aab081d279ac9d96e6cb460f4a413ca6b4ecd26cab17a862d42255e8f80a6615
+    .claude/skills/stacking-pull-requests/SKILL.md: sha256:2762e5d388391df894c9ae63bf69799e80d160c67d9bca99e5d304181129df14
     .claude/skills/uploading-pr-media/SKILL.md: sha256:e565b4ba2b8376fe9e662e49963fd08c0b89717746f7a3f72a514d61efd24916
-  content_hash: sha256:7abc444ffe8fd5189b9667309e4f9f517fb9f6e508f275e13b5d66f01883c647
+  content_hash: sha256:d23aa712f026102766883e180cf67577e12d009602d51b5d82a6fc5eb5ded7c8
 - repo_url: microsoft/playwright-cli
   name: playwright-cli
   host: github.com
   resolved_commit: b85c7a736bb473bf55b584e54a09ffa698d6d871
   resolved_ref: b85c7a736bb473bf55b584e54a09ffa698d6d871
-  version: unknown
+  version: 0.0.0
   package_type: skill_bundle
   deployed_files:
   - .claude/skills/playwright-cli
@@ -1022,7 +1031,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:07b8aec58579a5e653f7fe9f64a0434d27b90ae42c6bc8dfcefa96c79127390c
+  content_hash: sha256:a1b8531c1cac7f049580aebbbf21034196c3de8644f5cfceffec2a9751f2d07d
 - kind: project-relative
   target: claude
   value: .claude/skills/checking-pr-checklists
@@ -1247,7 +1256,16 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:222c3f28f391da3c8fe9b0624ddcd1c1cbe6088aff1f49916dcad182ca22c5f3
+  content_hash: sha256:b601d1f31abcb21b89a92f1a4ee56dc787d6d6e055a653ad3e4efb7ee26249c6
+- kind: project-relative
+  target: claude
+  value: .claude/skills/committing-git-changes/references/diagrams.md
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: sha256:e33a7318917a02f5355762ec5376fbee9f6dcaeb4c1f4f8ed5d8e871dbb51ed2
 - kind: project-relative
   target: claude
   value: .claude/skills/committing-git-changes/references/templates.md
@@ -1256,7 +1274,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:5a92a9e2b95672806fcab6174d3bf9139bce121ba6b97c3a2cb64ffee417c52b
+  content_hash: sha256:0988a443069cba095d05edb122083f9bd42cfbcec2bbf9a6206b86bfaa195b3f
 - kind: project-relative
   target: claude
   value: .claude/skills/committing-git-changes/scripts/check_gitmoji.py
@@ -1301,7 +1319,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:649faf0fab3586f2d75e08a2477f9e2f43138a2d0750d13979eed0f8739d2179
+  content_hash: sha256:ac10c5b87d8e7bb74ed60c069032c48bd86b5e5f4f43363e45ac5a7247f26ead
 - kind: project-relative
   target: claude
   value: .claude/skills/dispatching-tasks
@@ -1472,7 +1490,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:326db50ea6d9c92f57290019ea2b48b152feb6a9b5554ff6fd70e5bd5c2835b2
+  content_hash: sha256:be082ef0da1ee2b66e578c40f785f1b5baf3d469d1ed6632e819dadba7fcc420
 - kind: project-relative
   target: claude
   value: .claude/skills/herdr/SKILL.md
@@ -2768,7 +2786,16 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:9ebfebabd1b11b003164ae9114827febd679695a0742e2b277b17d18c38c5f53
+  content_hash: sha256:8b04e813ed99a54b0d8f6cf181f0707fe151e5860d659a6e49e80384d6ce8cb7
+- kind: project-relative
+  target: claude
+  value: .claude/skills/planning-manual-checks/references/viewpoints.md
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: sha256:9fb8ba7eead294d2be98f39c0cd9b0cf839c32e70cd9d6cc03e4920ab5ab5969
 - kind: project-relative
   target: claude
   value: .claude/skills/playground
@@ -2987,6 +3014,51 @@ deployments:
   content_hash: sha256:467b8ec1ad799591e099012711e072352395c0b897029200661e852374be9764
 - kind: project-relative
   target: claude
+  value: .claude/skills/recording-browser-videos
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/recording-browser-videos/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: sha256:a93524b3f58e68ea772d9fb46a53bbdace7814ac96606ddf9bff97315e0cffd4
+- kind: project-relative
+  target: claude
+  value: .claude/skills/recording-browser-videos/scripts/decor.js
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: sha256:eaee0a5eff0981e2e1085bd541e5e86bcc09cf77221b928863d1ad6b8171a13c
+- kind: project-relative
+  target: claude
+  value: .claude/skills/recording-browser-videos/scripts/lib.sh
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: sha256:33841b7367b85178d8cb5e729f79c2b5c7c5a511081328c544873b2dafec74b2
+- kind: project-relative
+  target: claude
+  value: .claude/skills/recording-browser-videos/scripts/record-scenes.sh
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: sha256:88186d8b38427130e3e207093db2dd93e1109a0a37efb392f4f1339e771d1b63
+- kind: project-relative
+  target: claude
   value: .claude/skills/recording-manual-checks
   runtime: null
   scope: project
@@ -3002,25 +3074,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:5c6fe1dfaf3dbe506ef8b27f12c4e5be0bc3f95b5f7e34b5fe0d8041963f87ba
-- kind: project-relative
-  target: claude
-  value: .claude/skills/recording-manual-checks/scripts/lib.sh
-  runtime: null
-  scope: project
-  owners:
-  - icchankun/skills
-  active_owner: icchankun/skills
-  content_hash: sha256:d02224ff8d34638d14c1acd9bbffcd119d66d7936c87fc7be6fa61ce2d4402a3
-- kind: project-relative
-  target: claude
-  value: .claude/skills/recording-manual-checks/scripts/record-checks.sh
-  runtime: null
-  scope: project
-  owners:
-  - icchankun/skills
-  active_owner: icchankun/skills
-  content_hash: sha256:440dc26e8853dc65413b0b6e95b1aefbbbf1c65ebaadbd22a939dce533ce581c
+  content_hash: sha256:27609c1db8128390af09c2540373abb1e0718bc29cda196c3ceeedf1f746eb21
 - kind: project-relative
   target: claude
   value: .claude/skills/resolving-pr-reviews
@@ -3038,7 +3092,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:2d12c419486863980c647e35be1e42bd13c8d003cdce0eaaab1fa90e0d377d4b
+  content_hash: sha256:be5a483d8b267401dee5cf517de74a1e800ca98ac46d15ea77775aef37f76a20
 - kind: project-relative
   target: claude
   value: .claude/skills/resolving-pr-reviews/scripts/fetch_pr_comments.rb
@@ -3155,7 +3209,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:ab064d23cf0bd8c466501ebd48b7e7c908311eec1af99325af9389c8156a4ca0
+  content_hash: sha256:0e5243c2f808987049ccf5d00c1d4cc43faa0bd882eba693f5f50425705645de
 - kind: project-relative
   target: claude
   value: .claude/skills/reviewing-writing/textlintrc.json
@@ -3182,7 +3236,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:c8dc4f2497a437fe3bedc58859accbff59a5fb01e941216cfd16e9cb4ed16137
+  content_hash: sha256:aab081d279ac9d96e6cb460f4a413ca6b4ecd26cab17a862d42255e8f80a6615
 - kind: project-relative
   target: claude
   value: .claude/skills/session-report
@@ -3236,7 +3290,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:86a049fab26a1d476553d778063741b9d4295193031efc6470d9e26ebb348b12
+  content_hash: sha256:2762e5d388391df894c9ae63bf69799e80d160c67d9bca99e5d304181129df14
 - kind: project-relative
   target: claude
   value: .claude/skills/typescript-best-practices
