@@ -1,5 +1,5 @@
 lockfile_version: '2'
-generated_at: '2026-10-26T00:10:19.743330+00:00'
+generated_at: '2026-10-27T00:07:47.910347+00:00'
 apm_version: 0.31.0
 dependencies:
 - repo_url: anthropics/claude-plugins-official
@@ -271,7 +271,7 @@ dependencies:
   host: github.com
   resolved_commit: 29a36d314be664583705f18e41cebdf2b61ad514
   resolved_ref: 29a36d314be664583705f18e41cebdf2b61ad514
-  version: 0.0.0
+  version: unknown
   package_type: skill_bundle
   deployed_files:
   - .claude/skills/gh-stack
@@ -718,7 +718,7 @@ dependencies:
   host: github.com
   resolved_commit: b85c7a736bb473bf55b584e54a09ffa698d6d871
   resolved_ref: b85c7a736bb473bf55b584e54a09ffa698d6d871
-  version: 0.0.0
+  version: unknown
   package_type: skill_bundle
   deployed_files:
   - .claude/skills/playwright-cli
