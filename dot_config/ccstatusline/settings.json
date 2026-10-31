@@ -24,15 +24,6 @@
         "type": "model",
         "color": "hex:88C0D0",
         "rawValue": true
-      },
-      {
-        "id": "2",
-        "type": "separator"
-      },
-      {
-        "id": "5",
-        "type": "git-branch",
-        "color": "hex:88C0D0"
       }
     ],
     [
@@ -49,6 +40,24 @@
         "rawValue": true
       },
       {
+        "id": "12b",
+        "type": "custom-text",
+        "customText": "（リセットまで ",
+        "color": "hex:88C0D0"
+      },
+      {
+        "id": "12c",
+        "type": "reset-timer",
+        "color": "hex:88C0D0",
+        "rawValue": true
+      },
+      {
+        "id": "12d",
+        "type": "custom-text",
+        "customText": "）",
+        "color": "hex:88C0D0"
+      },
+      {
         "id": "13",
         "type": "separator"
       },
@@ -63,24 +72,6 @@
         "type": "weekly-usage",
         "color": "hex:88C0D0",
         "rawValue": true
-      }
-    ],
-    [
-      {
-        "id": "7",
-        "type": "custom-command",
-        "commandPath": "bash ~/.claude/statusline-pr-url.sh",
-        "timeout": 5000,
-        "color": "hex:88C0D0"
-      },
-      {
-        "id": "8",
-        "type": "separator"
-      },
-      {
-        "id": "9",
-        "type": "git-ci-status",
-        "color": "hex:88C0D0"
       }
     ]
   ],
