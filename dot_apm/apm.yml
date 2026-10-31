@@ -23,11 +23,11 @@ dependencies:
       ref: 29a36d314be664583705f18e41cebdf2b61ad514 # v0.2.1
       skills:
         - gh-stack
-    # skill の内容は `herdr --skill` の出力と同一。本体を更新したら ref も揃える
-    - git: herdrdev/herdr
-      ref: 065ef9d6a531c49fb8bee7e818ef837065b21ee9 # v0.9.1
+    # Herdr.app の terminal を動かす hc の skill。本体を更新したら ref も揃える
+    - git: herdrdev/herdr-core
+      ref: 9e934dff8513710d3c5111fe28bc5b23564805db # v0.1.15
       skills:
-        - herdr
+        - herdr-core
     # インストールは `npx skills add` を使わず、この apm.yml に追記する
     - git: vercel-labs/skills
       ref: a80e4c9d12d607631249d4d7d059f835d4b2f13a # v1.7.4

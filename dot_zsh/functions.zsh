@@ -16,16 +16,15 @@ rm-wt() {
   git worktree remove "$target" "$@" && cd "$main_worktree"
 }
 
-# Herdrのペインで手動起動したClaude Codeに driver のセッション名を付ける。
-# セッション間メッセージの宛先とペインボーダーのラベルが一致し、宛先を探さずに済む。
-# 名前をSessionStartフックにも渡し、Herdr側のagent名を同じものに揃えさせる。
+# Herdr.appのterminalで起動したClaude Codeに driver のセッション名 (`t7-driver`) を付ける。
+# 名前に terminal の番地が入るので、セッション間メッセージの宛先を探さずに済む。
 # -n を明示した起動 (herdr-coding のレビュー役など) はワーカー側の名前を尊重して素通しする。
 claude() {
-  if [[ -n ${HERDR_PANE_ID:-} && ( $# -eq 0 || $1 == -* ) \
+  if [[ -n ${HC_TERMINAL_ID:-} && ( $# -eq 0 || $1 == -* ) \
         && " $* " != *" -n "* && " $* " != *" --name "* ]]; then
     local name
     name="$(herdr-agent-name)" || { command claude "$@"; return }
-    HERDR_AGENT_NAME="$name" command claude -n "$name" "$@"
+    command claude -n "$name" "$@"
   else
     command claude "$@"
   fi
