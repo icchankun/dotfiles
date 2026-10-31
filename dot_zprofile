@@ -3,8 +3,11 @@ eval "$(/opt/homebrew/bin/brew shellenv)"
 # GhosttyからはHerdrへ入る。Ghosttyのcommandで起動するとウィンドウの寸法が確定する前に
 # Herdrが立ち上がり、Cmdキーを押すたびにグリッドが約1/6に縮む。
 # .zshrcの末尾だとp10kのinstant promptが掴んだ端末を解放しないままexecするため
-# キー入力が効かなくなるので、対話初期化より前のここで入る
-if [[ -o interactive && -z ${HERDR_ENV:-} && ${TERM_PROGRAM:-} == ghostty ]] \
+# キー入力が効かなくなるので、対話初期化より前のここで入る。
+# Herdr.app (GUI) の中のzshも TERM_PROGRAM=ghostty を引き継ぐが HERDR_ENV は無いので、
+# バンドルIDで除外する。外さないとGUIの中でTUIのherdrが入れ子で立ち上がる
+if [[ -o interactive && -z ${HERDR_ENV:-} && ${TERM_PROGRAM:-} == ghostty \
+      && ${__CFBundleIdentifier:-} != dev.herdr.app ]] \
    && command -v herdr >/dev/null; then
   exec herdr
 fi
