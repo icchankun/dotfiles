@@ -49,7 +49,6 @@ class CcSessionRenamer
     return unless valid_title?(title)
 
     rename_cc_session(title)
-    rename_herdr_pane(title)
   end
 
   private
@@ -197,22 +196,12 @@ class CcSessionRenamer
     value.to_s.strip.empty?
   end
 
-  # ここで書くのはセッションのタイトルで、Herdr の agent 名や
+  # ここで書くのはセッションのタイトルで、claude -n で付けた名前や
   # ~/.claude/sessions/<pid>.json の name とは別物。SendMessage の宛先も statusline も
   # 後者を読んでいるので、生成タイトルを入れても宛先は見失われない。
   def rename_cc_session(title)
     entry = JSON.generate({ type: 'custom-title', customTitle: title, sessionId: cc_session_id })
     File.open(transcript_path, 'a') { |f| f.puts(entry) }
-  end
-
-  # Herdr のペインボーダーは 手動ペイン名 > agent ラベル > ターミナルタイトル の順に
-  # 表示を選ぶ。手動ペイン名に生成タイトルを入れておくと、ボーダーがそのペインの
-  # 作業内容を語る。agent 名は Herdr 側にも残るので、宛先は agent ラベルで引ける。
-  def rename_herdr_pane(title)
-    return unless ENV['HERDR_ENV'] == '1'
-    return if blank?(ENV['HERDR_PANE_ID'])
-
-    system('herdr', 'pane', 'rename', ENV['HERDR_PANE_ID'], title, out: File::NULL, err: File::NULL)
   end
 end
 

@@ -7,7 +7,7 @@
 #
 # Dependencies / 依存:
 #   - git, git-wt, gh（認証済み）, pgrep (macOS 標準)
-#   - herdr (optional / 任意。失敗を通知する)
+#   - osascript (macOS 標準。失敗を通知で知らせる)
 #
 # Usage / 使い方:
 #   prune-merged-worktrees [-n] [-q] [--root DIR] [--depth N]
@@ -210,8 +210,7 @@ delete_branch() {
 }
 
 notify_failure() {
-  command -v herdr >/dev/null 2>&1 || return 0
-  herdr notification show "🧹 prune-merged-worktrees" --body "$1" --sound request >/dev/null 2>&1 || true
+  osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title "🧹 prune-merged-worktrees"' -e 'end run' "$1" >/dev/null 2>&1 || true
 }
 
 deleted_total=0

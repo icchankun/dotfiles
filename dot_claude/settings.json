@@ -55,21 +55,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.claude/hooks/herdr-agent-state.sh session",
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "~/.bin/herdr-agent-rename",
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "~/.bin/herdr-tab-rename",
-            "timeout": 10
-          },
-          {
-            "type": "command",
             "command": "~/.bin/dev-flow-hook context",
             "timeout": 10
           }

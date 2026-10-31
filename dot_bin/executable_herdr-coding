@@ -6,7 +6,7 @@
 # (呼び出し元のペインが実装役を兼ね、その隣にレビュー役を立てる。)
 #
 # Dependencies / 依存:
-#   - herdr  https://herdr.dev
+#   - Herdr.app (herdr-app, hc)  https://herdr.dev
 #   - jq
 #   - herdr-agent-name
 #
@@ -18,24 +18,26 @@
 #     -h, --help         Show this help. (このヘルプを表示する。)
 #
 # Notes / 補足:
-#   - Panes are created without stealing focus, so the calling pane keeps it.
-#     (フォーカスは奪わないので、呼び出し元のペインに留まる。)
-#   - Workers start with `-n <agent name>`, so the Herdr agent name and the Claude
-#     session name match. Address them with SendMessage by that name instead of
-#     driving them through `herdr agent prompt`.
-#     (`-n <agent名>` 付きで起動するので、Herdr の agent 名と Claude のセッション名が
-#      一致する。ワーカーへは `herdr agent prompt` ではなく、その名前で SendMessage
-#      を送る。)
-#   - The reviewer is named after the *calling driver's* pane, not its own, so
-#     re-running reuses this driver's reviewer (see herdr-agent-name).
-#     (レビュー役の名前は自分ではなく呼び出した driver のペインから付くので、再実行
-#      すればその driver のレビュー役が再利用される。詳細は herdr-agent-name。)
+#   - Herdr.app moves focus to the pane it splits, so focus is put back on the
+#     calling pane afterwards.
+#     (Herdr.app は分割したペインにフォーカスを移すので、最後に呼び出し元へ戻す。)
+#   - Workers start with `-n <agent name>`, so they can be addressed with
+#     SendMessage by that name.
+#     (`-n <agent名>` 付きで起動するので、その名前で SendMessage を送れる。)
+#   - The reviewer is named after the *calling driver's* terminal, not its own,
+#     and labelled role=reviewer and driver=<terminal>, so re-running reuses this
+#     driver's reviewer (see herdr-agent-name). The label also keeps the reviewer
+#     out of the agent-notify mod's notifications.
+#     (レビュー役の名前は自分ではなく呼び出した driver の terminal から付き、
+#      role=reviewer と driver=<terminal> の label も付くので、再実行すればその
+#      driver のレビュー役が再利用される。詳細は herdr-agent-name。label は
+#      agent-notify mod がレビュー役を通知しないための目印にもなる。)
 #   - The tab ends up holding only the driver and its reviewer: any other pane is
-#     closed, and another driver sharing the tab is an error rather than
-#     something to close, since a driver is what a person talks to.
+#     closed, and another agent without a role sharing the tab is an error rather
+#     than something to close, since that is a driver a person talks to.
 #     (タブは driver とそのレビュー役だけになる。それ以外のペインは閉じるが、同じ
-#      タブに別の driver がいるときは閉じずにエラーで止める。driver は人がやりとり
-#      する相手のため。)
+#      タブに役割の label がない別の agent がいるときは閉じずにエラーで止める。
+#      それは人がやりとりする driver のため。)
 # =============================================================================
 
 set -euo pipefail
@@ -62,11 +64,6 @@ readonly WORKER_ARGS=(
   "Bash(git config --get:*)" "Bash(git rev-parse:*)" "Bash(gh repo view:*)"
   "Bash(sh ~/.claude/skills/reviewing-git-diffs/scripts/snapshot.sh)"
 )
-
-# How long to wait for a freshly split pane to become a usable shell.
-# (分割直後のペインがシェルとして使えるようになるまで待つ回数と間隔。)
-readonly START_ATTEMPTS=20
-readonly START_INTERVAL=0.25
 
 # The reviewer runs every round until the findings clear, so it defaults to the
 # cheaper model. The bug-finding agent inside the review command pins its own
@@ -96,130 +93,103 @@ parse_args() {
 }
 
 require_environment() {
-  [ "${HERDR_ENV:-}" = 1 ] || die "not running inside Herdr"
-  command -v herdr >/dev/null || die "herdr not found in PATH"
+  [ -n "${HC_TERMINAL_ID:-}" ] || die "not running inside Herdr.app"
+  command -v herdr-app >/dev/null || die "herdr-app not found in PATH"
+  command -v hc >/dev/null || die "hc not found in PATH"
   command -v jq >/dev/null || die "jq not found in PATH"
   command -v herdr-agent-name >/dev/null || die "herdr-agent-name not found in PATH"
 }
 
-# Split PANE ($1) in DIRECTION ($2) and print the new pane id.
-split_pane() {
-  herdr pane split --pane "$1" --direction "$2" --cwd "$PWD" --no-focus |
-    jq -er '.result.pane.pane_id'
+# Print the terminals of the tab this driver sits in, one JSON object per line.
+# (この driver がいるタブの terminal を1行1つの JSON で出力する。)
+tab_terminals() {
+  herdr-app ls | jq -c --arg self "$HC_TERMINAL_ID" '
+    .spaces[].tabs[] | select(any(.terminals[]; .terminal == $self)) | .terminals[]'
 }
 
-# Print the pane the agent NAMED ($1) runs in, or nothing when it is not running.
-# (NAME ($1) のエージェントが動いているペインを出力する。いなければ何も出さない。)
-agent_pane() {
-  herdr agent list | jq -r --arg name "$1" '
-    .result.agents[] | select(.name == $name) | .pane_id' | head -n 1
+# Print the live terminal of this driver's worker for ROLE ($1), or nothing.
+# (この driver の ROLE ($1) のワーカーの terminal を出力する。いなければ何も出さない。)
+worker_terminal() {
+  hc ls --json --label "role=$1" --label "driver=$HC_TERMINAL_ID" | jq -r '.terminals[0].address // empty'
 }
 
-# Start an agent NAMED ($1) in PANE ($2).
+# Start the worker for ROLE ($1) in a pane split from this driver toward
+# DIRECTION ($2), and label it as this driver's.
+# (この driver のペインを DIRECTION ($2) に分割して ROLE ($1) のワーカーを起動し、
+#  この driver のものだと分かる label を付ける。)
 start_agent() {
-  local name="$1" pane="$2" attempt
+  local role="$1" direction="$2" name pane argv opened terminal
+  name=$(herdr-agent-name "$role")
+  pane=$(jq -r --arg self "$HC_TERMINAL_ID" 'select(.terminal == $self) | .pane' <<<"$terminals")
+  argv=$(jq -cn --args '$ARGS.positional' -- claude -n "$name" --model "$model" "${WORKER_ARGS[@]}")
 
-  # A pane is not an available shell the instant it is split, so starting right
-  # after a split fails with agent_pane_busy. Try again until the shell is up.
-  # (分割直後のペインはまだシェルとして使えず、すぐ起動すると agent_pane_busy で
-  #  失敗する。シェルが立ち上がるまで試し直す。)
-  for ((attempt = 1; ; attempt++)); do
-    if herdr agent start "$name" --kind claude --pane "$pane" \
-      -- -n "$name" --model "$model" "${WORKER_ARGS[@]}" >/dev/null 2>&1; then
-      break
-    fi
-    [ "$attempt" -lt "$START_ATTEMPTS" ] || die "could not start $name in $pane"
-    sleep "$START_INTERVAL"
-  done
+  opened=$(herdr-app do pane.split --direction "$direction" --pane "$pane" --argv "$argv") ||
+    die "could not split $pane: $opened"
+  terminal=$(jq -er '.terminal' <<<"$opened")
+  hc label "$terminal" "role=$role" "driver=$HC_TERMINAL_ID" >/dev/null
 
-  # Guard against anything that renamed the pane while it was starting; the name
-  # is how the worker is addressed and how the notify plugin tells it from a driver.
-  # (起動中にペインを改名するものがあっても打ち消す。名前はワーカーの宛先であり、
-  #  通知プラグインが driver と見分ける手掛かりでもある。)
-  herdr agent rename "$pane" "$name" >/dev/null
-
-  rows+=("$name	$pane	started")
-  kept+=("$pane")
+  rows+=("$name	$terminal	started")
+  kept+=("$terminal")
 }
 
-# Make sure this driver's worker for ROLE ($1) is running, splitting FROM ($2)
-# toward DIRECTION ($3) when it is not.
-# (この driver の ROLE ($1) のワーカーが動いている状態にする。いなければ FROM ($2)
-#  を DIRECTION ($3) に分割して起動する。)
+# Make sure this driver's worker for ROLE ($1) is running, splitting toward
+# DIRECTION ($2) when it is not.
+# (この driver の ROLE ($1) のワーカーが動いている状態にする。いなければ
+#  DIRECTION ($2) に分割して起動する。)
 ensure_agent() {
-  local role="$1" from="$2" direction="$3" name pane
-  name=$(herdr-agent-name "$role")
+  local role="$1" direction="$2" terminal
+  terminal=$(worker_terminal "$role")
 
-  pane=$(agent_pane "$name")
-  if [ -n "$pane" ]; then
-    rows+=("$name	$pane	reused")
-    kept+=("$pane")
+  if [ -n "$terminal" ]; then
+    rows+=("$(herdr-agent-name "$role")	$terminal	reused")
+    kept+=("$terminal")
   else
-    pane=$(split_pane "$from" "$direction")
-    start_agent "$name" "$pane"
+    start_agent "$role" "$direction"
   fi
 }
 
-# Print the tab this driver sits in.
-# (この driver がいるタブを出力する。)
-current_tab() {
-  herdr pane list | jq -er --arg pane "$HERDR_PANE_ID" '
-    .result.panes[] | select(.pane_id == $pane) | .tab_id'
-}
-
-# Print the drivers other than this one in TAB ($1).
-# (TAB ($1) にいる自分以外の driver を出力する。)
-other_drivers() {
-  herdr agent list | jq -r --arg tab "$1" --arg self "$HERDR_PANE_ID" '
-    .result.agents[]
-    | select(.tab_id == $tab and .pane_id != $self and (.name | endswith("-driver")))
-    | "\(.name) (\(.pane_id))"'
-}
-
-# Fail when a driver other than this one is in TAB ($1). Their workers are named
-# after them, so this run cannot tell which of the tab's panes are its to clear,
-# and a driver is what a person talks to rather than something to close on a guess.
-# (TAB ($1) に自分以外の driver がいたら止める。そのワーカーはその driver の名前を
-#  持つため、どのペインを片付けてよいか判断できない。driver は人がやりとりする
-#  相手でもあり、当て推量で閉じるものではない。)
+# Fail when another agent without a role label shares the tab: that is a driver
+# a person talks to, not something to close on a guess.
+# (役割の label がない別の agent が同じタブにいたら止める。それは人がやりとりする
+#  driver で、当て推量で閉じるものではない。)
 require_sole_driver() {
   local drivers
-  drivers=$(other_drivers "$1")
+  drivers=$(jq -r --arg self "$HC_TERMINAL_ID" 'select(.terminal != $self and .app != null) | .terminal' <<<"$terminals" |
+    while read -r t; do
+      [ -n "$(hc get --json "$t" | jq -r '.labels.role // empty')" ] || printf '%s ' "$t"
+    done)
 
-  [ -z "$drivers" ] || die "another driver shares this tab: $(tr '\n' ' ' <<<"$drivers")"
+  [ -z "$drivers" ] || die "another driver shares this tab: $drivers"
 }
 
-# Close every pane in TAB ($1) that is not one this run named, so the tab ends up
+# Close every pane in this tab that is not one this run kept, so the tab ends up
 # holding the driver and its reviewer and nothing else. A pane whose agent is
 # still working is reported instead of cut off mid-task.
-# (TAB ($1) のうち今回名前を付けたペイン以外を閉じ、タブを driver とレビュー役だけにする。
+# (このタブのうち今回残したもの以外のペインを閉じ、タブを driver とレビュー役だけにする。
 #  まだ作業中のエージェントが乗っているペインは、途中で切らずに報告に残す。)
 prune_tab() {
-  local pane status name
+  local terminal pane status
 
-  while IFS=$'\t' read -r pane status name; do
-    case " ${kept[*]} " in *" $pane "*) continue ;; esac
+  while IFS=$'\t' read -r terminal pane status; do
+    case " ${kept[*]} " in *" $terminal "*) continue ;; esac
 
     if [ "$status" = working ]; then
-      rows+=("${name:--}	$pane	kept (working)")
+      rows+=("-	$terminal	kept (working)")
       continue
     fi
 
-    herdr pane close "$pane" >/dev/null
-    rows+=("${name:--}	$pane	closed")
-  done < <(herdr pane list | jq -r --arg tab "$1" '
-    .result.panes[]
-    | select(.tab_id == $tab)
-    | [.pane_id, .agent_status // "unknown", .terminal_title_stripped // ""] | @tsv')
+    herdr-app do pane.close --pane "$pane" >/dev/null
+    rows+=("-	$terminal	closed")
+  done < <(jq -r '[.terminal, .pane, .status // "unknown"] | @tsv' <<<"$terminals")
 }
 
 start_reviewer() {
-  local tab
-  tab=$(current_tab)
-  require_sole_driver "$tab"
+  terminals=$(tab_terminals)
+  require_sole_driver
 
-  ensure_agent reviewer "$HERDR_PANE_ID" right
-  prune_tab "$tab"
+  ensure_agent reviewer right
+  prune_tab
+  herdr-app do pane.focus --terminal "$HC_TERMINAL_ID" >/dev/null || true
 }
 
 main() {
@@ -227,10 +197,10 @@ main() {
   require_environment
 
   rows=()
-  kept=("$HERDR_PANE_ID")
+  kept=("$HC_TERMINAL_ID")
   start_reviewer
 
-  printf '%s\n' "AGENT	PANE	STATUS"
+  printf '%s\n' "AGENT	TERMINAL	STATUS"
   printf '%s\n' "${rows[@]}"
 }
 

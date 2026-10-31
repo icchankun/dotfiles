@@ -7,13 +7,13 @@
 
 上記に該当しない場合（調査・質問・簡単な設定変更など）は、branch を作成せずそのまま対応する。
 
-worktree の作成・削除は `git wt` で行う。`git worktree add` / `git worktree remove` を直接使うと、Herdr で開くフックが走らない。
+worktree の作成・削除は `git wt` で行う。`git worktree add` / `git worktree remove` を直接使うと、Herdr.app で開くフックが走らない。
 
-# Herdr のペイン間でやりとりする手順
+# Herdr.app のペイン間でやりとりする手順
 
-相手が Claude セッションなら `SendMessage` を使う。宛先は `ListAgents` に出る名前で、Herdr の pane ID に役割を付けた形（`wC:p2` の driver なら `wc-p2-driver`、その reviewer なら `wc-p2-reviewer`）に揃えてある。
+相手が Claude セッションなら `SendMessage` を使う。宛先は `ListAgents` に出る名前で、driver の terminal の番地（`$HC_TERMINAL_ID`）に役割を付けた形（`t7` の driver なら `t7-driver`、その reviewer なら `t7-reviewer`）に揃えてある。
 
-`herdr agent prompt` は TTY への打ち込みで、返事は画面から読み取るしかない。Codex や Gemini など Claude 以外が相手のとき、または `ListAgents` に出てこないときに使う。
+`hc send <番地>` は terminal への打ち込みで、返事は `hc read <番地>` で画面から読み取るしかない。Codex や Gemini など Claude 以外が相手のとき、または `ListAgents` に出てこないときに使う。
 
 # 文章を書くとき
 
