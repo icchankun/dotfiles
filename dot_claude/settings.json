@@ -102,6 +102,17 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.bin/git-rewrite-guard"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
