@@ -2,24 +2,24 @@
 
 # =============================================================================
 # herdr-agent-name
-# Print the agent name for a Herdr pane. (Herdr のペインに付けるべき agent 名を
-# 出力する。)
+# Print the agent name for a Herdr.app terminal. (Herdr.app の terminal に付ける
+# agent 名を出力する。)
 #
-# The name is `<pane id>-<role>`: a driver takes its own pane id (`wK:p3` + driver
-# -> `wk-p3-driver`), and the workers it starts take the *driver's* pane id
-# (`wk-p3-reviewer`), not their own. A worker's name therefore says whose it is, and
+# The name is `<terminal address>-<role>`: a driver takes its own address (`t7` +
+# driver -> `t7-driver`), and the workers it starts take the *driver's* address
+# (`t7-reviewer`), not their own. A worker's name therefore says whose it is, and
 # re-running herdr-coding from the same driver lands on the same name, so the
 # existing workers can be reused instead of a second set of panes appearing.
-# (名前は `<ペインID>-<役割>`。driver は自分のペインID (`wK:p3` + driver なら
-#  `wk-p3-driver`)、driver が立てたワーカーは自分ではなく driver のペインID
-#  (`wk-p3-reviewer`) を使う。こうするとワーカーの名前が誰のものかを語り、同じ
+# (名前は `<terminal の番地>-<役割>`。driver は自分の番地 (`t7` + driver なら
+#  `t7-driver`)、driver が立てたワーカーは自分ではなく driver の番地
+#  (`t7-reviewer`) を使う。こうするとワーカーの名前が誰のものかを語り、同じ
 #  driver から herdr-coding を再実行しても同じ名前になるので、ペインが二重に
 #  増えず既存のワーカーを再利用できる。)
 #
 # Usage / 使い方:
-#   herdr-agent-name [ROLE] [PANE_ID]
-#     ROLE     default: driver
-#     PANE_ID  default: $HERDR_PANE_ID (起点のペイン。ワーカーでも driver のもの)
+#   herdr-agent-name [ROLE] [TERMINAL]
+#     ROLE      default: driver
+#     TERMINAL  default: $HC_TERMINAL_ID (起点の terminal。ワーカーでも driver のもの)
 #
 #   claude -n "$(herdr-agent-name)"
 #   herdr-agent-name reviewer
@@ -28,8 +28,8 @@
 set -eu
 
 role="${1:-driver}"
-pane="${2:-${HERDR_PANE_ID:-}}"
+terminal="${2:-${HC_TERMINAL_ID:-}}"
 
-[ -n "$pane" ] || exit 1
+[ -n "$terminal" ] || exit 1
 
-printf '%s-%s\n' "$(printf '%s' "$pane" | tr ':' '-' | tr '[:upper:]' '[:lower:]')" "$role"
+printf '%s-%s\n' "$terminal" "$role"
