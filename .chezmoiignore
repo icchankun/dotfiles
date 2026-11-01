@@ -2,3 +2,4 @@
 docs/
 .config/herdr-app/mods/*/gpui-kit.d.ts
 .config/herdr-app/mods/*/jsconfig.json
+graphify-out/
