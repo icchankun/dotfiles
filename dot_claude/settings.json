@@ -5,6 +5,7 @@
   "attribution": {
     "sessionUrl": false
   },
+  "autoContinueAtUsageLimit": true,
   "permissions": {
     "allow": [
       "WebSearch",
