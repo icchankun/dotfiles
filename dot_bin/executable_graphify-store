@@ -1,0 +1,174 @@
+#!/usr/bin/env bash
+
+# =============================================================================
+# graphify-store
+# Keep one graphify graph per repository under ~/.graphify/projects, built from
+# the base branch, and copy it into a checkout that has none yet.
+# (リポジトリごとに graphify のグラフを1つ ~/.graphify/projects に貯める。ベースの
+#  ブランチから作り、グラフのまだない checkout にコピーする。)
+#
+# Dependencies / 依存:
+#   - git, tar, graphify (mise: pipx:graphifyy)
+#
+# Usage / 使い方:
+#   graphify-store sync [--root DIR] [--depth N]
+#       Rebuild the stored graph of every repository under DIR. Run by launchd
+#       twice a day. (DIR の下の全リポジトリについて、貯めたグラフを作り直す。
+#       launchd が1日2回動かす。)
+#       --root DIR  Directory to scan for repositories. (default: ~/workspace)
+#       --depth N   Max search depth under --root. (default: 3)
+#   graphify-store seed [DIR]
+#       Copy the stored graph into DIR/graphify-out when DIR has none. Run by
+#       wt.hook in each new worktree. (DIR に graphify-out がなければ、貯めた
+#       グラフをコピーする。wt.hook が新しい worktree で動かす。)
+#
+# Store / 置き場所:
+#   ~/.graphify/projects/<owner>/<repo>/  (the contents of graphify-out/)
+#   Only repositories whose origin is on GitHub get one: owner/repo is the key
+#   shared by every clone and worktree. (origin が GitHub のリポジトリだけ。
+#   owner/repo を、どの clone と worktree からも同じ鍵として使う。)
+#
+# How sync builds a graph / sync がグラフを作る手順:
+#   1. fetch the base branch: develop, or else the default branch
+#      (ベースのブランチを fetch する。develop、なければデフォルトブランチ)
+#   2. export it with git archive into a temporary directory, so uncommitted
+#      work in a checkout never ends up in the store
+#      (git archive で一時ディレクトリに取り出す。checkout の作業中の変更を
+#       貯めるグラフに混ぜないため)
+#   3. graphify update with GRAPHIFY_OUT pointed at a copy of the stored graph,
+#      so unchanged files come from its cache, then swap the copy in. A seed
+#      that runs meanwhile never sees a half-written graph.
+#      (GRAPHIFY_OUT を貯めたグラフのコピーに向けて graphify update する。
+#       変わっていないファイルはキャッシュから読む。終わったらコピーと入れ替える。
+#       その間に seed が走っても、書きかけのグラフを見ない。)
+#
+# graphify parses the code locally and uses no tokens. --force keeps the graph
+# from staying stale after code is deleted: without it, update keeps the old
+# graph when the new one has fewer nodes.
+# (graphify は手元でコードを解析するだけで、トークンを使わない。--force を付けない
+#  と、新しいグラフのノードが減ったときに古いグラフを残すので、コードを消したあと
+#  グラフが古いままになる。)
+# =============================================================================
+
+set -uo pipefail
+
+# launchd starts with a minimal PATH / launchd 経由だと PATH が最小限なので補う
+export PATH="$HOME/.local/share/mise/shims:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+# Never block on credential prompts / 認証プロンプトで固まらないようにする
+export GIT_TERMINAL_PROMPT=0
+export GIT_SSH_COMMAND="${GIT_SSH_COMMAND:-ssh -o BatchMode=yes -o ConnectTimeout=10 -o ServerAliveInterval=5 -o ServerAliveCountMax=3}"
+
+STORE="$HOME/.graphify/projects"
+
+log() { printf '%s %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"; }
+
+# owner/repo of the origin on GitHub, or nothing.
+# (GitHub にある origin の owner/repo。なければ何も出さない。)
+repo_key() {
+  local url path
+  url="$(git -C "$1" remote get-url origin 2>/dev/null)" || return 1
+  case "$url" in
+    git@github.com:*) path="${url#git@github.com:}" ;;
+    ssh://git@github.com/*) path="${url#ssh://git@github.com/}" ;;
+    https://github.com/*) path="${url#https://github.com/}" ;;
+    *) return 1 ;;
+  esac
+  path="${path%/}"
+  path="${path%.git}"
+  [[ "$path" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || return 1
+  [[ "$path" != *..* ]] || return 1
+  printf '%s\n' "$path"
+}
+
+# develop when origin has it, or else the default branch. (git-auto-sync と同じ)
+base_branch() {
+  local repo="$1" ref
+  if git -C "$repo" show-ref --verify --quiet refs/remotes/origin/develop; then
+    echo develop
+    return
+  fi
+  ref="$(git -C "$repo" symbolic-ref --quiet refs/remotes/origin/HEAD 2>/dev/null)" || ref=refs/remotes/origin/main
+  echo "${ref#refs/remotes/origin/}"
+}
+
+sync_repo() {
+  local repo="$1" key base dest work tmp src
+  key="$(repo_key "$repo")" || return 0
+  base="$(base_branch "$repo")"
+  git check-ref-format --branch "$base" >/dev/null 2>&1 || return 0
+  # A failed fetch (no network) still builds from the last fetched base.
+  # (fetch に失敗しても（ネットワークがない）、前に fetch したベースから作る。)
+  git -C "$repo" fetch --quiet origin -- "refs/heads/$base:refs/remotes/origin/$base" 2>/dev/null ||
+    log "WARN  $key: fetch failed, using the last fetched origin/$base"
+  git -C "$repo" show-ref --verify --quiet "refs/remotes/origin/$base" || {
+    log "SKIP  $key: no origin/$base"
+    return 0
+  }
+
+  dest="$STORE/$key"
+  work="$dest.new"
+  tmp="$(mktemp -d)"
+  # Named after the repository, which graphify puts in the report title.
+  # (graphify はディレクトリの名前をレポートの見出しに使うので、リポジトリの名前にする。)
+  src="$tmp/${key#*/}"
+  mkdir -p "$src" "$(dirname "$dest")"
+  rm -rf "$work"
+  if ! git -C "$repo" archive --format=tar "refs/remotes/origin/$base" | tar -x -C "$src"; then
+    log "FAIL  $key: git archive origin/$base"
+    rm -rf "$tmp"
+    return 0
+  fi
+  [[ -d "$dest" ]] && cp -R "$dest" "$work"
+  if (cd "$src" && GRAPHIFY_OUT="$work" graphify update . --force) >"$tmp/graphify.log" 2>&1 && [[ -f "$work/graph.json" ]]; then
+    rm -rf "$dest.old"
+    [[ -d "$dest" ]] && mv "$dest" "$dest.old"
+    mv "$work" "$dest"
+    rm -rf "$dest.old"
+    log "OK    $key: origin/$base $(git -C "$repo" rev-parse --short "refs/remotes/origin/$base")"
+  else
+    log "FAIL  $key: graphify update"
+    sed 's/^/      /' "$tmp/graphify.log"
+    rm -rf "$work"
+  fi
+  rm -rf "$tmp"
+}
+
+cmd_sync() {
+  local root="$HOME/workspace" depth=3 gitdir
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --root) root="$2"; shift 2 ;;
+      --depth) depth="$2"; shift 2 ;;
+      *) echo "usage: graphify-store sync [--root DIR] [--depth N]" >&2; exit 2 ;;
+    esac
+  done
+  command -v graphify >/dev/null 2>&1 || { log "graphify not found"; exit 0; }
+  # Each repository once: a worktree's .git is a file, so only the main
+  # checkout's .git directory is found. (リポジトリごとに1回。worktree の .git は
+  # ファイルなので、見つかるのはメインの checkout の .git ディレクトリだけ。)
+  while IFS= read -r gitdir; do
+    sync_repo "$(dirname "$gitdir")"
+  done < <(find "$root" -maxdepth "$depth" -type d -name .git -prune 2>/dev/null | sort)
+}
+
+cmd_seed() {
+  local dir="${1:-$PWD}" top key
+  top="$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null)" || return 0
+  [[ -e "$top/graphify-out" ]] && return 0
+  key="$(repo_key "$top")" || return 0
+  [[ -f "$STORE/$key/graph.json" ]] || return 0
+  # Copied aside first, so a failed copy never leaves a broken graphify-out.
+  # (先に脇へコピーする。コピーに失敗しても、壊れた graphify-out を残さない。)
+  local part="$top/graphify-out.seed.$$"
+  if cp -R "$STORE/$key" "$part"; then
+    mv "$part" "$top/graphify-out"
+  else
+    rm -rf "$part"
+  fi
+}
+
+case "${1:-}" in
+  sync) shift; cmd_sync "$@" ;;
+  seed) shift; cmd_seed "$@" ;;
+  *) echo "usage: graphify-store sync [--root DIR] [--depth N] | seed [DIR]" >&2; exit 2 ;;
+esac
