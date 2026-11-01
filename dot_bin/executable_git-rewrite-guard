@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
-# Claude Code の PreToolUse hook。git commit --amend と git push --force-with-lease を、
+# Claude Code と Codex の hook。git commit --amend と git push --force-with-lease を、
 # 引数を1つずつ確かめて安全な形のときだけ確認なしで通す。それ以外は何も出さず、ふだんの判断に任せる。
 # settings.json の allow は文字列の前方一致なので、git が受け付ける省略形（--rec で --receive-pack など）を塞げない。
-# 使い方: settings.json の hooks.PreToolUse（matcher: Bash）に登録する。`git-rewrite-guard test` で自己テスト
+# 使い方: Claude Code は settings.json の hooks.PreToolUse（matcher: Bash）に登録する。
+#   Codex は ~/.codex/hooks.json の PermissionRequest（matcher: Bash）に `git-rewrite-guard --codex` で登録する。
+#   Codex の PreToolUse は allow を返しても確認を飛ばさず、確認を決めるのは PermissionRequest のため。
+#   `git-rewrite-guard test` で自己テスト
 import json
 import os
 import re
@@ -234,7 +237,15 @@ if __name__ == "__main__":
         test()
         sys.exit()
     payload = json.load(sys.stdin)
-    if allowed(payload.get("tool_input", {}).get("command", ""), payload.get("cwd", ".")):
+    command = payload.get("tool_input", {}).get("command", "")
+    if not isinstance(command, str) or not allowed(command, payload.get("cwd", ".")):
+        sys.exit()
+    if sys.argv[1:] == ["--codex"]:
+        print(json.dumps({"hookSpecificOutput": {
+            "hookEventName": "PermissionRequest",
+            "decision": {"behavior": "allow"},
+        }}))
+    else:
         print(json.dumps({"hookSpecificOutput": {
             "hookEventName": "PreToolUse",
             "permissionDecision": "allow",
