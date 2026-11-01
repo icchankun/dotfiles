@@ -2,8 +2,12 @@
 
 # =============================================================================
 # dev-flow-hook
-# Claude Code hook for the running-dev-flow skill's state file.
-# (running-dev-flow の状態ファイル dev-flow.md を扱う Claude Code の hook。)
+# Claude Code and Codex hook for the running-dev-flow skill's state file. Both
+# send the same JSON and read the same answer, so one script serves both
+# (~/.claude/settings.json and ~/.codex/hooks.json).
+# (running-dev-flow の状態ファイル dev-flow.md を扱う、Claude Code と Codex の hook。
+#  どちらも同じ JSON を渡し同じ返事を読むので、1つのスクリプトで両方に使う
+#  （~/.claude/settings.json と ~/.codex/hooks.json）。)
 #
 # The file lives in the worktree's own git dir, so it is never committed and goes
 # away with `git wt -D`.

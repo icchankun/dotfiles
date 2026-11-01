@@ -1,0 +1,38 @@
+# Codex の実行ポリシー。Claude Code の settings.json の permissions に当たる
+# Codex は「常に許可」を選ぶと default.rules に書き足すので、dotfiles で管理するのはこのファイルだけにする
+# 読むだけのコマンドは確認なしで通す（permissions.allow）
+
+prefix_rule(pattern = ["gh", "issue", "list"])
+prefix_rule(pattern = ["gh", "issue", "view"])
+prefix_rule(pattern = ["gh", "issue", "status"])
+prefix_rule(pattern = ["gh", "pr", "list"])
+prefix_rule(pattern = ["gh", "pr", "view"])
+prefix_rule(pattern = ["gh", "pr", "status"])
+prefix_rule(pattern = ["gh", "pr", "checks"])
+prefix_rule(pattern = ["gh", "pr", "diff"])
+prefix_rule(pattern = ["gh", "repo", "view"])
+prefix_rule(pattern = ["gh", "repo", "list"])
+prefix_rule(pattern = ["gh", "release", "list"])
+prefix_rule(pattern = ["gh", "release", "view"])
+prefix_rule(pattern = ["gh", "run", "list"])
+prefix_rule(pattern = ["gh", "run", "view"])
+prefix_rule(pattern = ["gh", "workflow", "list"])
+prefix_rule(pattern = ["gh", "workflow", "view"])
+prefix_rule(pattern = ["gh", "search"])
+prefix_rule(pattern = ["gh", "gist", "list"])
+prefix_rule(pattern = ["gh", "gist", "view"])
+prefix_rule(pattern = ["git", "log"])
+prefix_rule(pattern = ["git", "diff"])
+prefix_rule(pattern = ["git", "status"])
+prefix_rule(pattern = ["git", "show"])
+prefix_rule(pattern = ["bundle", "list"])
+prefix_rule(pattern = ["bundle", "info"])
+prefix_rule(pattern = ["ruby", "-v"])
+prefix_rule(pattern = ["node", "-v"])
+prefix_rule(pattern = ["yarn", "--version"])
+prefix_rule(pattern = ["which"])
+prefix_rule(pattern = ["ls"])
+
+# 消す・権限を上げるコマンドは止める（permissions.deny）
+prefix_rule(pattern = ["rm", ["-rf", "-fr", "-Rf", "-rF"]], decision = "forbidden", justification = "まとめて消すコマンドは使わない。消すファイルを1つずつ指定する", match = ["rm -rf build"], not_match = ["rm build/a.txt"])
+prefix_rule(pattern = ["sudo"], decision = "forbidden", justification = "権限を上げるコマンドは使わない。必要ならユーザーに頼む", match = ["sudo ls"])
