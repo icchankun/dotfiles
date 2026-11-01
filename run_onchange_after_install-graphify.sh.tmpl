@@ -1,0 +1,10 @@
+#!/bin/sh
+# graphify の skill を Claude Code と Codex に登録する。mise の設定（graphify の版）が変わったら入れ直す
+# mise config: {{ include "dot_config/mise/config.toml" | sha256sum }}
+#
+# Claude Code 向けの登録は ~/.claude/CLAUDE.md に「# graphify」の節を書き足す。同じ節を dot_claude/CLAUDE.md に置いてあるので、ここでは変更なしで終わる
+set -eu
+
+cd "$HOME"
+mise exec -- graphify install --platform claude
+mise exec -- graphify install --platform codex
