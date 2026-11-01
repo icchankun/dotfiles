@@ -8,29 +8,31 @@
 # Dependencies / 依存:
 #   - Herdr.app (herdr-app, hc)  https://herdr.dev
 #   - jq
-#   - herdr-agent-name
+#   - claude or codex (the reviewer's agent / レビュー役の agent)
 #
 # Usage / 使い方:
 #   herdr-coding [options]
 #
 #   Options / オプション:
-#     -m, --model NAME   Model for the reviewer. (レビュー役のモデル。default: sonnet)
+#     -a, --agent NAME   Agent for the reviewer: claude or codex.
+#                        (レビュー役の agent。default: driver と同じ)
+#     -m, --model NAME   Model for the reviewer.
+#                        (レビュー役のモデル。default: claude は sonnet、codex は gpt-6.1-sol)
 #     -h, --help         Show this help. (このヘルプを表示する。)
 #
 # Notes / 補足:
 #   - Herdr.app moves focus to the pane it splits, so focus is put back on the
 #     calling pane afterwards.
 #     (Herdr.app は分割したペインにフォーカスを移すので、最後に呼び出し元へ戻す。)
-#   - Workers start with `-n <agent name>`, so they can be addressed with
-#     SendMessage by that name.
-#     (`-n <agent名>` 付きで起動するので、その名前で SendMessage を送れる。)
-#   - The reviewer is named after the *calling driver's* terminal, not its own,
-#     and labelled role=reviewer and driver=<terminal>, so re-running reuses this
-#     driver's reviewer (see herdr-agent-name). The label also keeps the reviewer
+#   - Agents are addressed by their terminal (`t8`), not by a session name, so
+#     a Claude Code driver and a Codex reviewer can talk with `hc send`.
+#     (agent は session 名ではなく terminal の番地（`t8`）で呼ぶので、Claude Code
+#      の driver と Codex のレビュー役でも `hc send` でやりとりできる。)
+#   - The reviewer is labelled role=reviewer and driver=<calling terminal>, so
+#     re-running reuses this driver's reviewer. The label also keeps the reviewer
 #     out of the agent-notify mod's notifications.
-#     (レビュー役の名前は自分ではなく呼び出した driver の terminal から付き、
-#      role=reviewer と driver=<terminal> の label も付くので、再実行すればその
-#      driver のレビュー役が再利用される。詳細は herdr-agent-name。label は
+#     (レビュー役には role=reviewer と driver=<呼び出し元の terminal> の label が
+#      付くので、再実行すればその driver のレビュー役が再利用される。label は
 #      agent-notify mod がレビュー役を通知しないための目印にもなる。)
 #   - The tab ends up holding only the driver and its reviewer: any other pane is
 #     closed, and another agent without a role sharing the tab is an error rather
@@ -42,9 +44,9 @@
 
 set -euo pipefail
 
-# Args every worker starts with.
-# (ワーカー共通の起動引数。)
-readonly WORKER_ARGS=(
+# Args a Claude Code reviewer starts with.
+# (Claude Code のレビュー役の起動引数。)
+readonly CLAUDE_ARGS=(
   # MCP off: every server's tool definitions are resent on each request, and that
   # cost multiplies by the number of workers.
   # (MCP 無効。ツール定義は毎リクエスト再送され、その費用が並列数の分だけ掛かる。)
@@ -59,19 +61,38 @@ readonly WORKER_ARGS=(
   # a permission prompt goes unnoticed and the review loop stalls.
   # (読むだけのコマンドは事前に許可する。通知を切っているので、許可待ちで止まった
   #  reviewer には誰も気づかず、往復が止まる。)
-  --allowedTools Read Grep Glob Agent Skill SendMessage
+  --allowedTools Read Grep Glob Agent Skill
   "Bash(git diff:*)" "Bash(git status:*)" "Bash(git log:*)" "Bash(git show:*)"
   "Bash(git config --get:*)" "Bash(git rev-parse:*)" "Bash(gh repo view:*)"
+  "Bash(hc send:*)" "Bash(hc get:*)" "Bash(hc ls:*)"
   "Bash(sh ~/.claude/skills/reviewing-git-diffs/scripts/snapshot.sh)"
 )
 
+# Args a Codex reviewer starts with. --no-daemon keeps its commands inside hc.
+# Approvals are off so it never waits on a prompt nobody sees. The "dotfiles"
+# permission profile from ~/.codex/config.toml lets it write in the worktree,
+# because the review snapshot writes a git tree object, and keeps secrets
+# unreadable; the skill tells it not to edit files.
+# (Codex のレビュー役の起動引数。--no-daemon がないとコマンドが hc の外で動く。
+#  誰も見ていない確認で止まらないよう承認は切る。~/.codex/config.toml の権限
+#  プロファイル dotfiles で、レビューのスナップショットが git の tree オブジェクトを
+#  書くための worktree への書き込みは許し、秘密情報は読ませない。ファイルを編集
+#  しないことは skill に書いてある。)
+readonly CODEX_ARGS=(
+  --no-daemon
+  --config 'default_permissions="dotfiles"'
+  --ask-for-approval never
+  --config model_reasoning_effort=medium
+)
+
 # The reviewer runs every round until the findings clear, so it defaults to the
-# cheaper model. The bug-finding agent inside the review command pins its own
-# model, so this mainly sets who sorts the findings and runs the lighter checks.
+# cheaper model. For Claude Code, the bug-finding agent inside the review command
+# pins its own model, so this mainly sets who sorts the findings.
 # (レビュー役は指摘がなくなるまで毎ラウンド動くので、既定は安いモデルにする。
-#  レビューコマンド内でバグを探すエージェントは自分でモデルを固定しているため、
-#  ここで決まるのは主に指摘の仕分けと軽い観点のチェックを担うモデル。)
-model=sonnet
+#  Claude Code では、レビューコマンド内でバグを探すエージェントが自分でモデルを
+#  固定しているため、ここで決まるのは主に指摘の仕分けを担うモデル。)
+agent=
+model=
 
 die() {
   printf 'herdr-coding: %s\n' "$1" >&2
@@ -85,6 +106,7 @@ usage() {
 parse_args() {
   while [ $# -gt 0 ]; do
     case "$1" in
+      -a | --agent) [ -n "${2:-}" ] || die "--agent requires a name"; agent="$2"; shift 2 ;;
       -m | --model) [ -n "${2:-}" ] || die "--model requires a name"; model="$2"; shift 2 ;;
       -h | --help) usage; exit 0 ;;
       *) die "unknown option: $1" ;;
@@ -97,7 +119,23 @@ require_environment() {
   command -v herdr-app >/dev/null || die "herdr-app not found in PATH"
   command -v hc >/dev/null || die "hc not found in PATH"
   command -v jq >/dev/null || die "jq not found in PATH"
-  command -v herdr-agent-name >/dev/null || die "herdr-agent-name not found in PATH"
+}
+
+# Pick the reviewer's agent and model: the driver's own agent unless --agent says
+# otherwise, as reported by the program itself or else the command it runs.
+# (レビュー役の agent とモデルを決める。--agent がなければ driver と同じ agent に
+#  する。agent はプログラム自身の報告か、なければ起動コマンドから読む。)
+resolve_agent() {
+  if [ -z "$agent" ]; then
+    agent=$(hc get --json "$HC_TERMINAL_ID" | jq -r '(.status.app // .argv[0] // "") | ascii_downcase')
+    case "$agent" in *codex*) agent=codex ;; *) agent=claude ;; esac
+  fi
+  case "$agent" in
+    claude) model="${model:-sonnet}" ;;
+    codex) model="${model:-gpt-6.1-sol}" ;;
+    *) die "unknown agent: $agent (claude or codex)" ;;
+  esac
+  command -v "$agent" >/dev/null || die "$agent not found in PATH"
 }
 
 # Print the terminals of the tab this driver sits in, one JSON object per line.
@@ -118,17 +156,19 @@ worker_terminal() {
 # (この driver のペインを DIRECTION ($2) に分割して ROLE ($1) のワーカーを起動し、
 #  この driver のものだと分かる label を付ける。)
 start_agent() {
-  local role="$1" direction="$2" name pane argv opened terminal
-  name=$(herdr-agent-name "$role")
+  local role="$1" direction="$2" pane argv opened terminal
   pane=$(jq -r --arg self "$HC_TERMINAL_ID" 'select(.terminal == $self) | .pane' <<<"$terminals")
-  argv=$(jq -cn --args '$ARGS.positional' -- claude -n "$name" --model "$model" "${WORKER_ARGS[@]}")
+  case "$agent" in
+    claude) argv=$(jq -cn --args '$ARGS.positional' -- claude --model "$model" "${CLAUDE_ARGS[@]}") ;;
+    codex) argv=$(jq -cn --args '$ARGS.positional' -- codex --model "$model" "${CODEX_ARGS[@]}") ;;
+  esac
 
   opened=$(herdr-app do pane.split --direction "$direction" --pane "$pane" --argv "$argv") ||
     die "could not split $pane: $opened"
   terminal=$(jq -er '.terminal' <<<"$opened")
   hc label "$terminal" "role=$role" "driver=$HC_TERMINAL_ID" >/dev/null
 
-  rows+=("$name	$terminal	started")
+  rows+=("$role	$terminal	$agent	started")
   kept+=("$terminal")
 }
 
@@ -141,22 +181,22 @@ ensure_agent() {
   terminal=$(worker_terminal "$role")
 
   if [ -n "$terminal" ]; then
-    rows+=("$(herdr-agent-name "$role")	$terminal	reused")
+    rows+=("$role	$terminal	$(hc get --json "$terminal" | jq -r '(.status.app // .argv[0] // "?")')	reused")
     kept+=("$terminal")
   else
     start_agent "$role" "$direction"
   fi
 }
 
-# Fail when another agent without a role label shares the tab: that is a driver
-# a person talks to, not something to close on a guess.
-# (役割の label がない別の agent が同じタブにいたら止める。それは人がやりとりする
-#  driver で、当て推量で閉じるものではない。)
+# Fail when another driver shares the tab, labelled role=driver or not labelled at
+# all: that is an agent a person talks to, not something to close on a guess.
+# (別の driver が同じタブにいたら止める。role=driver の label が付いたものと、役割の
+#  label がない agent のこと。人がやりとりする agent で、当て推量で閉じるものではない。)
 require_sole_driver() {
   local drivers
   drivers=$(jq -r --arg self "$HC_TERMINAL_ID" 'select(.terminal != $self and .app != null) | .terminal' <<<"$terminals" |
     while read -r t; do
-      [ -n "$(hc get --json "$t" | jq -r '.labels.role // empty')" ] || printf '%s ' "$t"
+      case "$(hc get --json "$t" | jq -r '.labels.role // empty')" in '' | driver) printf '%s ' "$t" ;; esac
     done)
 
   [ -z "$drivers" ] || die "another driver shares this tab: $drivers"
@@ -174,12 +214,12 @@ prune_tab() {
     case " ${kept[*]} " in *" $terminal "*) continue ;; esac
 
     if [ "$status" = working ]; then
-      rows+=("-	$terminal	kept (working)")
+      rows+=("-	$terminal	-	kept (working)")
       continue
     fi
 
     herdr-app do pane.close --pane "$pane" >/dev/null
-    rows+=("-	$terminal	closed")
+    rows+=("-	$terminal	-	closed")
   done < <(jq -r '[.terminal, .pane, .status // "unknown"] | @tsv' <<<"$terminals")
 }
 
@@ -195,12 +235,13 @@ start_reviewer() {
 main() {
   parse_args "$@"
   require_environment
+  resolve_agent
 
   rows=()
   kept=("$HC_TERMINAL_ID")
   start_reviewer
 
-  printf '%s\n' "AGENT	TERMINAL	STATUS"
+  printf '%s\n' "ROLE	TERMINAL	AGENT	STATUS"
   printf '%s\n' "${rows[@]}"
 }
 
