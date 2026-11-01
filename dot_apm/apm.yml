@@ -4,6 +4,7 @@ description: APM project for icchankun
 author: icchankun
 targets:
   - claude
+  - codex
 dependencies:
   apm:
     # my skills
