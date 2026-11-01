@@ -18,6 +18,11 @@
             "type": "command",
             "command": "~/.bin/dev-flow-hook stop",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "~/.bin/graphify-refresh",
+            "async": true
           }
         ]
       }
@@ -28,6 +33,18 @@
           {
             "type": "command",
             "command": "~/.bin/dev-flow-hook prompt",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.bin/graphify-hook-guard search",
             "timeout": 10
           }
         ]

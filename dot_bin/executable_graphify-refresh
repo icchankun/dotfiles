@@ -2,21 +2,23 @@
 
 # =============================================================================
 # graphify-refresh
-# Claude Code Stop hook: build or refresh the graphify graph of the repository
-# the session works in, so the next session can look files up in the graph
-# instead of searching for them.
-# (Claude Code の Stop の hook。セッションが作業しているリポジトリの graphify の
-#  グラフを作るか更新する。次のセッションがファイルを探す代わりにグラフを引ける
-#  ようにするため。)
+# Claude Code and Codex Stop hook: build or refresh the graphify graph of the
+# repository the session works in, so the next session can look files up in
+# the graph instead of searching for them.
+# (Claude Code と Codex の Stop の hook。セッションが作業しているリポジトリの
+#  graphify のグラフを作るか更新する。次のセッションがファイルを探す代わりに
+#  グラフを引けるようにするため。)
 #
 # Dependencies / 依存:
 #   - git, jq, graphify (mise: pipx:graphifyy)
 #
 # Usage / 使い方:
-#   Registered as an async Stop hook in ~/.claude/settings.json; reads the hook
-#   JSON from stdin and takes the repository from its cwd.
-#   (~/.claude/settings.json に async の Stop の hook として登録する。stdin の JSON
-#    の cwd からリポジトリを決める。)
+#   Registered as an async Stop hook in ~/.claude/settings.json and
+#   ~/.codex/hooks.json; reads the hook JSON from stdin and takes the repository
+#   from its cwd. Both send the same JSON, so one script serves both.
+#   (~/.claude/settings.json と ~/.codex/hooks.json に async の Stop の hook として
+#    登録する。stdin の JSON の cwd からリポジトリを決める。どちらも同じ JSON を
+#    渡すので、1つのスクリプトで両方に使う。)
 #
 # graphify update parses the code locally and uses no tokens. Unchanged files are
 # served from its cache, so running it after every turn stays cheap. The graph is

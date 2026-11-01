@@ -16,7 +16,7 @@ worktree の作成・削除は `git wt` で行う。`git worktree add` / `git wo
 - `graphify explain "<名前>"`：1つのノードとそのつながり
 - `graphify path "<A>" "<B>"`：2つのノードのつながり方
 
-ファイルを読むのは、グラフで場所が分かってから。Claude Code では Stop の hook（`graphify-refresh`）がターンのたびにグラフを作り直すので、自分で `graphify update` を打たなくてよい。
+ファイルを読むのは、グラフで場所が分かってから。グラフは Stop の hook（`graphify-refresh`）がターンのたびに作り直すので、自分で `graphify update` を打たなくてよい。
 
 # Herdr.app のペイン間でやりとりする手順
 
