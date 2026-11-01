@@ -15,3 +15,7 @@ betterleaks = "latest"
 lazygit = "latest"
 ffmpeg = "latest"
 gh = "latest"
+# pipx の backend が使う
+uv = "latest"
+# コードのグラフを手元で作る（解析に LLM を使わない）。skill の登録は run_onchange_after_install-graphify.sh
+"pipx:graphifyy" = "0.9.97"
