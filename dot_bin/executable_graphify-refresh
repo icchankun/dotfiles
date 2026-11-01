@@ -22,12 +22,13 @@
 #
 # graphify update parses the code locally and uses no tokens. Unchanged files are
 # served from its cache, so running it after every turn stays cheap. The graph is
-# written to graphify-out/, which the global gitignore keeps out of commits, and
-# wt.copy in the git config carries it into each new worktree.
+# written to graphify-out/, which the global gitignore keeps out of commits. A
+# checkout with no graph yet starts from the one graphify-store keeps for the
+# repository.
 # (graphify update は手元でコードを解析するだけで、トークンを使わない。変わって
 #  いないファイルはキャッシュから読むので、ターンのたびに走らせても軽い。グラフは
-#  graphify-out/ に書き、グローバルの gitignore でコミットから外す。git の設定の
-#  wt.copy で、新しい worktree にも持ち込む。)
+#  graphify-out/ に書き、グローバルの gitignore でコミットから外す。グラフのまだ
+#  ない checkout は、graphify-store がリポジトリごとに貯めたグラフから始める。)
 #
 # --force: without it, update keeps the old graph when the new one has fewer
 # nodes, so a graph would stay stale after code is deleted.
@@ -56,4 +57,8 @@ mkdir "$lock" 2>/dev/null || exit 0
 trap 'rmdir "$lock"' EXIT INT TERM
 
 cd "$top"
+# A checkout without a graph starts from the one graphify-store keeps, so only
+# what changed since is parsed. (グラフのない checkout は、graphify-store が貯めた
+# グラフから始める。そこから変わった分だけを解析する。)
+"$(dirname "$0")/graphify-store" seed "$top" || true
 graphify update . --force >"$gitdir/graphify-refresh.log" 2>&1 || true

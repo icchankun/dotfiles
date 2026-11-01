@@ -4,10 +4,10 @@
 	commentChar = ^
 	editor = code --wait
 [wt]
+	# ~/.graphify/projects に貯めた graphify のグラフをコピーする。Herdr で開く前に置き、最初のターンから使えるようにする
+	hook = ~/.bin/graphify-store seed
 	# worktree を作ったら Herdr のタブに自動で開く
 	hook = ~/.bin/herdr-worktree-open
-	# graphify のグラフ（gitignore 済み）を新しい worktree にも持ち込む。続きから更新できる
-	copy = graphify-out/
 [hook "betterleaks"]
 	# 全リポジトリでコミット前にシークレットを検出する
 	command = mise exec -- betterleaks git --pre-commit --redact --staged --verbose
