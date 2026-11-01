@@ -3,15 +3,19 @@
 # =============================================================================
 # herdr-worktree-open
 # git-wt hook: open a worktree as a Herdr.app space right after `git wt` creates
-# it, with a Claude driver in its first tab and lazygit in a second.
+# it, with a driver agent in its first tab and lazygit in a second.
 # (git-wt フック: `git wt` が worktree を作った直後に、Herdr.app の space として
-#  開き、最初のタブで Claude を driver として、2つ目のタブで lazygit を起動する。)
+#  開き、最初のタブで driver の agent を、2つ目のタブで lazygit を起動する。)
 #
-# A worktree created by /creating-git-branches otherwise stays invisible until it
+# The driver is Claude Code unless `git config --global herdr.driver codex` says
+# otherwise. (driver は Claude Code。`git config --global herdr.driver codex` で
+# Codex にできる。)
+#
+# A worktree created by creating-git-branches otherwise stays invisible until it
 # is opened by hand. git-wt runs wt.hook in the new worktree directory, so $PWD
 # is the checkout to open, and it does not run hooks when switching to an
 # existing worktree, so this only fires on creation.
-# (/creating-git-branches が作った worktree は、手で開くまで画面に出てこない。
+# (creating-git-branches が作った worktree は、手で開くまで画面に出てこない。
 #  git-wt は wt.hook を新しい worktree のディレクトリで実行するので $PWD が開く
 #  対象になり、既存の worktree への切り替えではフックを実行しないので、作成時に
 #  だけ走る。)
@@ -30,22 +34,34 @@ command -v herdr-app >/dev/null 2>&1 || exit 0
 # (すでに space がある worktree は、それを使い続け、2つ目を開かない。)
 herdr-app ls 2>/dev/null | jq -e --arg dir "$PWD" 'any(.spaces[]; .folder == $dir)' >/dev/null 2>&1 && exit 0
 
-# The driver is started as plain `claude`: it runs in an interactive zsh, where
-# the claude() wrapper names it `<terminal>-driver`, the name /handover sends to.
+# The driver is addressed by its terminal (`t7`) and carries role=driver and
+# driver=<terminal> labels, the same pair herdr-coding gives its reviewer, so a
+# request like "send it to t7's driver" can be resolved with `hc ls --label`.
+# Codex needs --no-daemon, or its commands run outside hc.
 # A failure to open must not turn a successful `git wt` into an error, but it is
 # reported so a missing space does not go unnoticed.
-# (driver は素の `claude` で起動する。対話 zsh の中で動くので、claude() ラッパーが
-#  `<terminal>-driver` と名付け、/handover の宛先になる。開けなかったことで成功した
-#  `git wt` をエラーにはしないが、space が開かなかったことに気づけるよう1行で知らせる。)
+# (driver は terminal の番地（`t7`）で呼ぶ。herdr-coding がレビュー役に付けるのと
+#  同じ role=driver と driver=<terminal> の label を付けるので、「t7 の driver に
+#  送って」のような頼みも `hc ls --label` で探せる。Codex は --no-daemon がないと
+#  コマンドが hc の外で動く。開けなかったことで成功した `git wt` をエラーには
+#  しないが、space が開かなかったことに気づけるよう1行で知らせる。)
+agent=$(git config --global --get herdr.driver 2>/dev/null || echo claude)
+case "$agent" in
+  codex) driver_argv='["codex","--no-daemon"]' ;;
+  *) agent=claude driver_argv='["claude"]' ;;
+esac
 argv='[]'
-command -v claude >/dev/null 2>&1 && argv='["claude"]'
+command -v "$agent" >/dev/null 2>&1 && argv=$driver_argv
 opened=$(herdr-app do space.new --folder "$PWD" --tab driver --argv "$argv" 2>&1) || {
   printf 'herdr-worktree-open: could not open %s in Herdr: %s\n' "$PWD" "$opened" >&2
   exit 0
 }
 space=$(printf '%s' "$opened" | jq -r '.space // empty')
 terminal=$(printf '%s' "$opened" | jq -r '.terminal // empty')
-[ "$argv" = '[]' ] || [ -z "$terminal" ] || printf 'driver: %s\n' "$(herdr-agent-name driver "$terminal")"
+if [ "$argv" != '[]' ] && [ -n "$terminal" ]; then
+  hc label "$terminal" role=driver "driver=$terminal" >/dev/null 2>&1 || true
+  printf 'driver: %s (%s)\n' "$terminal" "$agent"
+fi
 
 if command -v lazygit >/dev/null 2>&1 && [ -n "$space" ]; then
   herdr-app do tab.new --space "$space" --name lazygit --folder "$PWD" --argv '["lazygit"]' >/dev/null 2>&1 || true
