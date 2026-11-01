@@ -1,0 +1,108 @@
+#!/usr/bin/env python3
+# chezmoi の modify_ スクリプト。今の ~/.codex/config.toml を標準入力で受け取り、dotfiles で決めた値だけを上書きして出力する
+# Codex は信頼したフォルダ・/model で選んだモデル・MCP などを自分でこのファイルに書き込み、apm も Codex 向けの MCP をここに書く。
+# ファイルごと置き換えるとそれらが消えるので、決めた値だけを混ぜ込み、それ以外は残す。コメントと並び順は残らない
+import copy
+import sys
+import tomllib
+
+HOME = {{ .chezmoi.homeDir | quote }}
+
+# 読ませないもの。Claude Code の permissions.deny の Read に当たる
+SECRETS = {
+    f"{HOME}/.ssh": "deny",
+    ":workspace_roots": {
+        "**/.env": "deny",
+        "**/.env.*": "deny",
+    },
+}
+
+# Claude Code の settings.json に対応する値
+MANAGED = {
+    # effortLevel: medium。モデルは Codex の主力
+    "model": "gpt-6.1-sol",
+    "model_reasoning_effort": "medium",
+    # defaultMode: auto。確認はモデルが要ると判断したときだけ
+    "approval_policy": "on-request",
+    "default_permissions": "dotfiles",
+    "permissions": {
+        "dotfiles": {
+            "description": "workspace に書ける。秘密情報は読ませない",
+            "extends": ":workspace",
+            "filesystem": SECRETS,
+        },
+        # codex-pr-review と codex-dep-review が使う。PR を読むだけで、秘密情報も読ませない
+        "dotfiles-readonly": {
+            "description": "読むだけ。秘密情報は読ませない",
+            "extends": ":read-only",
+            "filesystem": SECRETS,
+        },
+    },
+    "features": {
+        # env の CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS に当たる。サブエージェントを使えるようにする
+        "multi_agent": True,
+        # autoMemoryEnabled: false
+        "memories": False,
+    },
+    "tui": {
+        # inputNeededNotifEnabled / agentPushNotifEnabled
+        "notifications": True,
+        # statusLine に当たる。Codex は決まった項目から選ぶ
+        "status_line": ["model-with-reasoning", "five-hour-limit", "git-branch", "current-dir"],
+    },
+}
+
+
+def merge(base, managed):
+    for key, value in managed.items():
+        if isinstance(value, dict) and isinstance(base.get(key), dict):
+            merge(base[key], value)
+        else:
+            base[key] = copy.deepcopy(value)
+    return base
+
+
+def key(name):
+    if name and all(c.isalnum() or c in "-_" for c in name):
+        return name
+    return '"' + name.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def value(v):
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    if isinstance(v, (int, float)):
+        return repr(v)
+    if isinstance(v, str):
+        return '"' + v.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n").replace("\t", "\\t") + '"'
+    if isinstance(v, list):
+        return "[" + ", ".join(value(x) for x in v) + "]"
+    if isinstance(v, dict):
+        return "{ " + ", ".join(f"{key(k)} = {value(x)}" for k, x in v.items()) + " }"
+    return '"' + str(v) + '"'
+
+
+def is_table_array(v):
+    return isinstance(v, list) and v and all(isinstance(x, dict) for x in v)
+
+
+def dump(table, path=()):
+    lines = []
+    for k, v in table.items():
+        if not isinstance(v, dict) and not is_table_array(v):
+            lines.append(f"{key(k)} = {value(v)}")
+    for k, v in table.items():
+        sub = path + (k,)
+        name = ".".join(key(p) for p in sub)
+        if isinstance(v, dict):
+            body = dump(v, sub)
+            lines += ["", f"[{name}]"] + body if any(not isinstance(x, dict) and not is_table_array(x) for x in v.values()) or not v else body
+        elif is_table_array(v):
+            for item in v:
+                lines += ["", f"[[{name}]]"] + dump(item, sub)
+    return lines
+
+
+current = sys.stdin.read()
+config = tomllib.loads(current) if current.strip() else {}
+print("\n".join(dump(merge(config, MANAGED))).strip())
