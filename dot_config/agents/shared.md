@@ -9,6 +9,15 @@
 
 worktree の作成・削除は `git wt` で行う。`git worktree add` / `git worktree remove` を直接使うと、Herdr.app で開くフックが走らない。
 
+# コードを探すとき
+
+リポジトリに `graphify-out/graph.json` があれば、grep やファイルを開く前に graphify でグラフを引く：
+- `graphify query "<知りたいこと>"`：関係するファイルと関係
+- `graphify explain "<名前>"`：1つのノードとそのつながり
+- `graphify path "<A>" "<B>"`：2つのノードのつながり方
+
+ファイルを読むのは、グラフで場所が分かってから。
+
 # Herdr.app のペイン間でやりとりする手順
 
 相手が Claude Code でも Codex でも `hc` を使う。使う前に `hc --skill` を読み、それに従う。
