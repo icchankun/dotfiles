@@ -1,0 +1,28 @@
+# セッション開始時の手順
+
+以下のいずれかが渡された場合は `dispatching-tasks` で branch・worktree を作り、その worktree の driver に引き継ぐ：
+- GitHub Issue のリンク
+- Notion チケットのリンク
+- PR を前提とした実装方針
+
+上記に該当しない場合（調査・質問・簡単な設定変更など）は、branch を作成せずそのまま対応する。
+
+worktree の作成・削除は `git wt` で行う。`git worktree add` / `git worktree remove` を直接使うと、Herdr.app で開くフックが走らない。
+
+# Herdr.app のペイン間でやりとりする手順
+
+相手が Claude セッションなら `SendMessage` を使う。宛先は `ListAgents` に出る名前で、driver の terminal の番地（`$HC_TERMINAL_ID`）に役割を付けた形（`t7` の driver なら `t7-driver`、その reviewer なら `t7-reviewer`）に揃えてある。
+
+`hc send <番地>` は terminal への打ち込みで、返事は `hc read <番地>` で画面から読み取るしかない。Codex や Gemini など Claude 以外が相手のとき、または `ListAgents` に出てこないときに使う。
+
+# 文章を書くとき
+
+返答は日本語で書く。
+
+会話の外に残る文章（コミットメッセージ、PR、レビューへの返信、ドキュメント、コードコメント、Notion）は、`reviewing-writing` で見直してから出す。
+
+この会話での返答は対象外で、caveman の書き方に従う。
+
+# skill を入れるとき
+
+`find-skills` で見つけた skill は `npx skills add` で入れず、dotfiles の `dot_apm/apm.yml` に追記して apm で入れる。
