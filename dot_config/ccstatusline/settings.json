@@ -5,7 +5,7 @@
       {
         "id": "0",
         "type": "custom-command",
-        "commandPath": "bash ~/.claude/statusline-session-name.sh",
+        "commandPath": "bash ~/.claude/statusline-terminal.sh",
         "timeout": 1000,
         "color": "hex:88C0D0"
       },
