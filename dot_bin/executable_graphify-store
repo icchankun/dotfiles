@@ -19,9 +19,8 @@
 #       --depth N   Max search depth under --root. (default: 3)
 #   graphify-store seed [DIR]
 #       Copy the stored graph into DIR/graphify-out when DIR has none. Run by
-#       wt.hook in each new worktree and by graphify-refresh. (DIR に
-#       graphify-out がなければ、貯めたグラフをコピーする。wt.hook が新しい
-#       worktree で、graphify-refresh がターンの終わりに動かす。)
+#       wt.hook in each new worktree. (DIR に graphify-out がなければ、貯めた
+#       グラフをコピーする。wt.hook が新しい worktree で動かす。)
 #
 # Store / 置き場所:
 #   ~/.graphify/projects/<owner>/<repo>/  (the contents of graphify-out/)
