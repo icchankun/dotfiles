@@ -1,0 +1,264 @@
+#!/usr/bin/env bash
+
+# =============================================================================
+# codex-pr-review
+# Review a pull request someone else opened with Codex: a reviewer finds the
+# problems, an advisor checks each one against the code, and this script turns
+# what is left into a GitHub review.
+# (他の人が作った PR を Codex でレビューする。reviewer が問題を見つけ、advisor が
+#  1件ずつコードで確かめ、残ったものをこのスクリプトが GitHub のレビューにする。)
+#
+# Dependencies / 依存:
+#   - gh, git, jq, codex
+#   - the reviewing-pull-requests and checking-review-findings skills
+#     (icchankun/skills, deployed by apm to ~/.agents/skills)
+#   - graphify (optional / 任意)
+#
+# Usage / 使い方:
+#   codex-pr-review [--post] <PR URL | owner/repo#number>
+#
+#   Without --post the review is printed and nothing is sent to GitHub.
+#   (--post を付けなければ、文面を表示するだけで GitHub には送らない。)
+#
+# Notes / 補足:
+#   - Only the first review for now: no loop over later pushes, no approve.
+#     (今は初回のレビューだけ。push のあとの往復と approve はまだしない。)
+#   - Codex runs with the dotfiles-readonly permission profile from
+#     ~/.codex/config.toml: it only reads, cannot read ~/.ssh or .env files, and
+#     never gets GitHub credentials. Only this script posts, so a pull request
+#     cannot talk Codex into posting or approving.
+#     (Codex は ~/.codex/config.toml の権限プロファイル dotfiles-readonly で動く。
+#      読むだけで、~/.ssh と .env は読めず、GitHub の権限も持たない。投稿するのは
+#      このスクリプトだけなので、PR の中身に誘導されても Codex が投稿や approve を
+#      することはない。)
+#   - Models are set here rather than in ~/.codex/config.toml, which Codex writes
+#     to itself (trusted folders) and so is not managed by chezmoi.
+#     (モデルは ~/.codex/config.toml ではなくここで決める。そのファイルは Codex が
+#      信頼したフォルダなどを自分で書き込むので、chezmoi では管理しない。)
+#   - Each run is kept under ~/.local/state/codex-pr-review/ for checking what
+#     Codex returned. (実行ごとの入力と Codex の結果は ~/.local/state/
+#      codex-pr-review/ に残す。)
+# =============================================================================
+
+set -euo pipefail
+
+readonly REVIEWER_MODEL=gpt-6.1-sol
+readonly REVIEWER_EFFORT=medium
+readonly ADVISOR_MODEL=gpt-6.1-sol
+readonly ADVISOR_EFFORT=high
+
+readonly STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/codex-pr-review"
+readonly CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/codex-pr-review"
+
+die() {
+  printf 'codex-pr-review: %s\n' "$1" >&2
+  exit 1
+}
+
+usage() {
+  sed -n '/^# Usage/,/^# Notes/p' "$0" | sed 's/^# \{0,1\}//;$d'
+}
+
+post=false
+target=
+
+parse_args() {
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --post) post=true; shift ;;
+      -h | --help) usage; exit 0 ;;
+      -*) die "unknown option: $1" ;;
+      *) [ -z "$target" ] || die "only one pull request at a time"; target="$1"; shift ;;
+    esac
+  done
+  [ -n "$target" ] || { usage >&2; exit 1; }
+
+  case "$target" in
+    https://github.com/*/pull/*)
+      repo=$(printf '%s' "$target" | sed -E 's#https://github.com/([^/]+/[^/]+)/pull/.*#\1#')
+      number=$(printf '%s' "$target" | sed -E 's#.*/pull/([0-9]+).*#\1#')
+      ;;
+    */*'#'*) repo="${target%%#*}" number="${target##*#}" ;;
+    *) die "not a pull request: $target" ;;
+  esac
+  [[ "$number" =~ ^[0-9]+$ ]] || die "not a pull request number: $number"
+}
+
+require_environment() {
+  local cmd
+  for cmd in gh git jq codex; do
+    command -v "$cmd" >/dev/null || die "$cmd not found in PATH"
+  done
+
+  skill_root=
+  for dir in "$HOME/.agents/skills" "$HOME/.codex/skills"; do
+    [ -f "$dir/reviewing-pull-requests/schemas/findings.json" ] && { skill_root="$dir"; break; }
+  done
+  [ -n "$skill_root" ] || die "reviewing-pull-requests is not installed (apm install -g)"
+  [ -f "$skill_root/checking-review-findings/SKILL.md" ] || die "checking-review-findings is not installed (apm install -g)"
+  schema="$skill_root/reviewing-pull-requests/schemas/findings.json"
+}
+
+# Read the pull request and refuse the ones this script must not review.
+# (PR を読み、レビューしてはいけないものを断る。)
+load_pull_request() {
+  local me
+  pr=$(gh api "repos/$repo/pulls/$number") || die "could not read $repo#$number"
+  me=$(gh api user --jq .login)
+
+  [ "$(jq -r .state <<<"$pr")" = open ] || die "$repo#$number is not open"
+  [ "$(jq -r .user.login <<<"$pr")" != "$me" ] || die "$repo#$number is your own pull request"
+
+  base=$(jq -r .base.ref <<<"$pr")
+  head=$(jq -r .head.sha <<<"$pr")
+  run="$STATE_DIR/runs/${repo//\//__}__$number/$head"
+  mkdir -p "$run/input"
+}
+
+# Check out the head in a throwaway worktree of a cached bare clone, so the
+# repositories you work in are never touched.
+# (キャッシュした bare clone から、使い捨ての worktree に head を checkout する。
+#  普段作業しているリポジトリには触らない。)
+checkout() {
+  bare="$CACHE_DIR/repos/$repo.git"
+  if [ ! -d "$bare" ]; then
+    mkdir -p "$(dirname "$bare")"
+    gh repo clone "$repo" "$bare" -- --bare --filter=blob:none --quiet || die "could not clone $repo"
+  fi
+  git -C "$bare" fetch --quiet --filter=blob:none origin \
+    "+refs/heads/$base:refs/heads/$base" "+refs/pull/$number/head:refs/pull/$number" ||
+    die "could not fetch $repo#$number"
+
+  tmp=$(mktemp -d)
+  tree="$tmp/tree"
+  trap 'git -C "$bare" worktree remove --force "$tree" >/dev/null 2>&1 || true; rm -rf "$tmp"' EXIT
+  git -C "$bare" worktree add --quiet --detach "$tree" "$head"
+
+  merge_base=$(git -C "$bare" merge-base "refs/heads/$base" "$head")
+}
+
+# Write what the skills read into the input directory.
+# (skill が読むものを入力のディレクトリに書く。)
+write_input() {
+  local author
+  author=$(jq -r .user.login <<<"$pr")
+
+  jq '{number, title, body, author: .user.login, base: .base.ref, head: .head.sha, url: .html_url, draft}' <<<"$pr" >"$run/input/pr.json"
+  git -C "$tree" diff --no-color --no-ext-diff --src-prefix=a/ --dst-prefix=b/ "$merge_base" "$head" >"$run/input/diff.patch"
+
+  {
+    gh api --paginate --slurp "repos/$repo/issues/$number/comments"
+    gh api --paginate --slurp "repos/$repo/pulls/$number/reviews"
+    gh api --paginate --slurp "repos/$repo/pulls/$number/comments"
+  } | jq -s --arg author "$author" '
+    def who: {author: .user.login, is_pr_author: (.user.login == $author), is_bot: (.user.type == "Bot")};
+    (.[0] | add // [] | map(who + {kind: "comment", body, created_at})) +
+    (.[1] | add // [] | map(select(.body != "") | who + {kind: "review", state, body, created_at: .submitted_at})) +
+    (.[2] | add // [] | map(who + {kind: "inline", id, in_reply_to: .in_reply_to_id, path, line, body, created_at}))
+    | sort_by(.created_at)' >"$run/input/conversation.json"
+}
+
+# Refresh the code graph for the reviewer's impact checks. It parses locally
+# and uses no tokens. (reviewer が影響範囲を調べるためにグラフを更新する。手元で
+# 解析するだけで、トークンは使わない。)
+update_graph() {
+  command -v graphify >/dev/null || return 0
+  (cd "$tree" && graphify update . >"$run/graphify.log" 2>&1) || true
+}
+
+# Run one skill with codex exec and keep its JSON. Stop with the reset time
+# when the usage limit is reached. (codex exec で skill を1つ動かし、JSON を残す。
+# 利用枠を使い切ったら、戻る時刻を出して止める。)
+run_codex() {
+  local role="$1" model="$2" effort="$3" prompt="$4"
+  if ! codex exec --ephemeral -m "$model" -c "model_reasoning_effort=$effort" -c 'default_permissions="dotfiles-readonly"' \
+    -C "$tree" --output-schema "$schema" -o "$run/$role.json" "$prompt" >"$run/$role.log" 2>&1; then
+    grep -i 'usage limit' "$run/$role.log" >&2 && exit 75
+    die "the $role failed; see $run/$role.log"
+  fi
+  jq -e '.findings | type == "array"' "$run/$role.json" >/dev/null || die "the $role did not return the schema; see $run/$role.json"
+}
+
+review() {
+  run_codex reviewer "$REVIEWER_MODEL" "$REVIEWER_EFFORT" \
+    "\$reviewing-pull-requests を使って PR をレビューしてください。ラウンド: 1。入力のディレクトリ: $run/input"
+  run_codex advisor "$ADVISOR_MODEL" "$ADVISOR_EFFORT" \
+    "\$checking-review-findings を使って指摘を確かめてください。ラウンド: 1。入力のディレクトリ: $run/input。reviewer が返した JSON: $run/reviewer.json"
+}
+
+# Drop the line of a finding that is outside the diff's hunks: GitHub rejects
+# inline comments there, so it is listed in the review body only.
+# (差分の hunk の外を指す指摘は行を外す。GitHub はそこにインラインのコメントを付け
+#  られないので、レビューの本文の一覧にだけ出す。)
+place_findings() {
+  local lines
+  lines=$(awk '
+    /^\+\+\+ b\// { file = substr($0, 7); next }
+    /^\+\+\+ / { file = ""; next }
+    /^@@ / { split($3, a, ","); n = substr(a[1], 2) + 0; next }
+    file == "" { next }
+    /^\+/ || /^ / { print file ":" n; n++; next }
+  ' "$run/input/diff.patch" | jq -R . | jq -s .)
+  jq --argjson lines "$lines" '
+    .findings |= map(
+      if .line == null then .
+      elif (.file + ":" + (.line | tostring)) as $k | $lines | any(. == $k) then .
+      else .line = null end)
+  ' "$run/advisor.json" >"$run/findings.json"
+}
+
+# Build the GitHub review: a body that lists every finding and a hidden marker
+# holding the findings for the next round, plus one inline comment per finding.
+# (GitHub のレビューを組み立てる。本文には全部の指摘の一覧と、次のラウンドのために
+#  指摘を埋め込んだ隠しマーカーを入れ、指摘ごとにインラインのコメントを付ける。)
+build_review() {
+  local saved
+  saved=$(jq -c '{round: 1, head: $head, findings}' --arg head "$head" "$run/findings.json" | base64 | tr -d '\n')
+  jq --arg head "$head" --arg saved "$saved" '
+    def order: {must: 0, should: 1, nit: 2}[.severity];
+    def tag: "[" + .severity + "]";
+    (.findings | sort_by(order)) as $f
+    | (if (.good_points | length) > 0 then "レビューしました。" + (.good_points | join("、")) + "は分かりやすいです。" else "レビューしました。" end) as $open
+    | ([$open + (if ($f | length) > 0 then "気になった点は以下です。" else "気になった点はありませんでした。" end)]
+       + (if ($f | length) > 0 then ["", ($f | map(tag + " " + .title + "（" + .file + "）") | join("\n"))] else [] end)
+       + (if .scope_note then ["", .scope_note] else [] end)
+       + ["", "<!-- codex-review:v1 round=1 head=" + $head + " findings=" + $saved + " -->"]
+      ) as $body
+    | {
+        commit_id: $head,
+        event: "COMMENT",
+        body: ($body | join("\n")),
+        comments: [$f[] | select(.line != null) | {
+          path: .file, line, side: "RIGHT",
+          body: (tag + " " + .title + "\n\n" + .body + (if .suggestion then "\n\n直し方の案: " + .suggestion else "" end))
+        }]
+      }' "$run/findings.json" >"$run/review.json"
+}
+
+show_or_post() {
+  if [ "$post" = true ]; then
+    gh api -X POST "repos/$repo/pulls/$number/reviews" --input "$run/review.json" --jq .html_url ||
+      die "could not post the review; it is kept at $run/review.json"
+    return
+  fi
+
+  jq -r '.body' "$run/review.json"
+  jq -r '.comments[] | "\n--- \(.path):\(.line)\n\(.body)"' "$run/review.json"
+  jq -r '.dropped[]? | "\n(落とした指摘) \(.id): \(.reason)"' "$run/findings.json"
+  printf '\n(not posted; run again with --post. Saved in %s)\n' "$run"
+}
+
+main() {
+  parse_args "$@"
+  require_environment
+  load_pull_request
+  checkout
+  write_input
+  update_graph
+  review
+  place_findings
+  build_review
+  show_or_post
+}
+
+main "$@"
