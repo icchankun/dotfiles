@@ -34,6 +34,9 @@
 #     the verdict is only commented. (それらのリポジトリの Renovate と Dependabot の
 #     依存更新を codex-dep-review で確かめる。1回に MAX_DEP_PRS 件まで。シャドー
 #     モードなので、判定はコメントに残すだけ。)
+#   - Once a week, runs codex-dep-report to compare those verdicts with what I
+#     did, and notifies the summary. (週に1回、codex-dep-report でその判定と自分の
+#     判断を比べ、要約を知らせる。)
 #   - Notifies only what needs me: a pull request handed over after too many
 #     rounds, a dependency update to check myself, a failure, and a pause. Each
 #     is notified once. (知らせるのは自分が要るものだけ。ラウンドが多すぎて任された
@@ -148,6 +151,18 @@ check_dependency_updates() {
   done < <(dep_pull_requests)
 }
 
+# On the first run of each week from Monday, compare the dependency verdicts with
+# what I did, and say how they compare. (週の最初の回（月曜から）に、依存更新の
+# 判定と自分の判断を比べ、その結果を知らせる。)
+weekly_report() {
+  local week
+  week=$(date +%G-W%V)
+  [ "$(cat "$STATE_DIR/report-week" 2>/dev/null)" != "$week" ] || return 0
+  [ -s "$STATE_DIR/deps-shadow.tsv" ] || return 0
+  codex-dep-report --notify || { log "codex-dep-report failed"; return 0; }
+  printf '%s\n' "$week" >"$STATE_DIR/report-week"
+}
+
 untrack() {
   grep -vxF "$1" "$TRACKED" >"$TRACKED.new" || true
   mv "$TRACKED.new" "$TRACKED"
@@ -197,6 +212,7 @@ main() {
   done < <(cat "$TRACKED")
 
   check_dependency_updates || true
+  weekly_report
 }
 
 main "$@"
