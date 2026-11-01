@@ -1,0 +1,146 @@
+#!/usr/bin/env bash
+
+# =============================================================================
+# codex-dep-report
+# Compare the shadow-mode verdicts of codex-dep-review with what I actually did
+# with each dependency update, to decide whether approving them on their own
+# is safe yet. Merging stays with a person either way.
+# (codex-dep-review のシャドーモードの判定と、自分が実際にその依存更新を
+# どうしたかを比べ、自動で approve させてよいかを決める材料にする。merge は
+# どちらにしても人がする。)
+#
+# Dependencies / 依存:
+#   - gh, jq, osascript (only with --notify / --notify のときだけ)
+#
+# Usage / 使い方:
+#   codex-dep-report [--notify]
+#
+#   Writes ~/.local/state/codex-pr-review/deps-report.md and prints a summary.
+#   --notify also shows the summary as a macOS notification.
+#   (~/.local/state/codex-pr-review/deps-report.md に書き、要約を表示する。
+#    --notify を付けると、要約を macOS の通知にも出す。)
+#
+# What I did, read from GitHub / 自分の判断は GitHub から読む:
+#   merged as the bot left it        -> ok
+#   merged after a person's commit   -> fix (直す必要があった)
+#   closed by a person               -> reject (入れないと判断した)
+#   reverted after the merge         -> revert (ok ではなかった)
+#   closed by the bot, or still open -> not counted (数えない)
+#
+#   AI ok + me ok, AI needs_human + me not ok -> agree (一致)
+#   AI ok + me not ok                         -> unsafe miss (危ない外れ)
+#   AI needs_human + me ok                    -> over-cautious (慎重すぎた外れ)
+# =============================================================================
+
+set -euo pipefail
+
+# When the automatic approval may be turned on. (自動 approve に進んでよい目安。)
+readonly MIN_COUNTED=30
+readonly RECENT_WEEKS=4
+readonly MAX_OVERCAUTIOUS_PERCENT=20
+
+readonly STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/codex-pr-review"
+readonly SHADOW_LOG="$STATE_DIR/deps-shadow.tsv"
+readonly REPORT="$STATE_DIR/deps-report.md"
+
+notify=false
+[ "${1:-}" = --notify ] && notify=true
+
+[ -s "$SHADOW_LOG" ] || { echo "no verdicts yet: $SHADOW_LOG"; exit 0; }
+
+is_bot() { [[ "$1" =~ \[bot\]$ || "$1" =~ ^(renovate|dependabot)$ ]]; }
+
+# What happened to the pull request ($1 = owner/repo, $2 = number).
+# (PR がその後どうなったか。)
+outcome() {
+  local repo="$1" number="$2" pr closer authors reverted
+  pr=$(gh api "repos/$repo/pulls/$number" 2>/dev/null) || { echo unknown; return; }
+
+  if [ "$(jq -r .state <<<"$pr")" = open ]; then echo open; return; fi
+
+  if [ "$(jq -r .merged <<<"$pr")" != true ]; then
+    closer=$(gh api "repos/$repo/issues/$number" --jq '.closed_by.login // ""' 2>/dev/null || true)
+    if [ -z "$closer" ] || is_bot "$closer"; then echo superseded; else echo reject; fi
+    return
+  fi
+
+  reverted=$(gh search prs --repo "$repo" --json number --jq 'length' -- "\"Reverts $repo#$number\" in:body" 2>/dev/null || echo 0)
+  if [ "${reverted:-0}" -gt 0 ]; then echo revert; return; fi
+
+  authors=$(gh api --paginate "repos/$repo/pulls/$number/commits" --jq '.[] | (.author.login // .commit.author.name)' 2>/dev/null || true)
+  while read -r login; do
+    [ -n "$login" ] || continue
+    is_bot "$login" || { echo fix; return; }
+  done <<<"$authors"
+  echo ok
+}
+
+# The last verdict of each pull request, with what I did.
+# (PR ごとの最後の判定と、自分の判断。)
+records() {
+  jq -R -s -c '
+    split("\n") | map(select(. != "") | split("\t") | {at: .[0], pr: .[1], head: .[2], verdict: .[3], reasons: (.[4] // "")})
+    | group_by(.pr) | map(last) | .[]' "$SHADOW_LOG" |
+    while read -r rec; do
+      local pr outcome_value
+      pr=$(jq -r .pr <<<"$rec")
+      outcome_value=$(outcome "${pr%%#*}" "${pr##*#}")
+      jq -c --arg outcome "$outcome_value" '. + {outcome: $outcome}' <<<"$rec"
+    done
+}
+
+since=$(date -v-"$RECENT_WEEKS"w '+%F' 2>/dev/null || date -d "-$RECENT_WEEKS weeks" '+%F')
+
+records | jq -s \
+  --arg since "$since" --argjson min "$MIN_COUNTED" --argjson weeks "$RECENT_WEEKS" \
+  --argjson max_over "$MAX_OVERCAUTIOUS_PERCENT" --arg today "$(date '+%F')" '
+  def me_ok: .outcome == "ok";
+  def counted: .outcome | IN("ok", "fix", "reject", "revert");
+  def kind: if (.verdict == "ok") == me_ok then "agree" elif .verdict == "ok" then "unsafe" else "overcautious" end;
+  def tally: {n: length, agree: map(select(kind == "agree")) | length,
+              unsafe: map(select(kind == "unsafe")) | length,
+              overcautious: map(select(kind == "overcautious")) | length};
+  def link: .pr as $p | ($p | split("#")) as $s | "[\($p)](https://github.com/\($s[0])/pull/\($s[1]))";
+
+  (map(select(counted)) | map(. + {kind: kind})) as $c
+  | ($c | tally) as $all
+  | ($c | map(select(.at[0:10] >= $since)) | tally) as $recent
+  | ($all.n >= $min) as $enough
+  | ($recent.unsafe == 0) as $safe
+  | (if $all.n == 0 then 0 else ($all.overcautious * 100 / $all.n | floor) end) as $over
+  | ($over <= $max_over) as $useful
+  | {
+      summary: "依存更新の判定: \($all.n) 件中 一致 \($all.agree) / 危ない外れ \($all.unsafe) / 慎重すぎた外れ \($all.overcautious)",
+      ready: ($enough and $safe and $useful),
+      markdown: ([
+        "# 依存更新の判定と自分の判断（\($today)）",
+        "",
+        "| | 件数 | 一致 | 危ない外れ | 慎重すぎた外れ |",
+        "|---|---|---|---|---|",
+        "| 全体 | \($all.n) | \($all.agree) | \($all.unsafe) | \($all.overcautious) |",
+        "| 直近 \($weeks) 週 | \($recent.n) | \($recent.agree) | \($recent.unsafe) | \($recent.overcautious) |",
+        "",
+        "まだ数えていないもの（open・bot が閉じた・読めない）: \(length - ($c | length)) 件",
+        "",
+        "## 自動 approve に進む目安",
+        "",
+        "- \(if $enough then "✅" else "⬜" end) 判定が \($min) 件以上ある（\($all.n) 件）",
+        "- \(if $safe then "✅" else "❌" end) 直近 \($weeks) 週で危ない外れが 0 件（\($recent.unsafe) 件）",
+        "- \(if $useful then "✅" else "❌" end) 慎重すぎた外れが \($max_over)% 以下（\($over)%）",
+        "",
+        "## 危ない外れ（AI は ok、自分は ok にしなかった）",
+        ""
+      ] + ($c | map(select(.kind == "unsafe") | "- \(link): 自分の判断 \(.outcome)") | if length == 0 then ["なし"] else . end)
+        + ["", "## 慎重すぎた外れ（AI は自分で見る、自分はそのまま merge した）", ""]
+        + ($c | map(select(.kind == "overcautious") | "- \(link): \(.reasons)") | if length == 0 then ["なし"] else . end)
+      | join("\n"))
+    }' >"$STATE_DIR/deps-report.json"
+
+jq -r .markdown "$STATE_DIR/deps-report.json" >"$REPORT"
+summary=$(jq -r .summary "$STATE_DIR/deps-report.json")
+[ "$(jq -r .ready "$STATE_DIR/deps-report.json")" = true ] && summary="$summary。自動 approve に進む目安を満たしています"
+printf '%s\n%s\n' "$summary" "$REPORT"
+
+if [ "$notify" = true ]; then
+  osascript -e "display notification \"$summary\" with title \"codex-dep-report\"" >/dev/null 2>&1 || true
+fi
