@@ -98,6 +98,26 @@
             "command": "~/.bin/git-rewrite-guard"
           }
         ]
+      },
+      {
+        "matcher": "Bash|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.bin/graphify-hook-guard search",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.bin/graphify-hook-guard read",
+            "timeout": 10
+          }
+        ]
       }
     ]
   },
