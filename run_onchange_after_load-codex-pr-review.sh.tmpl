@@ -1,0 +1,10 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/sh
+# codex-pr-review の launchd ジョブを読み込み直す。plist が変わったときだけ走る
+# plist: {{ include "private_Library/private_LaunchAgents/com.icchankun.codex-pr-review.plist.tmpl" | sha256sum }}
+set -eu
+
+label=com.icchankun.codex-pr-review
+launchctl bootout "gui/$(id -u)/$label" 2>/dev/null || true
+launchctl bootstrap "gui/$(id -u)" "$HOME/Library/LaunchAgents/$label.plist"
+{{ end -}}

@@ -36,7 +36,9 @@
 #       (MAX_ROUNDS を超えた -> 止めて人に任せる)
 #
 # Exit status / 終了コード:
-#   0   done, or nothing to do (済んだか、することがない)
+#   0   reviewed with Codex (Codex でレビューした)
+#   3   Codex not needed: nothing new, or only CI was checked
+#       (Codex は使っていない。新しいことがないか、CI だけを見た)
 #   4   handed over after MAX_ROUNDS (MAX_ROUNDS を超えたので人に任せた)
 #   75  Codex's usage limit; the message says when it resets (Codex の利用枠切れ。
 #       戻る時刻はメッセージに出る)
@@ -392,14 +394,14 @@ main() {
   if [ "$post" = true ] && [ -f "$pending" ]; then
     if [ "$(jq -r .head "$pending")" = "$head" ]; then
       finish_when_ci_done "$pending"
-      return
+      exit 3
     fi
     rm -f "$pending"
   fi
 
   if [ "$last_head" = "$head" ] && ! author_replied; then
     printf '%s#%s: nothing new since the last review\n' "$repo" "$number"
-    return
+    exit 3
   fi
 
   round=$((last_round + 1))
