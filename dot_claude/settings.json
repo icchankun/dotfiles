@@ -74,6 +74,11 @@
             "type": "command",
             "command": "~/.bin/dev-flow-hook stop",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "~/.bin/graphify-refresh",
+            "async": true
           }
         ]
       }
@@ -96,6 +101,26 @@
           {
             "type": "command",
             "command": "~/.bin/git-rewrite-guard"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.bin/graphify-hook-guard search",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.bin/graphify-hook-guard read",
+            "timeout": 10
           }
         ]
       }

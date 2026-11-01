@@ -1,0 +1,32 @@
+#!/bin/sh
+
+# =============================================================================
+# graphify-hook-guard
+# Claude Code PreToolUse hook: when the repository has a graphify graph, remind
+# Claude to look it up before searching or reading files one by one.
+# (Claude Code の PreToolUse の hook。リポジトリに graphify のグラフがあるとき、
+#  ファイルを1つずつ探したり読んだりする前にグラフを引くよう促す。)
+#
+# Dependencies / 依存:
+#   - graphify (mise: pipx:graphifyy)
+#
+# Usage / 使い方:
+#   graphify-hook-guard search   matcher Bash|Grep
+#   graphify-hook-guard read     matcher Read|Glob
+#
+# `graphify claude install` writes the same hooks into each repository's
+# .claude/settings.json and CLAUDE.md, which would end up in commits to work
+# repositories, so they are registered once in ~/.claude/settings.json instead.
+# Without a graph this exits before starting graphify, which keeps every Bash,
+# Read and Grep call from waiting on Python.
+# (`graphify claude install` は同じ hook を各リポジトリの .claude/settings.json と
+#  CLAUDE.md に書き込み、仕事のリポジトリのコミットに混ざるので、代わりに
+#  ~/.claude/settings.json に一度だけ登録する。グラフがなければ graphify を起動
+#  せずに終わるので、Bash・Read・Grep のたびに Python を待たせない。)
+# =============================================================================
+
+set -eu
+
+[ -f graphify-out/graph.json ] || exit 0
+command -v graphify >/dev/null 2>&1 || exit 0
+exec graphify hook-guard "$1"
