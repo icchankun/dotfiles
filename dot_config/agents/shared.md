@@ -11,9 +11,17 @@ worktree の作成・削除は `git wt` で行う。`git worktree add` / `git wo
 
 # Herdr.app のペイン間でやりとりする手順
 
-相手が Claude セッションなら `SendMessage` を使う。宛先は `ListAgents` に出る名前で、driver の terminal の番地（`$HC_TERMINAL_ID`）に役割を付けた形（`t7` の driver なら `t7-driver`、その reviewer なら `t7-reviewer`）に揃えてある。
+相手が Claude Code でも Codex でも `hc` を使う。使う前に `hc --skill` を読み、それに従う。
 
-`hc send <番地>` は terminal への打ち込みで、返事は `hc read <番地>` で画面から読み取るしかない。Codex や Gemini など Claude 以外が相手のとき、または `ListAgents` に出てこないときに使う。
+- 送る: `hc send <番地> "<本文>"`。返事がほしいときは、本文に返信先として `hc send $HC_TERMINAL_ID` を書く。
+- 待つ: `hc wait --children any`。返事は `<hc from="t8 …">…</hc>` の形で、次の入力として届く。`hc read` で相手の画面を読みに行かない。
+- 宛先は番地（`t7` など）で指定する。自分の番地は `$HC_TERMINAL_ID`。
+- 「reviewer に送って」「t7 の driver に送って」のように役割で頼まれたら、ラベルから番地を探す。agent には `role`（`driver` か `reviewer`）と `driver`（どの driver のものか）のラベルが付いている。
+
+```bash
+hc ls --label role=reviewer --label driver="$HC_TERMINAL_ID"   # 自分の reviewer
+hc ls --label role=driver --label driver=t7                     # t7 の driver
+```
 
 # 文章を書くとき
 

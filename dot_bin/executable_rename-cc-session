@@ -197,8 +197,7 @@ class CcSessionRenamer
   end
 
   # ここで書くのはセッションのタイトルで、claude -n で付けた名前や
-  # ~/.claude/sessions/<pid>.json の name とは別物。SendMessage の宛先も statusline も
-  # 後者を読んでいるので、生成タイトルを入れても宛先は見失われない。
+  # ~/.claude/sessions/<pid>.json の name とは別物。
   def rename_cc_session(title)
     entry = JSON.generate({ type: 'custom-title', customTitle: title, sessionId: cc_session_id })
     File.open(transcript_path, 'a') { |f| f.puts(entry) }

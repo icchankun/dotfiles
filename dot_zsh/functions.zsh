@@ -15,17 +15,3 @@ rm-wt() {
   [[ -z "$target" ]] && return
   git worktree remove "$target" "$@" && cd "$main_worktree"
 }
-
-# Herdr.appのterminalで起動したClaude Codeに driver のセッション名 (`t7-driver`) を付ける。
-# 名前に terminal の番地が入るので、セッション間メッセージの宛先を探さずに済む。
-# -n を明示した起動 (herdr-coding のレビュー役など) はワーカー側の名前を尊重して素通しする。
-claude() {
-  if [[ -n ${HC_TERMINAL_ID:-} && ( $# -eq 0 || $1 == -* ) \
-        && " $* " != *" -n "* && " $* " != *" --name "* ]]; then
-    local name
-    name="$(herdr-agent-name)" || { command claude "$@"; return }
-    command claude -n "$name" "$@"
-  else
-    command claude "$@"
-  fi
-}
