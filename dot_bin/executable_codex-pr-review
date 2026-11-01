@@ -20,9 +20,28 @@
 #   Without --post the review is printed and nothing is sent to GitHub.
 #   (--post を付けなければ、文面を表示するだけで GitHub には送らない。)
 #
+# Rounds / ラウンド:
+#   Each run picks up where the last posted review left off, read back from the
+#   hidden marker in that review.
+#   (実行のたびに、前に投稿したレビューの隠しマーカーから続きを読み戻す。)
+#     - a new push, or a new reply from the author -> review the next round
+#       (新しい push か、作者の新しい返信がある -> 次のラウンドをレビューする)
+#     - must or should left -> post a COMMENT review
+#       (must か should が残っている -> COMMENT のレビューを投稿する)
+#     - none left -> wait for CI, then approve with LGTM; if CI fails, post the
+#       review as a COMMENT without approving
+#       (残っていない -> CI を待って LGTM 付きで approve する。CI が落ちたら approve
+#        せずに COMMENT で投稿する)
+#     - more than MAX_ROUNDS rounds -> stop and leave it to you
+#       (MAX_ROUNDS を超えた -> 止めて人に任せる)
+#
+# Exit status / 終了コード:
+#   0   done, or nothing to do (済んだか、することがない)
+#   4   handed over after MAX_ROUNDS (MAX_ROUNDS を超えたので人に任せた)
+#   75  Codex's usage limit; the message says when it resets (Codex の利用枠切れ。
+#       戻る時刻はメッセージに出る)
+#
 # Notes / 補足:
-#   - Only the first review for now: no loop over later pushes, no approve.
-#     (今は初回のレビューだけ。push のあとの往復と approve はまだしない。)
 #   - Codex runs with the dotfiles-readonly permission profile from
 #     ~/.codex/config.toml: it only reads, cannot read ~/.ssh or .env files, and
 #     never gets GitHub credentials. Only this script posts, so a pull request
@@ -46,6 +65,9 @@ readonly REVIEWER_MODEL=gpt-6.1-sol
 readonly REVIEWER_EFFORT=medium
 readonly ADVISOR_MODEL=gpt-6.1-sol
 readonly ADVISOR_EFFORT=high
+readonly MAX_ROUNDS=5
+readonly LGTM='CI もすべて通っているので approve します。LGTM です！'
+readonly CI_FAILED='CI が通っていないので、approve は見送ります。'
 
 readonly STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/codex-pr-review"
 readonly CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/codex-pr-review"
@@ -102,17 +124,58 @@ require_environment() {
 # Read the pull request and refuse the ones this script must not review.
 # (PR を読み、レビューしてはいけないものを断る。)
 load_pull_request() {
-  local me
   pr=$(gh api "repos/$repo/pulls/$number") || die "could not read $repo#$number"
   me=$(gh api user --jq .login)
 
   [ "$(jq -r .state <<<"$pr")" = open ] || die "$repo#$number is not open"
   [ "$(jq -r .user.login <<<"$pr")" != "$me" ] || die "$repo#$number is your own pull request"
 
+  author=$(jq -r .user.login <<<"$pr")
   base=$(jq -r .base.ref <<<"$pr")
   head=$(jq -r .head.sha <<<"$pr")
-  run="$STATE_DIR/runs/${repo//\//__}__$number/$head"
-  mkdir -p "$run/input"
+  key="${repo//\//__}__$number"
+  pending="$STATE_DIR/pending/$key.json"
+}
+
+# Read back the last review this script posted: its round, the head it saw, the
+# findings still open, and when it was posted.
+# (このスクリプトが前に投稿したレビューから、ラウンド・見た head・残っている指摘・
+#  投稿した時刻を読み戻す。)
+load_last_review() {
+  local last data
+  reviews=$(gh api --paginate --slurp "repos/$repo/pulls/$number/reviews" | jq 'add // []')
+  last=$(jq -c --arg me "$me" '
+    map(select(.user.login == $me and (.body | test("<!-- codex-review:v1 "))))
+    | sort_by(.submitted_at) | last // empty' <<<"$reviews")
+
+  last_round=0 last_head= last_at= open='[]'
+  [ -n "$last" ] || return 0
+  data=$(jq -r '.body | capture("codex-review:v1 round=(?<r>[0-9]+) head=(?<h>[0-9a-f]+) open=(?<d>[A-Za-z0-9+/=]+)") | "\(.r) \(.h) \(.d)"' <<<"$last") ||
+    die "could not read the marker of the last review"
+  read -r last_round last_head data <<<"$data"
+  open=$(printf '%s' "$data" | base64 --decode | jq -c '.open')
+  last_at=$(jq -r .submitted_at <<<"$last")
+}
+
+# The author replied after the last review, so an explanation may settle a
+# finding without a push. (前回のレビューのあとに作者が返信した。push がなくても、
+# 説明で解消する指摘があるかもしれない。)
+author_replied() {
+  [ -n "$last_at" ] || return 1
+  {
+    gh api --paginate --slurp "repos/$repo/issues/$number/comments"
+    gh api --paginate --slurp "repos/$repo/pulls/$number/comments"
+  } | jq -s -e --arg author "$author" --arg since "$last_at" '
+    [.[] | add // [] | .[] | select(.user.login == $author and .created_at > $since)] | length > 0' >/dev/null
+}
+
+# Where the CI of the head stands: pass, pending or fail. No checks counts as pass.
+# (head の CI の状態。pass / pending / fail。チェックがなければ pass とみなす。)
+ci_state() {
+  local buckets
+  buckets=$(gh pr checks "$number" -R "$repo" --json bucket --jq 'map(.bucket)' 2>/dev/null) || buckets='[]'
+  jq -r 'if any(.[]; . == "fail" or . == "cancel") then "fail"
+         elif any(.[]; . == "pending") then "pending" else "pass" end' <<<"${buckets:-[]}"
 }
 
 # Check out the head in a throwaway worktree of a cached bare clone, so the
@@ -135,16 +198,27 @@ checkout() {
   git -C "$bare" worktree add --quiet --detach "$tree" "$head"
 
   merge_base=$(git -C "$bare" merge-base "refs/heads/$base" "$head")
+
+  # From the second round, only what changed since the last review is read. After
+  # a force push the old head may be gone, so the whole pull request is read again.
+  # (2回目以降は前回から変わったところだけを読む。force push で前回の head が
+  #  消えていたら、PR 全体を読み直す。)
+  diff_from=$merge_base
+  if [ -n "$last_head" ] && git -C "$bare" cat-file -e "$last_head^{commit}" 2>/dev/null &&
+    git -C "$bare" merge-base --is-ancestor "$last_head" "$head"; then
+    diff_from=$last_head
+  fi
 }
 
 # Write what the skills read into the input directory.
 # (skill が読むものを入力のディレクトリに書く。)
 write_input() {
-  local author
-  author=$(jq -r .user.login <<<"$pr")
+  run="$STATE_DIR/runs/$key/$head-$round"
+  mkdir -p "$run/input"
 
   jq '{number, title, body, author: .user.login, base: .base.ref, head: .head.sha, url: .html_url, draft}' <<<"$pr" >"$run/input/pr.json"
-  git -C "$tree" diff --no-color --no-ext-diff --src-prefix=a/ --dst-prefix=b/ "$merge_base" "$head" >"$run/input/diff.patch"
+  git -C "$tree" diff --no-color --no-ext-diff --src-prefix=a/ --dst-prefix=b/ "$diff_from" "$head" >"$run/input/diff.patch"
+  [ "$round" -eq 1 ] || printf '%s\n' "$open" >"$run/input/previous.json"
 
   {
     gh api --paginate --slurp "repos/$repo/issues/$number/comments"
@@ -180,10 +254,14 @@ run_codex() {
 }
 
 review() {
-  run_codex reviewer "$REVIEWER_MODEL" "$REVIEWER_EFFORT" \
-    "\$reviewing-pull-requests を使って PR をレビューしてください。ラウンド: 1。入力のディレクトリ: $run/input"
+  local effort=$REVIEWER_EFFORT
+  # Later rounds read only the change since the last review, so a lighter effort
+  # is enough. (2回目以降は前回からの変更だけを読むので、軽い effort で足りる。)
+  [ "$round" -eq 1 ] || effort=low
+  run_codex reviewer "$REVIEWER_MODEL" "$effort" \
+    "\$reviewing-pull-requests を使って PR をレビューしてください。ラウンド: $round。入力のディレクトリ: $run/input"
   run_codex advisor "$ADVISOR_MODEL" "$ADVISOR_EFFORT" \
-    "\$checking-review-findings を使って指摘を確かめてください。ラウンド: 1。入力のディレクトリ: $run/input。reviewer が返した JSON: $run/reviewer.json"
+    "\$checking-review-findings を使って指摘を確かめてください。ラウンド: $round。入力のディレクトリ: $run/input。reviewer が返した JSON: $run/reviewer.json"
 }
 
 # Drop the line of a finding that is outside the diff's hunks: GitHub rejects
@@ -207,27 +285,50 @@ place_findings() {
   ' "$run/advisor.json" >"$run/findings.json"
 }
 
+# Settle the previous findings: one the advisor did not mention counts as still
+# open. Then the open list for the next round is the new findings plus the
+# previous ones left unresolved.
+# (前回の指摘を確定する。advisor が触れなかったものは残っているとみなす。次の
+#  ラウンドに持ち越すのは、今回の指摘と、解消していない前回の指摘。)
+settle_findings() {
+  jq --argjson open "$open" '
+    (.previous | map({key: .id, value: .}) | from_entries) as $seen
+    | .previous = [$open[] | . as $f | ($seen[$f.id] // {status: "unresolved", note: ("「" + $f.title + "」の対応を確認できませんでした")}) + {id: $f.id, severity: $f.severity}]
+    | .open = (.findings + [$open[] | select(.id as $id | any($seen[$id]; .status == "resolved" or .status == "explained") | not)])
+    | .ready = ([.open[] | select(.severity != "nit")] | length == 0)
+  ' "$run/findings.json" >"$run/settled.json"
+  mv "$run/settled.json" "$run/findings.json"
+}
+
 # Build the GitHub review: a body that lists every finding and a hidden marker
-# holding the findings for the next round, plus one inline comment per finding.
-# (GitHub のレビューを組み立てる。本文には全部の指摘の一覧と、次のラウンドのために
-#  指摘を埋め込んだ隠しマーカーを入れ、指摘ごとにインラインのコメントを付ける。)
+# holding the open findings for the next round, plus one inline comment per new
+# finding. The event and the closing line are added once CI is known.
+# (GitHub のレビューを組み立てる。本文には指摘の一覧と、次のラウンドに持ち越す指摘を
+#  埋め込んだ隠しマーカーを入れ、今回の指摘ごとにインラインのコメントを付ける。
+#  event と締めの1行は、CI の結果が分かってから足す。)
 build_review() {
   local saved
-  saved=$(jq -c '{round: 1, head: $head, findings}' --arg head "$head" "$run/findings.json" | base64 | tr -d '\n')
-  jq --arg head "$head" --arg saved "$saved" '
+  saved=$(jq -c '{open}' "$run/findings.json" | base64 | tr -d '\n')
+  jq --arg head "$head" --arg saved "$saved" --argjson round "$round" '
     def order: {must: 0, should: 1, nit: 2}[.severity];
     def tag: "[" + .severity + "]";
+    def list: map(tag + " " + .title + "（" + .file + "）") | join("\n");
     (.findings | sort_by(order)) as $f
-    | (if (.good_points | length) > 0 then "レビューしました。" + (.good_points | join("、")) + "は分かりやすいです。" else "レビューしました。" end) as $open
-    | ([$open + (if ($f | length) > 0 then "気になった点は以下です。" else "気になった点はありませんでした。" end)]
-       + (if ($f | length) > 0 then ["", ($f | map(tag + " " + .title + "（" + .file + "）") | join("\n"))] else [] end)
-       + (if .scope_note then ["", .scope_note] else [] end)
-       + ["", "<!-- codex-review:v1 round=1 head=" + $head + " findings=" + $saved + " -->"]
-      ) as $body
+    | ((if $round == 1 then
+        [(if (.good_points | length) > 0 then "レビューしました。" + (.good_points | join("、")) + "は分かりやすいです。" else "レビューしました。" end)
+          + (if ($f | length) > 0 then "気になった点は以下です。" else "気になった点はありませんでした。" end)]
+        + (if ($f | length) > 0 then ["", ($f | list)] else [] end)
+      else
+        ["対応ありがとうございます。前回の指摘への対応を確認しました。", "",
+         (.previous | sort_by(order) | map(tag + " " + .note) | join("\n"))]
+        + (if ($f | length) > 0 then ["", "新しく気になった点は以下です。", "", ($f | list)] else [] end)
+      end)
+      + (if .scope_note then ["", .scope_note] else [] end)) as $body
     | {
         commit_id: $head,
-        event: "COMMENT",
         body: ($body | join("\n")),
+        marker: ("<!-- codex-review:v1 round=" + ($round | tostring) + " head=" + $head + " open=" + $saved + " -->"),
+        ready,
         comments: [$f[] | select(.line != null) | {
           path: .file, line, side: "RIGHT",
           body: (tag + " " + .title + "\n\n" + .body + (if .suggestion then "\n\n直し方の案: " + .suggestion else "" end))
@@ -235,30 +336,86 @@ build_review() {
       }' "$run/findings.json" >"$run/review.json"
 }
 
-show_or_post() {
-  if [ "$post" = true ]; then
-    gh api -X POST "repos/$repo/pulls/$number/reviews" --input "$run/review.json" --jq .html_url ||
-      die "could not post the review; it is kept at $run/review.json"
-    return
-  fi
+# Post a built review with EVENT ($2) and an optional closing line ($3).
+# (組み立てたレビューを EVENT ($2) と、あれば締めの1行 ($3) を付けて投稿する。)
+post_review() {
+  local file="$1" event="$2" closing="${3:-}"
+  jq --arg event "$event" --arg closing "$closing" '
+    {commit_id, event, comments,
+     body: (.body + (if $closing == "" then "" else "\n\n" + $closing end) + "\n\n" + .marker)}' "$file" |
+    gh api -X POST "repos/$repo/pulls/$number/reviews" --input - --jq .html_url ||
+    die "could not post the review; it is kept at $file"
+}
 
+# A review with nothing left waits for CI: approve on pass, post without
+# approving on fail, and keep it pending otherwise.
+# (残りのないレビューは CI を待つ。通れば approve、落ちれば approve せずに投稿し、
+#  まだなら保留のまま残す。)
+finish_when_ci_done() {
+  local file="$1"
+  case "$(ci_state)" in
+    pass) post_review "$file" APPROVE "$LGTM"; rm -f "$pending" ;;
+    fail) post_review "$file" COMMENT "$CI_FAILED"; rm -f "$pending" ;;
+    *) printf '%s#%s: waiting for CI\n' "$repo" "$number" ;;
+  esac
+}
+
+show() {
   jq -r '.body' "$run/review.json"
   jq -r '.comments[] | "\n--- \(.path):\(.line)\n\(.body)"' "$run/review.json"
   jq -r '.dropped[]? | "\n(落とした指摘) \(.id): \(.reason)"' "$run/findings.json"
+  if [ "$(jq -r .ready "$run/review.json")" = true ]; then
+    printf '\n(must と should なし。CI: %s。pass なら approve して「%s」を付ける)\n' "$(ci_state)" "$LGTM"
+  fi
   printf '\n(not posted; run again with --post. Saved in %s)\n' "$run"
+}
+
+publish() {
+  if [ "$(jq -r .ready "$run/review.json")" = true ]; then
+    mkdir -p "$(dirname "$pending")"
+    jq --arg head "$head" '. + {head: $head}' "$run/review.json" >"$pending"
+    finish_when_ci_done "$pending"
+  else
+    rm -f "$pending"
+    post_review "$run/review.json" COMMENT
+  fi
 }
 
 main() {
   parse_args "$@"
   require_environment
   load_pull_request
+  load_last_review
+
+  # A review already built for this head is only waiting for CI.
+  # (この head のレビューがもうできていれば、CI を待っているだけ。)
+  if [ "$post" = true ] && [ -f "$pending" ]; then
+    if [ "$(jq -r .head "$pending")" = "$head" ]; then
+      finish_when_ci_done "$pending"
+      return
+    fi
+    rm -f "$pending"
+  fi
+
+  if [ "$last_head" = "$head" ] && ! author_replied; then
+    printf '%s#%s: nothing new since the last review\n' "$repo" "$number"
+    return
+  fi
+
+  round=$((last_round + 1))
+  if [ "$round" -gt "$MAX_ROUNDS" ]; then
+    printf '%s#%s: %s rounds done; leaving it to you\n' "$repo" "$number" "$MAX_ROUNDS"
+    exit 4
+  fi
+
   checkout
   write_input
   update_graph
   review
   place_findings
+  settle_findings
   build_review
-  show_or_post
+  if [ "$post" = true ]; then publish; else show; fi
 }
 
 main "$@"
