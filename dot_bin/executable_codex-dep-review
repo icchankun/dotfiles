@@ -1,0 +1,360 @@
+#!/usr/bin/env bash
+
+# =============================================================================
+# codex-dep-review
+# Check a dependency update pull request from Renovate or Dependabot: gates
+# that need no AI first, then Codex with the checking-library-updates skill.
+# The goal is to approve the ones that are ok; merging is always left to a
+# person. Shadow mode for now: the verdict is left as a comment, and nothing is
+# approved.
+# (Renovate や Dependabot の依存更新の PR を確かめる。先に AI を使わないゲートを
+#  通し、通ったものだけを checking-library-updates の skill で Codex に見せる。
+#  目指すのは ok のものの approve までで、merge は必ず人がする。今はシャドー
+#  モードで、判定をコメントに残すだけ。approve もしない。)
+#
+# Dependencies / 依存:
+#   - gh, git, jq, codex
+#   - the checking-library-updates skill (icchankun/skills, deployed by apm)
+#
+# Usage / 使い方:
+#   codex-dep-review [--post] <PR URL | owner/repo#number>
+#
+#   Without --post the verdict is printed and nothing is sent to GitHub.
+#   (--post を付けなければ、判定を表示するだけで GitHub には送らない。)
+#
+# Gates / ゲート (no AI / AI を使わない):
+#   - opened by renovate[bot] or dependabot[bot] (作成者が bot)
+#   - only dependency files changed, and in a Dockerfile, a compose file or a
+#     workflow only the FROM, image: or uses: lines
+#     (変わったのは依存のファイルだけ。Dockerfile・compose・workflow は FROM・
+#      image:・uses: の行だけ)
+#   - every check passed (CI がすべて通っている)
+#   - no major version bump; for 0.x a minor bump counts as major
+#     (major を上げていない。0.x は minor も major 扱い)
+#   - no new package in Gemfile.lock or package-lock.json
+#     (Gemfile.lock と package-lock.json に新しいパッケージが増えていない)
+#   How long a release has been out is left to Renovate's and Dependabot's own
+#   settings. (リリースからの日数は、Renovate と Dependabot の設定に任せる。)
+#
+# Exit status / 終了コード:
+#   0   ok: can be approved (自動で approve してよい)
+#   3   nothing to do: already checked this head, or CI is still running
+#       (することがない。この head は確かめ済みか、CI がまだ動いている)
+#   5   needs a person (自分で見る必要がある)
+#   75  Codex's usage limit (Codex の利用枠切れ)
+#   The last line is `result: <verdict> <head>`. (最後の行に結果を出す。)
+# =============================================================================
+
+set -euo pipefail
+
+readonly CHECK_MODEL=gpt-6-luna
+readonly CHECK_EFFORT=low
+# Used again when the first pass is not confident. (最初の判断に自信がないときに使う。)
+readonly RECHECK_MODEL=gpt-6.1-sol
+readonly RECHECK_EFFORT=medium
+
+readonly STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/codex-pr-review"
+readonly CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/codex-pr-review"
+readonly SHADOW_LOG="$STATE_DIR/deps-shadow.tsv"
+
+readonly BOTS='^(renovate|dependabot)\[bot\]$'
+readonly DEP_FILES='(^|/)(Gemfile|Gemfile\.lock|[^/]+\.gemspec|package\.json|package-lock\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml)$'
+readonly DOCKER_FILES='(^|/)([^/]*Dockerfile[^/]*|(docker-)?compose[^/]*\.ya?ml)$'
+readonly ACTION_FILES='(^\.github/workflows/[^/]+\.ya?ml|(^|/)action\.ya?ml)$'
+
+die() {
+  printf 'codex-dep-review: %s\n' "$1" >&2
+  exit 1
+}
+
+usage() {
+  sed -n '/^# Usage/,/^# Gates/p' "$0" | sed 's/^# \{0,1\}//;$d'
+}
+
+post=false
+target=
+
+parse_args() {
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --post) post=true; shift ;;
+      -h | --help) usage; exit 0 ;;
+      -*) die "unknown option: $1" ;;
+      *) [ -z "$target" ] || die "only one pull request at a time"; target="$1"; shift ;;
+    esac
+  done
+  [ -n "$target" ] || { usage >&2; exit 1; }
+
+  case "$target" in
+    https://github.com/*/pull/*)
+      repo=$(printf '%s' "$target" | sed -E 's#https://github.com/([^/]+/[^/]+)/pull/.*#\1#')
+      number=$(printf '%s' "$target" | sed -E 's#.*/pull/([0-9]+).*#\1#')
+      ;;
+    */*'#'*) repo="${target%%#*}" number="${target##*#}" ;;
+    *) die "not a pull request: $target" ;;
+  esac
+  [[ "$number" =~ ^[0-9]+$ ]] || die "not a pull request number: $number"
+}
+
+require_environment() {
+  local cmd dir
+  for cmd in gh git jq codex; do
+    command -v "$cmd" >/dev/null || die "$cmd not found in PATH"
+  done
+  schema=
+  for dir in "$HOME/.agents/skills" "$HOME/.codex/skills"; do
+    [ -f "$dir/checking-library-updates/schemas/verdict.json" ] && { schema="$dir/checking-library-updates/schemas/verdict.json"; break; }
+  done
+  [ -n "$schema" ] || die "checking-library-updates is not installed (apm install -g)"
+}
+
+load_pull_request() {
+  pr=$(gh api "repos/$repo/pulls/$number") || die "could not read $repo#$number"
+  me=$(gh api user --jq .login)
+  [ "$(jq -r .state <<<"$pr")" = open ] || die "$repo#$number is not open"
+  [[ "$(jq -r .user.login <<<"$pr")" =~ $BOTS ]] || die "$repo#$number is not from Renovate or Dependabot"
+  base=$(jq -r .base.ref <<<"$pr")
+  head=$(jq -r .head.sha <<<"$pr")
+  run="$STATE_DIR/deps/${repo//\//__}__$number/$head"
+  mkdir -p "$run/input"
+}
+
+# A head that already has this script's comment was checked.
+# (このスクリプトのコメントがある head は、確かめ済み。)
+already_checked() {
+  gh api --paginate --slurp "repos/$repo/issues/$number/comments" | jq -e --arg me "$me" --arg head "$head" '
+    add // [] | any(.[]; .user.login == $me and (.body | contains("<!-- codex-deps:v1 head=" + $head + " ")))' >/dev/null
+}
+
+ci_state() {
+  local buckets
+  buckets=$(gh pr checks "$number" -R "$repo" --json bucket --jq 'map(.bucket)' 2>/dev/null) || buckets='[]'
+  jq -r 'if any(.[]; . == "fail" or . == "cancel") then "fail"
+         elif any(.[]; . == "pending") then "pending" else "pass" end' <<<"${buckets:-[]}"
+}
+
+checkout() {
+  bare="$CACHE_DIR/repos/$repo.git"
+  if [ ! -d "$bare" ]; then
+    mkdir -p "$(dirname "$bare")"
+    gh repo clone "$repo" "$bare" -- --bare --filter=blob:none --quiet || die "could not clone $repo"
+  fi
+  git -C "$bare" fetch --quiet --filter=blob:none origin \
+    "+refs/heads/$base:refs/heads/$base" "+refs/pull/$number/head:refs/pull/$number" ||
+    die "could not fetch $repo#$number"
+  tmp=$(mktemp -d)
+  tree="$tmp/tree"
+  trap 'git -C "$bare" worktree remove --force "$tree" >/dev/null 2>&1 || true; rm -rf "$tmp"' EXIT
+  git -C "$bare" worktree add --quiet --detach "$tree" "$head"
+  merge_base=$(git -C "$bare" merge-base "refs/heads/$base" "$head")
+  git -C "$tree" diff --no-color --no-ext-diff --src-prefix=a/ --dst-prefix=b/ "$merge_base" "$head" >"$run/input/diff.patch"
+}
+
+# The changed lines of each file as "file<TAB>+line" or "file<TAB>-line".
+# (ファイルごとの変わった行を「ファイル<TAB>+行」か「ファイル<TAB>-行」で出す。)
+changed_lines() {
+  awk '
+    /^diff --git / { file = ""; next }
+    /^\+\+\+ b\// { file = substr($0, 7); next }
+    /^\+\+\+ \/dev\/null/ { next }
+    /^--- a\// { if (file == "") old = substr($0, 7); next }
+    /^--- / { next }
+    /^@@ / { next }
+    /^[+-]/ { print (file != "" ? file : old) "\t" $0 }
+  ' "$run/input/diff.patch"
+}
+
+# Versions from the bot's description: Renovate's table (`1.2.3` -> `1.3.0`)
+# and Dependabot's sentence (from 1.2.3 to 1.3.0).
+# (bot の説明から版を読む。Renovate の表と、Dependabot の文。)
+versions() {
+  jq -r '.body // ""' <<<"$pr" | grep -oE '`[^`]+` (->|→) `[^`]+`|from `?[0-9A-Za-z._+-]*[0-9A-Za-z]`? to `?[0-9A-Za-z._+-]*[0-9A-Za-z]`?' |
+    sed -E 's/`//g; s/^from //; s/ to / /; s/ (->|→) / /' | sort -u
+}
+
+# major.minor of a version, or nothing for a digest or something unreadable.
+# (版の major.minor。digest や読めないものは何も出さない。)
+major_of() {
+  local v="${1#v}"
+  [[ "$v" =~ ^([0-9]+)(\.([0-9]+))? ]] || return 0
+  if [ "${BASH_REMATCH[1]}" = 0 ]; then printf '0.%s\n' "${BASH_REMATCH[3]:-0}"; else printf '%s\n' "${BASH_REMATCH[1]}"; fi
+}
+
+# A digest has hex letters; a version made only of digits (a date) is not one.
+# (digest は英字の入った16進数。数字だけの版（日付など）は digest ではない。)
+is_digest() { [[ "$1" =~ ^(sha256:)?[0-9a-f]{7,64}$ && "$1" =~ [a-f] ]]; }
+
+# Run the gates and write gates.json. (ゲートを通し、gates.json に書く。)
+run_gates() {
+  local file line from to bad=() pairs=() fails=() new
+  local lines
+  lines=$(changed_lines)
+
+  # Files and lines (ファイルと行)
+  while IFS=$'\t' read -r file line; do
+    [ -n "$file" ] || continue
+    if [[ "$file" =~ $DEP_FILES ]]; then continue; fi
+    if [[ "$file" =~ $DOCKER_FILES ]] && [[ "${line:1}" =~ ^[[:space:]]*(FROM[[:space:]]|image:[[:space:]]) ]]; then continue; fi
+    if [[ "$file" =~ $ACTION_FILES ]] && [[ "${line:1}" =~ ^[[:space:]]*(-[[:space:]]*)?uses:[[:space:]] ]]; then continue; fi
+    bad+=("$file")
+  done <<<"$lines"
+  files_ok=true files_detail="依存のファイルと、FROM・image:・uses: の行だけ"
+  if [ "${#bad[@]}" -gt 0 ]; then
+    files_ok=false files_detail="依存以外の変更がある: $(printf '%s\n' "${bad[@]}" | sort -u | paste -sd ' ' -)"
+  fi
+
+  # Versions (版)
+  versions_ok=true versions_detail=
+  while read -r from to; do
+    [ -n "$from" ] || continue
+    pairs+=("$from -> $to")
+    if is_digest "$from" && is_digest "$to"; then continue; fi
+    if [ -z "$(major_of "$from")" ] || [ -z "$(major_of "$to")" ]; then
+      fails+=("版を読み取れない $from -> $to")
+    elif [ "$(major_of "$from")" != "$(major_of "$to")" ]; then
+      fails+=("major を上げている $from -> $to")
+    fi
+  done < <(versions)
+  if [ "${#fails[@]}" -gt 0 ]; then
+    versions_ok=false versions_detail=$(printf '%s\n' "${fails[@]}" | paste -sd ',' - | sed 's/,/, /g')
+  elif [ "${#pairs[@]}" -eq 0 ]; then
+    versions_ok=false versions_detail="PR の説明から版を読み取れない"
+  elif [ "$versions_ok" = true ]; then
+    versions_detail="major は上げていない: $(printf '%s\n' "${pairs[@]}" | paste -sd ',' - | sed 's/,/, /g')"
+  fi
+
+  # New packages in the lockfiles (lockfile に増えたパッケージ)
+  new=$(printf '%s\n' "$lines" | awk -F '\t' '
+    $1 ~ /(^|\/)Gemfile\.lock$/ && match($2, /^[+-]    [A-Za-z0-9_.-]+ \(/) {
+      name = substr($2, 6); sub(/ \(.*/, "", name); seen[substr($2, 1, 1) name] = 1 }
+    $1 ~ /(^|\/)package-lock\.json$/ && match($2, /^[+-][[:space:]]*"node_modules\/[^"]+": \{/) {
+      name = $2; sub(/^[+-][[:space:]]*"node_modules\//, "", name); sub(/".*/, "", name); seen[substr($2, 1, 1) name] = 1 }
+    END { for (k in seen) if (substr(k, 1, 1) == "+" && !(("-" substr(k, 2)) in seen)) print substr(k, 2) }' | sort | paste -sd ' ' -)
+  transitive_ok=true transitive_detail="lockfile に新しいパッケージは増えていない"
+  [ -z "$new" ] || { transitive_ok=false transitive_detail="lockfile に増えたパッケージ: $new"; }
+
+  jq -n \
+    --arg author "$(jq -r .user.login <<<"$pr")" \
+    --argjson files_ok "$files_ok" --arg files "$files_detail" \
+    --argjson versions_ok "$versions_ok" --arg versions_d "$versions_detail" \
+    --argjson transitive_ok "$transitive_ok" --arg transitive "$transitive_detail" \
+    --arg ci "$ci" \
+    --argjson pairs "$(if [ "${#pairs[@]}" -gt 0 ]; then printf '%s\n' "${pairs[@]}" | jq -R 'split(" -> ") | {from: .[0], to: .[1]}' | jq -s .; else echo '[]'; fi)" '
+    {versions: $pairs, gates: [
+      {name: "作成者が Renovate か Dependabot", ok: true, detail: $author},
+      {name: "変わったファイル", ok: $files_ok, detail: $files},
+      {name: "CI", ok: ($ci == "pass"), detail: (if $ci == "pass" then "すべて通っている" else "通っていない" end)},
+      {name: "major", ok: $versions_ok, detail: $versions_d},
+      {name: "推移的依存", ok: $transitive_ok, detail: $transitive}
+    ]}' >"$run/input/gates.json"
+}
+
+write_input() {
+  local author
+  author=$(jq -r .user.login <<<"$pr")
+  jq '{number, title, body, author: .user.login, url: .html_url}' <<<"$pr" >"$run/input/pr.json"
+  {
+    gh api --paginate --slurp "repos/$repo/issues/$number/comments"
+    gh api --paginate --slurp "repos/$repo/pulls/$number/reviews"
+    gh api --paginate --slurp "repos/$repo/pulls/$number/comments"
+  } | jq -s --arg me "$me" '
+    def who: {author: .user.login, is_bot: (.user.type == "Bot")};
+    (.[0] | add // [] | map(select(.user.login != $me) | who + {kind: "comment", body, created_at})) +
+    (.[1] | add // [] | map(select(.body != "") | who + {kind: "review", state, body, created_at: .submitted_at})) +
+    (.[2] | add // [] | map(who + {kind: "inline", path, line, body, created_at}))
+    | sort_by(.created_at)' >"$run/input/conversation.json"
+}
+
+run_codex() {
+  local model="$1" effort="$2" out="$3"
+  if ! codex exec --ephemeral -m "$model" -c "model_reasoning_effort=$effort" -c 'default_permissions="dotfiles-readonly"' \
+    -C "$tree" --output-schema "$schema" -o "$out" \
+    "\$checking-library-updates を使って、この依存更新の PR を確かめてください。入力のディレクトリ: $run/input" >"$out.log" 2>&1; then
+    grep -i 'usage limit' "$out.log" >&2 && exit 75
+    die "Codex failed; see $out.log"
+  fi
+  jq -e '.verdict' "$out" >/dev/null || die "Codex did not return the schema; see $out"
+}
+
+check_with_codex() {
+  run_codex "$CHECK_MODEL" "$CHECK_EFFORT" "$run/verdict.json"
+  if [ "$(jq -r .confident "$run/verdict.json")" != true ]; then
+    run_codex "$RECHECK_MODEL" "$RECHECK_EFFORT" "$run/verdict.json"
+  fi
+}
+
+# The verdict when a gate fails: Codex is not asked, to save tokens.
+# (ゲートで落ちたときの判定。トークンを節約するため Codex には聞かない。)
+gate_verdict() {
+  jq '{verdict: "needs_human", reasons: [.gates[] | select(.ok | not) | .name + ": " + .detail],
+       summary: "ゲートで止まったので、Codex では確かめていません。", packages: [], breaking: [], other_reviews: []}' \
+    "$run/input/gates.json" >"$run/verdict.json"
+}
+
+build_comment() {
+  jq -r --slurpfile gates "$run/input/gates.json" --arg head "$head" '
+    def mark: if . then "✅" else "❌" end;
+    (if .verdict == "ok" then "自動で approve してよいと判断しました。" else "自分で見る必要があると判断しました。" end) as $title
+    | [
+        "依存更新を確かめました（シャドーモードなので、approve はしていません）。",
+        "",
+        "**" + $title + "**",
+        "",
+        .summary,
+        "",
+        "ゲート:",
+        ($gates[0].gates | map("- " + (.ok | mark) + " " + .name + ": " + .detail) | join("\n"))
+      ]
+      + (if (.reasons | length) > 0 then ["", "自分で見る理由:", (.reasons | map("- " + .) | join("\n"))] else [] end)
+      + (if ([.packages[] | select(.category != "none")] | length) > 0
+         then ["", "自分で見る種類に当たるもの:", ([.packages[] | select(.category != "none") | "- " + .name + "（" + .category + "）: " + .category_reason] | join("\n"))]
+         else [] end)
+      + (if ([.breaking[] | select(.impact != "none")] | length) > 0
+         then ["", "影響するかもしれない変更:", ([.breaking[] | select(.impact != "none") | "- " + .package + ": " + .change + (if (.used_in | length) > 0 then "（" + (.used_in | join(", ")) + "）" else "" end)] | join("\n"))]
+         else [] end)
+      + ["", "<!-- codex-deps:v1 head=" + $head + " verdict=" + .verdict + " -->"]
+    | join("\n")' "$run/verdict.json" >"$run/comment.md"
+}
+
+main() {
+  parse_args "$@"
+  require_environment
+  load_pull_request
+
+  if [ "$post" = true ] && already_checked; then
+    printf 'result: checked %s\n' "$head"
+    exit 3
+  fi
+  ci=$(ci_state)
+  if [ "$ci" = pending ]; then
+    printf '%s#%s: waiting for CI\nresult: waiting %s\n' "$repo" "$number" "$head"
+    exit 3
+  fi
+
+  checkout
+  run_gates
+  write_input
+  if jq -e 'all(.gates[]; .ok)' "$run/input/gates.json" >/dev/null; then
+    check_with_codex
+  else
+    gate_verdict
+  fi
+  build_comment
+
+  verdict=$(jq -r .verdict "$run/verdict.json")
+  if [ "$post" = true ]; then
+    gh api -X POST "repos/$repo/issues/$number/comments" -F "body=@$run/comment.md" --jq .html_url ||
+      die "could not post the comment; it is kept at $run/comment.md"
+    mkdir -p "$(dirname "$SHADOW_LOG")"
+    printf '%s\t%s#%s\t%s\t%s\t%s\n' "$(date '+%F %T')" "$repo" "$number" "$head" "$verdict" \
+      "$(jq -r '.reasons | join(" / ")' "$run/verdict.json")" >>"$SHADOW_LOG"
+  else
+    cat "$run/comment.md"
+    printf '\n(not posted; run again with --post. Saved in %s)\n' "$run"
+  fi
+
+  printf 'result: %s %s\n' "$verdict" "$head"
+  [ "$verdict" = ok ] || exit 5
+}
+
+main "$@"

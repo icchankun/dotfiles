@@ -7,7 +7,12 @@
 # 10分ごとに動かす。)
 #
 # Dependencies / 依存:
-#   - gh, codex-pr-review, osascript (macOS notifications / macOS の通知)
+#   - gh, codex-pr-review, codex-dep-review, osascript (macOS notifications / macOS の通知)
+#   - the repositories whose dependency updates are checked, in DEV_FLOW_REPOS
+#     (space separated) or ~/.config/dev-flow/repos (one per line). Kept out of
+#     dotfiles, which are public. (依存更新を確かめるリポジトリ。DEV_FLOW_REPOS
+#     （空白区切り）か ~/.config/dev-flow/repos（1行に1つ）。dotfiles は公開して
+#      いるので、そこには入れない。)
 #
 # What a run does / 1回の実行ですること:
 #   - Only on weekdays from 9:00 to 20:00. (平日 9:00〜20:00 だけ動く。)
@@ -24,15 +29,22 @@
 #   - When Codex hits its usage limit, pauses until the reset time Codex gives,
 #     and resumes with the pull requests left. (Codex の利用枠が切れたら、Codex が
 #     示す時刻まで止め、残りの PR から再開する。)
+#   - Checks the open dependency updates from Renovate and Dependabot in those
+#     repositories with codex-dep-review, at most MAX_DEP_PRS a run. Shadow mode:
+#     the verdict is only commented. (それらのリポジトリの Renovate と Dependabot の
+#     依存更新を codex-dep-review で確かめる。1回に MAX_DEP_PRS 件まで。シャドー
+#     モードなので、判定はコメントに残すだけ。)
 #   - Notifies only what needs me: a pull request handed over after too many
-#     rounds, a failure, and a pause. Each is notified once.
-#     (知らせるのは自分が要るものだけ。ラウンドが多すぎて任された PR、失敗、
-#      一時停止。同じものは1回だけ知らせる。)
+#     rounds, a dependency update to check myself, a failure, and a pause. Each
+#     is notified once. (知らせるのは自分が要るものだけ。ラウンドが多すぎて任された
+#      PR、自分で見る依存更新、失敗、一時停止。同じものは1回だけ知らせる。)
 # =============================================================================
 
 set -euo pipefail
 
 readonly MAX_PRS=3
+readonly MAX_DEP_PRS=5
+readonly REPOS_FILE="$HOME/.config/dev-flow/repos"
 readonly STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/codex-pr-review"
 readonly TRACKED="$STATE_DIR/tracked"
 readonly PAUSED="$STATE_DIR/paused-until"
@@ -83,6 +95,59 @@ discover() {
   mv "$TRACKED.new" "$TRACKED"
 }
 
+# The repositories whose dependency updates are checked.
+# (依存更新を確かめるリポジトリ。)
+dep_repos() {
+  if [ -n "${DEV_FLOW_REPOS:-}" ]; then
+    printf '%s\n' $DEV_FLOW_REPOS
+  elif [ -f "$REPOS_FILE" ]; then
+    grep -vE '^[[:space:]]*(#|$)' "$REPOS_FILE"
+  fi
+}
+
+# Open, non-draft dependency updates in those repositories.
+# (それらのリポジトリの、draft でない open の依存更新。)
+dep_pull_requests() {
+  local repo bot
+  dep_repos | while read -r repo; do
+    for bot in app/renovate app/dependabot; do
+      gh pr list -R "$repo" --author "$bot" --state open --json number,isDraft \
+        --jq ".[] | select(.isDraft | not) | \"$repo#\(.number)\"" 2>/dev/null || log "$repo: could not list $bot"
+    done
+  done
+}
+
+# Pause until Codex's allowance comes back, and say so once.
+# (Codex の利用枠が戻るまで止め、1回だけ知らせる。)
+pause_for_limit() {
+  local until
+  until=$(reset_epoch "$1")
+  printf '%s\n' "$until" >"$PAUSED"
+  notify "pause:$until" "Codex の利用枠が切れました。$(date -r "$until" +%H:%M 2>/dev/null || date -d "@$until" +%H:%M) から再開します"
+}
+
+# Check the dependency updates. Returns 1 when Codex hit its usage limit.
+# (依存更新を確かめる。Codex の利用枠が切れたら 1 を返す。)
+check_dependency_updates() {
+  local used=0 pr out status head
+  while read -r pr; do
+    [ -n "$pr" ] || continue
+    [ "$used" -lt "$MAX_DEP_PRS" ] || { log "checked $MAX_DEP_PRS dependency updates; the rest wait"; break; }
+
+    if out=$(codex-dep-review --post "$pr" 2>&1); then status=0; else status=$?; fi
+    [ -z "$out" ] || printf '%s\n' "$out" | sed "s|^|$(date '+%F %T') $pr: |"
+    head=$(printf '%s\n' "$out" | sed -n 's/^result: [a-z_]* //p' | tail -n 1)
+
+    case "$status" in
+      0) used=$((used + 1)) ;;
+      3) ;;
+      5) used=$((used + 1)); notify "$pr:deps:$head" "$pr の依存更新は、自分で見てください" ;;
+      75) pause_for_limit "$out"; return 1 ;;
+      *) notify "$pr:deps-error:$(date +%F)" "$pr の依存更新の確認に失敗しました。~/Library/Logs/codex-pr-review.log を見てください" ;;
+    esac
+  done < <(dep_pull_requests)
+}
+
 untrack() {
   grep -vxF "$1" "$TRACKED" >"$TRACKED.new" || true
   mv "$TRACKED.new" "$TRACKED"
@@ -106,7 +171,7 @@ main() {
 
   discover
 
-  local used=0 pr repo number state out status until
+  local used=0 pr repo number state out status
   while read -r pr; do
     [ -n "$pr" ] || continue
     [ "$used" -lt "$MAX_PRS" ] || { log "used Codex on $MAX_PRS pull requests; the rest wait"; break; }
@@ -126,15 +191,12 @@ main() {
       0) used=$((used + 1)) ;;
       3) ;;
       4) notify "$pr:handover" "$pr はラウンドが多すぎるので、自分で見てください" ;;
-      75)
-        until=$(reset_epoch "$out")
-        printf '%s\n' "$until" >"$PAUSED"
-        notify "pause:$until" "Codex の利用枠が切れました。$(date -r "$until" +%H:%M 2>/dev/null || date -d "@$until" +%H:%M) から再開します"
-        break
-        ;;
+      75) pause_for_limit "$out"; return 0 ;;
       *) notify "$pr:error:$(date +%F)" "$pr のレビューに失敗しました。~/Library/Logs/codex-pr-review.log を見てください" ;;
     esac
   done < <(cat "$TRACKED")
+
+  check_dependency_updates || true
 }
 
 main "$@"
