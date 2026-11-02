@@ -53,6 +53,10 @@ readonly CHECK_EFFORT=low
 readonly RECHECK_MODEL=gpt-6.1-sol
 readonly RECHECK_EFFORT=medium
 
+# Ends every comment, so a reader can tell Codex wrote it and not me.
+# (コメントの最後に付ける。自分ではなく Codex が書いたと分かるように。)
+readonly FOOTER='🤖 Generated with [Codex](https://openai.com/codex)'
+
 readonly STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/codex-pr-review"
 readonly CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/codex-pr-review"
 readonly SHADOW_LOG="$STATE_DIR/deps-shadow.tsv"
@@ -292,7 +296,7 @@ gate_verdict() {
 }
 
 build_comment() {
-  jq -r --slurpfile gates "$run/input/gates.json" --arg head "$head" '
+  jq -r --slurpfile gates "$run/input/gates.json" --arg head "$head" --arg footer "$FOOTER" '
     def mark: if . then "✅" else "❌" end;
     (if .verdict == "ok" then "自動で approve してよいと判断しました。" else "自分で見る必要があると判断しました。" end) as $title
     | [
@@ -312,7 +316,7 @@ build_comment() {
       + (if ([.breaking[] | select(.impact != "none")] | length) > 0
          then ["", "影響するかもしれない変更:", ([.breaking[] | select(.impact != "none") | "- " + .package + ": " + .change + (if (.used_in | length) > 0 then "（" + (.used_in | join(", ")) + "）" else "" end)] | join("\n"))]
          else [] end)
-      + ["", "<!-- codex-deps:v1 head=" + $head + " verdict=" + .verdict + " -->"]
+      + ["", $footer, "", "<!-- codex-deps:v1 head=" + $head + " verdict=" + .verdict + " -->"]
     | join("\n")' "$run/verdict.json" >"$run/comment.md"
 }
 
