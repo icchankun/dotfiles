@@ -16,6 +16,8 @@
 #
 # What a run does / 1回の実行ですること:
 #   - Only on weekdays from 9:00 to 20:00. (平日 9:00〜20:00 だけ動く。)
+#   - Does nothing on a machine without Codex, without a notification.
+#     (Codex が入っていない端末では、知らせずに何もしない。)
 #   - Picks up open, non-draft pull requests that request my review in person
 #     (user-review-requested:@me) and keeps following them until they close:
 #     GitHub drops the request once a review is posted, but later rounds still
@@ -173,6 +175,7 @@ main() {
   touch "$TRACKED" "$NOTIFIED"
 
   in_working_hours || exit 0
+  command -v codex >/dev/null || exit 0
   mkdir "$LOCK" 2>/dev/null || { log "the previous run is still going"; exit 0; }
   trap 'rmdir "$LOCK"' EXIT
 
