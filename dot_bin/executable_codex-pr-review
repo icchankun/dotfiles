@@ -70,6 +70,10 @@ readonly ADVISOR_EFFORT=high
 readonly MAX_ROUNDS=5
 readonly LGTM='CI もすべて通っているので approve します。LGTM です！'
 readonly CI_FAILED='CI が通っていないので、approve は見送ります。'
+# Ends every review and inline comment, so a reader can tell Codex wrote it and
+# not me. (レビューとインラインのコメントの最後に付ける。自分ではなく Codex が
+#  書いたと分かるように。)
+readonly FOOTER='🤖 Generated with [Codex](https://openai.com/codex)'
 
 readonly STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/codex-pr-review"
 readonly CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/codex-pr-review"
@@ -311,7 +315,7 @@ settle_findings() {
 build_review() {
   local saved
   saved=$(jq -c '{open}' "$run/findings.json" | base64 | tr -d '\n')
-  jq --arg head "$head" --arg saved "$saved" --argjson round "$round" '
+  jq --arg head "$head" --arg saved "$saved" --argjson round "$round" --arg footer "$FOOTER" '
     def order: {must: 0, should: 1, nit: 2}[.severity];
     def tag: "[" + .severity + "]";
     def list: map(tag + " " + .title + "（" + .file + "）") | join("\n");
@@ -333,7 +337,7 @@ build_review() {
         ready,
         comments: [$f[] | select(.line != null) | {
           path: .file, line, side: "RIGHT",
-          body: (tag + " " + .title + "\n\n" + .body + (if .suggestion then "\n\n直し方の案: " + .suggestion else "" end))
+          body: (tag + " " + .title + "\n\n" + .body + (if .suggestion then "\n\n直し方の案: " + .suggestion else "" end) + "\n\n" + $footer)
         }]
       }' "$run/findings.json" >"$run/review.json"
 }
@@ -342,9 +346,9 @@ build_review() {
 # (組み立てたレビューを EVENT ($2) と、あれば締めの1行 ($3) を付けて投稿する。)
 post_review() {
   local file="$1" event="$2" closing="${3:-}"
-  jq --arg event "$event" --arg closing "$closing" '
+  jq --arg event "$event" --arg closing "$closing" --arg footer "$FOOTER" '
     {commit_id, event, comments,
-     body: (.body + (if $closing == "" then "" else "\n\n" + $closing end) + "\n\n" + .marker)}' "$file" |
+     body: (.body + (if $closing == "" then "" else "\n\n" + $closing end) + "\n\n" + $footer + "\n\n" + .marker)}' "$file" |
     gh api -X POST "repos/$repo/pulls/$number/reviews" --input - --jq .html_url ||
     die "could not post the review; it is kept at $file"
 }
