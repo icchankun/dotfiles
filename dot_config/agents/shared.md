@@ -23,7 +23,7 @@ worktree の作成・削除は `git wt` で行う。`git worktree add` / `git wo
 相手が Claude Code でも Codex でも `hc` を使う。使う前に `hc --skill` を読み、それに従う。
 
 - 送る: `hc send <番地> "<本文>"`。返事がほしいときは、本文に返信先として `hc send $HC_TERMINAL_ID` を書く。
-- 待つ: `hc wait --children any`。返事は `<hc from="t8 …">…</hc>` の形で、次の入力として届く。`hc read` で相手の画面を読みに行かない。
+- 待つ: `hc wait --children any`。返事は `<hc from="t8 …">…</hc>` の形で、次の入力として届く。`hc read` で相手のペインの画面を読みに行かない。自分が `hc run --bg` で動かしたジョブの出力は、`hc read <名前>` で読んでよい。
 - 宛先は番地（`t7` など）で指定する。自分の番地は `$HC_TERMINAL_ID`。
 - 「reviewer に送って」「t7 の driver に送って」のように役割で頼まれたら、ラベルから番地を探す。agent には `role`（`driver` か `reviewer`）と `driver`（どの driver のものか）のラベルが付いている。
 
@@ -32,13 +32,19 @@ hc ls --label role=reviewer --label driver="$HC_TERMINAL_ID"   # 自分の revie
 hc ls --label role=driver --label driver=t7                     # t7 の driver
 ```
 
+# ファイルを編集するとき
+
+ファイルの編集は、同じ応答の中でまとめて出す（Claude Code は Edit を並べ、Codex は1つの apply_patch に複数のファイルを入れる）。
+
+サブエージェントに分けるのは、互いに関係しない機械的な変更が3ファイル以上あるときだけにする。何をどう変えるかは自分で決めて渡すので、いちばん軽いモデル（Claude Code は `haiku`、Codex は `gpt-6-luna`）でよい。サブエージェントは起動のたびに要件と周りのコードを読み直すので、小さな変更では自分で書くより遅く、トークンも増える。
+
 # 文章を書くとき
 
 返答は日本語で書く。
 
 会話の外に残る文章（コミットメッセージ、PR、レビューへの返信、ドキュメント、コードコメント、Notion）は、`reviewing-writing` で見直してから出す。
 
-この会話での返答は対象外で、caveman の書き方に従う。
+この会話での返答は対象外。Claude Code では caveman の書き方に従う（caveman は Claude Code の plugin で、Codex には入っていない）。
 
 # skill を入れるとき
 
