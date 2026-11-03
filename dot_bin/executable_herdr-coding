@@ -82,7 +82,6 @@ readonly CODEX_ARGS=(
   --no-daemon
   --config 'default_permissions="dotfiles"'
   --ask-for-approval never
-  --config model_reasoning_effort=medium
 )
 
 # The reviewer runs every round until the findings clear, so it defaults to the
