@@ -23,6 +23,11 @@ const PAGE = 300, ROW = 24, LANE = 12, PAD = 6, DATE = 62, AUTHOR = 120;
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const pad2 = (n) => String(n).padStart(2, "0");
 const laneColors = (t) => [t.ansi4, t.ansi2, t.ansi5, t.ansi3, t.ansi6, t.ansi1, t.ansi12, t.ansi10, t.ansi13, t.ansi11, t.ansi14, t.ansi9];
+// The built paths of each row, kept until the history is read again. Building them
+// for every row on each redraw took long enough in a big repository that Herdr
+// interrupted the render. A row is the object layoutLanes returns, so a new layout
+// drops the old paths with it.
+const pathCache = new WeakMap();
 const isRefChange = (p) => /\/(HEAD|packed-refs)$|\/refs\//.test(p);
 const inGitDir = (p) => p.includes("/.git/") || p.endsWith("/.git");
 
@@ -377,20 +382,27 @@ export class Graph {
   graphCell(row, commit, colors, t, width) {
     // Path coordinates are percentages of the cell, so they land where the dot's layout units do at any zoom.
     const at = (lane) => PAD + lane * LANE + LANE / 2, x = (lane) => `${(at(lane) / width) * 100}%`, y = (v) => `${v * 100}%`;
-    const paths = new Map();
-    // One stroked path per color: a row is a handful of paints, however many lanes cross it.
-    for (const [a, ya, b, yb, c, dashed] of row.segments) {
-      const color = dashed ? t.dim : colors[c % colors.length], key = `${color}${dashed ? "-" : ""}`;
-      let p = paths.get(key)?.p ?? (dashed ? PathBuilder.stroke(1.5).dash_array([3, 3]) : PathBuilder.stroke(1.5));
-      p = p.move_to(x(a), y(ya));
-      if (a === b) p = p.line_to(x(b), y(yb));
-      else { const mid = y((ya + yb) / 2); p = p.cubic_bezier_to(x(b), y(yb), x(a), mid, x(b), mid); }
-      paths.set(key, { p, color });
+    // Built again only when the width or the theme's colors change.
+    const sig = `${width}|${t.dim}|${colors.join()}`;
+    let cached = pathCache.get(row);
+    if (cached?.sig !== sig) {
+      const paths = new Map();
+      // One stroked path per color: a row is a handful of paints, however many lanes cross it.
+      for (const [a, ya, b, yb, c, dashed] of row.segments) {
+        const color = dashed ? t.dim : colors[c % colors.length], key = `${color}${dashed ? "-" : ""}`;
+        let p = paths.get(key)?.p ?? (dashed ? PathBuilder.stroke(1.5).dash_array([3, 3]) : PathBuilder.stroke(1.5));
+        p = p.move_to(x(a), y(ya));
+        if (a === b) p = p.line_to(x(b), y(yb));
+        else { const mid = y((ya + yb) / 2); p = p.cubic_bezier_to(x(b), y(yb), x(a), mid, x(b), mid); }
+        paths.set(key, { p, color });
+      }
+      cached = { sig, paths: [...paths.values()].map(({ p, color }) => ({ path: p.build(), color })) };
+      pathCache.set(row, cached);
     }
     const color = commit.uncommitted ? t.dim : colors[row.lane % colors.length];
     const dot = div().absolute().left(at(row.lane) - 4).top(ROW / 2 - 4).size(8).rounded(4);
     return div().relative().flex_none().w(width).h(ROW).overflow_hidden()
-      .children([...paths.values()].map(({ p, color }) => window.paint_path(p.build(), color).absolute().top(0).left(0).size_full()))
+      .children(cached.paths.map(({ path, color }) => window.paint_path(path, color).absolute().top(0).left(0).size_full()))
       // HEAD is a ring, as in Git Graph; uncommitted changes a gray one.
       .child(commit.head || commit.uncommitted ? dot.bg(t.background).border(2).border_color(color) : dot.bg(color));
   }
