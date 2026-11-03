@@ -135,7 +135,10 @@ pause_for_limit() {
 # (依存更新を確かめる。Codex の利用枠が切れたら 1 を返す。)
 check_dependency_updates() {
   local used=0 pr out status head
-  while read -r pr; do
+  # The list is read from fd 3, so the commands in the loop cannot read the rest
+  # of it from stdin. (一覧は fd 3 から読む。ループの中のコマンドが、標準入力から
+  # 残りを読んでしまわないように。)
+  while read -r pr <&3; do
     [ -n "$pr" ] || continue
     [ "$used" -lt "$MAX_DEP_PRS" ] || { log "checked $MAX_DEP_PRS dependency updates; the rest wait"; break; }
 
@@ -150,7 +153,7 @@ check_dependency_updates() {
       75) pause_for_limit "$out"; return 1 ;;
       *) notify "$pr:deps-error:$(date +%F)" "$pr の依存更新の確認に失敗しました。~/Library/Logs/codex-pr-review.log を見てください" ;;
     esac
-  done < <(dep_pull_requests)
+  done 3< <(dep_pull_requests)
 }
 
 # On the first run of each week from Monday, compare the dependency verdicts with
@@ -190,7 +193,7 @@ main() {
   discover
 
   local used=0 pr repo number state out status
-  while read -r pr; do
+  while read -r pr <&3; do
     [ -n "$pr" ] || continue
     [ "$used" -lt "$MAX_PRS" ] || { log "used Codex on $MAX_PRS pull requests; the rest wait"; break; }
 
@@ -212,7 +215,7 @@ main() {
       75) pause_for_limit "$out"; return 0 ;;
       *) notify "$pr:error:$(date +%F)" "$pr のレビューに失敗しました。~/Library/Logs/codex-pr-review.log を見てください" ;;
     esac
-  done < <(cat "$TRACKED")
+  done 3< <(cat "$TRACKED")
 
   check_dependency_updates || true
   weekly_report
