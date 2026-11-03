@@ -1,0 +1,10 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/sh
+# prune-merged-worktrees の launchd ジョブを読み込み直す。plist が変わったときだけ走る
+# plist: {{ include "private_Library/private_LaunchAgents/com.icchankun.prune-merged-worktrees.plist.tmpl" | sha256sum }}
+set -eu
+
+label=com.icchankun.prune-merged-worktrees
+launchctl bootout "gui/$(id -u)/$label" 2>/dev/null || true
+launchctl bootstrap "gui/$(id -u)" "$HOME/Library/LaunchAgents/$label.plist"
+{{ end -}}
