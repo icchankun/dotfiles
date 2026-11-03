@@ -30,6 +30,8 @@ MANAGED = {
             "description": "workspace に書ける。秘密情報は読ませない",
             "extends": ":workspace",
             "filesystem": SECRETS,
+            # gh で GitHub の API を使えるようにする。切ったままだと api.github.com を名前解決できない
+            "network": {"enabled": True},
         },
         # codex-pr-review と codex-dep-review が使う。PR を読むだけで、秘密情報も読ませない
         "dotfiles-readonly": {
