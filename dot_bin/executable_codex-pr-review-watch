@@ -32,10 +32,10 @@
 #     and resumes with the pull requests left. (Codex の利用枠が切れたら、Codex が
 #     示す時刻まで止め、残りの PR から再開する。)
 #   - Checks the open dependency updates from Renovate and Dependabot in those
-#     repositories with codex-dep-review, at most MAX_DEP_PRS a run. Shadow mode:
-#     the verdict is only commented. (それらのリポジトリの Renovate と Dependabot の
-#     依存更新を codex-dep-review で確かめる。1回に MAX_DEP_PRS 件まで。シャドー
-#     モードなので、判定はコメントに残すだけ。)
+#     repositories with codex-dep-review, at most MAX_DEP_PRS a run. An ok one is
+#     approved, and a person merges it. (それらのリポジトリの Renovate と Dependabot の
+#     依存更新を codex-dep-review で確かめる。1回に MAX_DEP_PRS 件まで。ok なら
+#     approve し、merge は人がする。)
 #   - Once a week, runs codex-dep-report to compare those verdicts with what I
 #     did, and notifies the summary. (週に1回、codex-dep-report でその判定と自分の
 #     判断を比べ、要約を知らせる。)
