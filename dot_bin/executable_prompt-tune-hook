@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-# Claude Code の UserPromptSubmit の hook。新しい作業の依頼が来たら、作業の前に prompt-master の skill で
+# Claude Code と Codex の UserPromptSubmit の hook。新しい作業の依頼が来たら、作業の前に prompt-master の skill で
 # 依頼を整えた版を作って見せ、その版で作業を進めるよう指示を足す。承認は待たない。
 # 日本語の依頼には、日本語の崩れ方を補う tuning-japanese-prompts（icchankun/skills）も使わせる。
 # hook はプロンプトの本文を書き換えられず、additionalContext で文脈を足すことしかできないので、整えるのはモデルに任せる。
 # 承認・相槌・スラッシュコマンドや、agent 同士のやり取り（hc send、dev-flow.md のある worktree）には何も足さない。
 # agent 同士の依頼は送る側が組み立てたもので、整え直すと引き継いだ中身がずれる。
 # 調べられないときは何も足さずに通す（fail-open）。整えるのは「あると得」で、作業を止めてまでやることではない。
-# 使い方: settings.json の hooks.UserPromptSubmit に登録する。プロンプトに #notune を入れるとその回は素通しする
+# 使い方: settings.json の hooks.UserPromptSubmit に登録する。Codex では ~/.codex/hooks.json に --codex を付けて登録し、
+#   対象ツールを Codex にする。プロンプトに #notune を入れるとその回は素通しする
 #   `prompt-tune-hook test` で自己テスト
 # 参考: https://zenn.dev/su8/articles/996c50ae501275
 import json
@@ -30,13 +31,17 @@ AGENT_MESSAGE = re.compile(r"^<hc from=|\bhc send\b")
 
 CONTEXT = (
     "[prompt-tune] このプロンプトが新しい作業の依頼なら、作業を始める前に prompt-master の skill で整えた版を作る。"
-    "対象ツールは、いま動いているこの Claude Code（あなた自身のモデル）とし、対象ツールを聞き返さない。"
+    "対象ツールは、いま動いているこの {tool}（あなた自身のモデル）とし、対象ツールを聞き返さない。"
     "ユーザーの意図と頼んだ中身は変えず、変えてよいのは書き方・構造・範囲や完了条件の明示だけにする。"
     "依頼が日本語なら tuning-japanese-prompts の skill も使い、日本語の崩れ方を直して、整えた版を日本語で書く。"
     "整えた版と、変えた点とその理由を2〜4点示したら、承認を待たずに整えた版で作業を始める。"
     "原文で足りているなら「調整不要」と一言添えて、そのまま作業する。"
     "前の質問への答え・続きの指示・ただの質問や雑談なら、この指示は無視する。"
 )
+
+
+def context(codex):
+    return CONTEXT.format(tool="Codex" if codex else "Claude Code")
 
 
 def weighted_len(text):
@@ -77,13 +82,17 @@ def test():
         open(os.path.join(plain, ".git", "dev-flow.md"), "w").write("状態: 作業中\n")
         assert not should_tune(long_ja, plain), "dev-flow.md のある worktree"
     assert should_tune("Refactor the error handling under pkg/api so that swallowed exceptions are logged with context.", "/")
+    assert "この Claude Code" in context(False) and "Codex" not in context(False)
+    assert "この Codex" in context(True) and "Claude Code" not in context(True)
     print("ok")
 
 
 def main():
-    if sys.argv[1:] == ["test"]:
+    args = sys.argv[1:]
+    if args == ["test"]:
         test()
         return
+    codex = args == ["--codex"]
     try:
         payload = json.load(sys.stdin)
         prompt = payload.get("prompt")
@@ -94,7 +103,7 @@ def main():
         return
     print(json.dumps({"hookSpecificOutput": {
         "hookEventName": "UserPromptSubmit",
-        "additionalContext": CONTEXT,
+        "additionalContext": context(codex),
     }}, ensure_ascii=False))
 
 
