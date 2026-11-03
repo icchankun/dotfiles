@@ -71,6 +71,9 @@ readonly TRACKED="$STATE_DIR/tracked"
 readonly PAUSED="$STATE_DIR/paused-until"
 readonly NOTIFIED="$STATE_DIR/notified"
 readonly LOCK="$STATE_DIR/watch.lock"
+# A lock older than this is left over from a run that died. (これより古いロックは、
+# 落ちた回の残りとみなす。)
+readonly LOCK_STALE_MINUTES=180
 
 log() { printf '%s %s\n' "$(date '+%F %T')" "$*"; }
 
@@ -184,6 +187,26 @@ weekly_report() {
   printf '%s\n' "$week" >"$STATE_DIR/report-week"
 }
 
+# Take the lock, removing one left by a run whose process is gone or that is
+# older than LOCK_STALE_MINUTES. (ロックを取る。プロセスがもういない回か、
+# LOCK_STALE_MINUTES より古い回が残したロックは消す。)
+take_lock() {
+  local pid
+  if ! mkdir "$LOCK" 2>/dev/null; then
+    pid=$(cat "$LOCK/pid" 2>/dev/null || true)
+    # No pid yet means the other run has only just made the lock.
+    # (pid がまだないのは、相手がロックを作った直後。)
+    if { [ -z "$pid" ] || kill -0 "$pid" 2>/dev/null; } &&
+      [ -z "$(find "$LOCK" -maxdepth 0 -mmin +"$LOCK_STALE_MINUTES")" ]; then
+      return 1
+    fi
+    log "removing a stale lock${pid:+ (pid $pid)}"
+    rm -rf "$LOCK"
+    mkdir "$LOCK" 2>/dev/null || return 1
+  fi
+  printf '%s\n' "$$" >"$LOCK/pid"
+}
+
 untrack() {
   grep -vxF "$1" "$TRACKED" >"$TRACKED.new" || true
   mv "$TRACKED.new" "$TRACKED"
@@ -195,8 +218,8 @@ main() {
 
   in_working_hours || exit 0
   command -v codex >/dev/null || exit 0
-  mkdir "$LOCK" 2>/dev/null || { log "the previous run is still going"; exit 0; }
-  trap 'rmdir "$LOCK"' EXIT
+  take_lock || { log "the previous run is still going"; exit 0; }
+  trap 'rm -rf "$LOCK"' EXIT
 
   if [ -f "$PAUSED" ]; then
     if [ "$(date +%s)" -lt "$(cat "$PAUSED")" ]; then
