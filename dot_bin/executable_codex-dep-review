@@ -4,13 +4,18 @@
 # codex-dep-review
 # Check a dependency update pull request from Renovate or Dependabot: gates
 # that need no AI first, then Codex with the checking-library-updates skill.
-# The goal is to approve the ones that are ok; merging is always left to a
-# person. Shadow mode for now: the verdict is left as a comment, and nothing is
-# approved.
+# An ok verdict is posted as an approval; anything else as a comment. Merging
+# is always left to a person.
 # (Renovate や Dependabot の依存更新の PR を確かめる。先に AI を使わないゲートを
 #  通し、通ったものだけを checking-library-updates の skill で Codex に見せる。
-#  目指すのは ok のものの approve までで、merge は必ず人がする。今はシャドー
-#  モードで、判定をコメントに残すだけ。approve もしない。)
+#  判定が ok なら approve し、それ以外はコメントに残す。merge は必ず人がする。)
+#
+# Approval guards / approve を見送るとき:
+#   - the head moved while checking (確かめている間に head が変わった)
+#   - auto-merge is on, since the approval would merge it
+#     (auto-merge が有効。approve で merge されてしまうため)
+#   When a later head is not ok, my earlier approvals are dismissed.
+#   (あとの head が ok でなければ、前に出した approve を取り消す。)
 #
 # Dependencies / 依存:
 #   - gh, git, jq, codex
@@ -40,7 +45,8 @@
 #   0   ok: can be approved (自動で approve してよい)
 #   3   nothing to do: already checked this head, or CI is still running
 #       (することがない。この head は確かめ済みか、CI がまだ動いている)
-#   5   needs a person (自分で見る必要がある)
+#   5   needs a person, or ok but the approval was held back
+#       (自分で見る必要がある。ok でも approve を見送った)
 #   75  Codex's usage limit (Codex の利用枠切れ)
 #   The last line is `result: <verdict> <head>`. (最後の行に結果を出す。)
 # =============================================================================
@@ -123,11 +129,39 @@ load_pull_request() {
   mkdir -p "$run/input"
 }
 
-# A head that already has this script's comment was checked.
-# (このスクリプトのコメントがある head は、確かめ済み。)
+# A head that already has this script's comment or review was checked.
+# (このスクリプトのコメントか review がある head は、確かめ済み。)
 already_checked() {
-  gh api --paginate --slurp "repos/$repo/issues/$number/comments" | jq -e --arg me "$me" --arg head "$head" '
-    add // [] | any(.[]; .user.login == $me and (.body | contains("<!-- codex-deps:v1 head=" + $head + " ")))' >/dev/null
+  {
+    gh api --paginate --slurp "repos/$repo/issues/$number/comments"
+    gh api --paginate --slurp "repos/$repo/pulls/$number/reviews"
+  } | jq -s -e --arg me "$me" --arg head "$head" '
+    map(add // []) | add | any(.[]; .user.login == $me and ((.body // "") | contains("<!-- codex-deps:v1 head=" + $head + " ")))' >/dev/null
+}
+
+# Why an ok verdict cannot be approved now, or nothing when it can.
+# (ok の判定を今は approve できない理由。できるなら何も出さない。)
+approval_blocker() {
+  local now
+  now=$(gh api "repos/$repo/pulls/$number") || { echo "PR を読み直せなかった"; return 0; }
+  if [ "$(jq -r .head.sha <<<"$now")" != "$head" ]; then echo "確かめている間に head が変わった"; return 0; fi
+  if [ "$(jq -r .state <<<"$now")" != open ]; then echo "PR が閉じられた"; return 0; fi
+  if [ "$(jq -r '.auto_merge != null' <<<"$now")" = true ]; then echo "auto-merge が有効なので、approve すると merge されてしまう"; fi
+}
+
+# Dismiss my approvals of earlier heads, and print a line for the comment.
+# (前の head に出した自分の approve を取り消し、コメントに書く1行を出す。)
+dismiss_my_approvals() {
+  local ids id failed=0
+  ids=$(gh api --paginate --slurp "repos/$repo/pulls/$number/reviews" |
+    jq -r --arg me "$me" 'add // [] | .[] | select(.user.login == $me and .state == "APPROVED") | .id')
+  [ -n "$ids" ] || return 0
+  for id in $ids; do
+    gh api -X PUT "repos/$repo/pulls/$number/reviews/$id/dismissals" \
+      -f message="新しい head は自分で見る必要があるので、前の approve を取り消します。" -f event=DISMISS >/dev/null 2>&1 || failed=1
+  done
+  if [ "$failed" = 0 ]; then echo "前の head に出した approve は取り消しました。"
+  else echo "⚠️ 前の head に出した approve を取り消せませんでした。自分で取り消してください。"; fi
 }
 
 ci_state() {
@@ -296,11 +330,11 @@ gate_verdict() {
 }
 
 build_comment() {
-  jq -r --slurpfile gates "$run/input/gates.json" --arg head "$head" --arg footer "$FOOTER" '
+  jq -r --slurpfile gates "$run/input/gates.json" --arg head "$head" --arg footer "$FOOTER" --arg lead "$1" '
     def mark: if . then "✅" else "❌" end;
     (if .verdict == "ok" then "自動で approve してよいと判断しました。" else "自分で見る必要があると判断しました。" end) as $title
     | [
-        "依存更新を確かめました（シャドーモードなので、approve はしていません）。",
+        $lead,
         "",
         "**" + $title + "**",
         "",
@@ -343,18 +377,34 @@ main() {
   else
     gate_verdict
   fi
-  build_comment
-
   verdict=$(jq -r .verdict "$run/verdict.json")
-  if [ "$post" = true ]; then
-    gh api -X POST "repos/$repo/issues/$number/comments" -F "body=@$run/comment.md" --jq .html_url ||
-      die "could not post the comment; it is kept at $run/comment.md"
-    mkdir -p "$(dirname "$SHADOW_LOG")"
-    printf '%s\t%s#%s\t%s\t%s\t%s\n' "$(date '+%F %T')" "$repo" "$number" "$head" "$verdict" \
-      "$(jq -r '.reasons | join(" / ")' "$run/verdict.json")" >>"$SHADOW_LOG"
-  else
+  if [ "$post" != true ]; then
+    build_comment "依存更新を確かめました（まだ投稿していません）。"
     cat "$run/comment.md"
     printf '\n(not posted; run again with --post. Saved in %s)\n' "$run"
+  elif [ "$verdict" = ok ] && blocker=$(approval_blocker) && [ -z "$blocker" ]; then
+    build_comment "依存更新を確かめ、approve しました。merge は人がしてください。"
+    gh api -X POST "repos/$repo/pulls/$number/reviews" -f event=APPROVE -f commit_id="$head" \
+      -F "body=@$run/comment.md" --jq .html_url ||
+      die "could not approve; the review is kept at $run/comment.md"
+  else
+    if [ "$verdict" = ok ]; then
+      lead="依存更新を確かめました。ok と判断しましたが、approve は見送りました（$blocker）。"
+      verdict=held
+    else
+      lead="依存更新を確かめました。approve はしていません。"
+      note=$(dismiss_my_approvals)
+      [ -z "$note" ] || lead="$lead $note"
+    fi
+    build_comment "$lead"
+    gh api -X POST "repos/$repo/issues/$number/comments" -F "body=@$run/comment.md" --jq .html_url ||
+      die "could not post the comment; it is kept at $run/comment.md"
+  fi
+
+  if [ "$post" = true ]; then
+    mkdir -p "$(dirname "$SHADOW_LOG")"
+    printf '%s\t%s#%s\t%s\t%s\t%s\n' "$(date '+%F %T')" "$repo" "$number" "$head" "$(jq -r .verdict "$run/verdict.json")" \
+      "$(jq -r '.reasons | join(" / ")' "$run/verdict.json")" >>"$SHADOW_LOG"
   fi
 
   printf 'result: %s %s\n' "$verdict" "$head"
