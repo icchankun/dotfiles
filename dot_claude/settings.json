@@ -133,7 +133,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "node ~/.claude/statusline-packages/node_modules/ccstatusline/dist/ccstatusline.js",
+    "command": "mise exec -- ccstatusline",
     "padding": 0
   },
   "enabledPlugins": {
