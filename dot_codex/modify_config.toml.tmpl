@@ -3,6 +3,7 @@
 # Codex は信頼したフォルダ・/model で選んだモデル・MCP などを自分でこのファイルに書き込み、apm も Codex 向けの MCP をここに書く。
 # ファイルごと置き換えるとそれらが消えるので、決めた値だけを混ぜ込み、それ以外は残す。コメントと並び順は残らない
 import copy
+import datetime
 import sys
 import tomllib
 
@@ -64,10 +65,20 @@ def merge(base, managed):
     return base
 
 
+# TOML の basic string。\ と " のほか、そのままでは書けない制御文字（U+0000〜U+001F と U+007F）もエスケープする
+ESCAPES = {"\\": "\\\\", '"': '\\"', "\b": "\\b", "\t": "\\t", "\n": "\\n", "\f": "\\f", "\r": "\\r"}
+
+
+def string(text):
+    return '"' + "".join(
+        ESCAPES.get(c) or (f"\\u{ord(c):04X}" if ord(c) < 0x20 or ord(c) == 0x7F else c) for c in text
+    ) + '"'
+
+
 def key(name):
     if name and all(c.isalnum() or c in "-_" for c in name):
         return name
-    return '"' + name.replace("\\", "\\\\").replace('"', '\\"') + '"'
+    return string(name)
 
 
 def value(v):
@@ -76,12 +87,15 @@ def value(v):
     if isinstance(v, (int, float)):
         return repr(v)
     if isinstance(v, str):
-        return '"' + v.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n").replace("\t", "\\t") + '"'
+        return string(v)
+    # tomllib は日時を datetime・date・time で返す。引用符を付けると文字列に変わるので、そのまま書く
+    if isinstance(v, (datetime.datetime, datetime.date, datetime.time)):
+        return v.isoformat()
     if isinstance(v, list):
         return "[" + ", ".join(value(x) for x in v) + "]"
     if isinstance(v, dict):
         return "{ " + ", ".join(f"{key(k)} = {value(x)}" for k, x in v.items()) + " }"
-    return '"' + str(v) + '"'
+    return string(str(v))
 
 
 def is_table_array(v):
