@@ -45,7 +45,9 @@ case "${1:-}" in
     state=$(sed -n 's/^状態: *//p' "$file" | head -n 1)
     [ "$state" = "作業中" ] || exit 0
     grep -q '^- \[ \]' "$file" || exit 0
-    printf '{"decision":"block","reason":"dev-flow.md の手順が残っています。次の手順に進むか、待つなら状態を「reviewer 待ち」か「ユーザー待ち」に書き換えてください。ユーザーの承認を得ていない確認があるなら、先へ進まず「ユーザー待ち」にして止まってください: %s"}\n' "$file"
+    # パスを JSON の文字列に入れるため、\ と " をエスケープする。JSON に書けない制御文字は落とす
+    json_file=$(printf '%s' "$file" | tr -d '\000-\037' | sed 's/\\/\\\\/g; s/"/\\"/g')
+    printf '{"decision":"block","reason":"dev-flow.md の手順が残っています。次の手順に進むか、待つなら状態を「reviewer 待ち」か「ユーザー待ち」に書き換えてください。ユーザーの承認を得ていない確認があるなら、先へ進まず「ユーザー待ち」にして止まってください: %s"}\n' "$json_file"
     ;;
   prompt)
     # エージェントに戻させると忘れ、Stop で止められずに後続の手順を飛ばして終わるため、ここで戻す
