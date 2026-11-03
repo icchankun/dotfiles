@@ -62,11 +62,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.bin/rename-cc-session",
-            "async": true
-          },
-          {
-            "type": "command",
             "command": "~/.bin/dev-flow-hook stop",
             "timeout": 10
           }

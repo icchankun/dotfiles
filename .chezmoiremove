@@ -1,0 +1,3 @@
+# 消した dotfiles。chezmoi apply で手元からも消す
+.bin/rename-cc-session
+.cache/rename-cc-session
