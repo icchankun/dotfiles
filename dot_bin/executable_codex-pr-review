@@ -374,14 +374,18 @@ place_findings() {
 # Settle the previous findings: one the advisor did not mention counts as still
 # open. Then the open list for the next round is the new findings plus the
 # previous ones left unresolved.
+# fyi needs no answer, so it is not carried over. Only must and should hold back
+# the approval; ask, nit and fyi do not.
 # (前回の指摘を確定する。advisor が触れなかったものは残っているとみなす。次の
-#  ラウンドに持ち越すのは、今回の指摘と、解消していない前回の指摘。)
+#  ラウンドに持ち越すのは、今回の指摘と、解消していない前回の指摘。fyi は返事が
+#  要らないので持ち越さない。approve を止めるのは must と should だけで、ask・nit・
+#  fyi は止めない。)
 settle_findings() {
   jq --argjson open "$open" '
     (.previous | map({key: .id, value: .}) | from_entries) as $seen
     | .previous = [$open[] | . as $f | ($seen[$f.id] // {status: "unresolved", note: ("「" + $f.title + "」の対応を確認できませんでした")}) + {id: $f.id, severity: $f.severity}]
-    | .open = (.findings + [$open[] | select(.id as $id | any($seen[$id]; .status == "resolved" or .status == "explained") | not)])
-    | .ready = ([.open[] | select(.severity != "nit")] | length == 0)
+    | .open = ([.findings[] | select(.severity != "fyi")] + [$open[] | select(.id as $id | any($seen[$id]; .status == "resolved" or .status == "explained") | not)])
+    | .ready = ([.open[] | select(.severity == "must" or .severity == "should")] | length == 0)
   ' "$run/findings.json" >"$run/settled.json"
   mv "$run/settled.json" "$run/findings.json"
 }
@@ -396,7 +400,7 @@ build_review() {
   local saved
   saved=$(jq -c '{open}' "$run/findings.json" | base64 | tr -d '\n')
   jq --arg head "$head" --arg saved "$saved" --argjson round "$round" --arg footer "$FOOTER" '
-    def order: {must: 0, should: 1, nit: 2}[.severity];
+    def order: {must: 0, should: 1, ask: 2, nit: 3, fyi: 4}[.severity];
     def tag: "[" + .severity + "]";
     def list: map(tag + " " + .title + "（" + .file + "）") | join("\n");
     (.findings | sort_by(order)) as $f
