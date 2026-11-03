@@ -72,9 +72,27 @@ readonly MAX_ROUNDS=5
 # per file, and the earlier pull requests whose comments are read.
 # (reviewer に渡す履歴の量。調べる変えたファイルの数、ファイルごとのコミット数、
 #  コメントを読む以前の PR の数。)
-readonly MAX_CONTEXT_FILES=30
-readonly HISTORY_COMMITS=5
-readonly MAX_PAST_PRS=5
+readonly MAX_CONTEXT_FILES=15
+readonly HISTORY_COMMITS=3
+readonly MAX_PAST_PRS=3
+# Files left out of diff.patch: lockfiles and generated files. The reviewer does
+# not read their contents anyway, and they can make up most of a diff's tokens.
+# Their names are still listed in skipped-files. Codex's usage allowance is small
+# on the Business plan, so the input is kept to what the review uses.
+# (diff.patch から外すファイル。lockfile と生成物。reviewer は中身を読まないのに、
+#  差分のトークンの大半になりうる。名前は skipped-files に残す。Business プランの
+#  Codex は利用枠が小さいので、入力はレビューに使うものだけにする。)
+readonly SKIPPED_PATHSPECS=(
+  ':(exclude,glob)**/*.lock' ':(exclude,glob)**/package-lock.json' ':(exclude,glob)**/npm-shrinkwrap.json'
+  ':(exclude,glob)**/yarn.lock' ':(exclude,glob)**/pnpm-lock.yaml'
+  ':(exclude,glob)**/*.min.js' ':(exclude,glob)**/*.min.css' ':(exclude,glob)**/*.map'
+  ':(exclude,glob)**/*.snap' ':(exclude,glob)**/__snapshots__/**'
+)
+# Longest body kept for a comment in conversation.json and past_reviews.json.
+# CI and coverage bots post reports far longer than any review comment.
+# (conversation.json と past_reviews.json に残すコメントの本文の長さの上限。CI や
+#  カバレッジの bot は、レビューのコメントよりずっと長い報告を書く。)
+readonly MAX_BODY_CHARS=2000
 readonly LGTM='CI もすべて通っているので approve します。LGTM です！'
 readonly CI_FAILED='CI が通っていないので、approve は見送ります。'
 # Ends every review and inline comment, so a reader can tell Codex wrote it and
@@ -230,18 +248,20 @@ write_input() {
   mkdir -p "$run/input"
 
   jq '{number, title, body, author: .user.login, base: .base.ref, head: .head.sha, url: .html_url, draft}' <<<"$pr" >"$run/input/pr.json"
-  git -C "$tree" diff --no-color --no-ext-diff --src-prefix=a/ --dst-prefix=b/ "$diff_from" "$head" >"$run/input/diff.patch"
+  git -C "$tree" diff --no-color --no-ext-diff --src-prefix=a/ --dst-prefix=b/ "$diff_from" "$head" -- . "${SKIPPED_PATHSPECS[@]}" >"$run/input/diff.patch"
+  git -C "$tree" diff --name-only "$diff_from" "$head" | grep -vxF -f <(git -C "$tree" diff --name-only "$diff_from" "$head" -- . "${SKIPPED_PATHSPECS[@]}") >"$run/input/skipped-files" || true
   [ "$round" -eq 1 ] || printf '%s\n' "$open" >"$run/input/previous.json"
 
   {
     gh api --paginate --slurp "repos/$repo/issues/$number/comments"
     gh api --paginate --slurp "repos/$repo/pulls/$number/reviews"
     gh api --paginate --slurp "repos/$repo/pulls/$number/comments"
-  } | jq -s --arg author "$author" '
+  } | jq -s --arg author "$author" --argjson max "$MAX_BODY_CHARS" '
     def who: {author: .user.login, is_pr_author: (.user.login == $author), is_bot: (.user.type == "Bot")};
-    (.[0] | add // [] | map(who + {kind: "comment", body, created_at})) +
-    (.[1] | add // [] | map(select(.body != "") | who + {kind: "review", state, body, created_at: .submitted_at})) +
-    (.[2] | add // [] | map(who + {kind: "inline", id, in_reply_to: .in_reply_to_id, path, line, body, created_at}))
+    def cut: if length > $max then .[:$max] + "…（以下略）" else . end;
+    (.[0] | add // [] | map(who + {kind: "comment", body: (.body | cut), created_at})) +
+    (.[1] | add // [] | map(select(.body != "") | who + {kind: "review", state, body: (.body | cut), created_at: .submitted_at})) +
+    (.[2] | add // [] | map(who + {kind: "inline", id, in_reply_to: .in_reply_to_id, path, line, body: (.body | cut), created_at}))
     | sort_by(.created_at)' >"$run/input/conversation.json"
 
   git -C "$bare" diff --name-only "$diff_from" "$head" | head -n "$MAX_CONTEXT_FILES" >"$run/changed-files"
@@ -312,8 +332,9 @@ write_past_reviews() {
 
   jq -c '.[]' <<<"$numbers" | while read -r past; do
     gh api --paginate --slurp "repos/$repo/pulls/$(jq -r .number <<<"$past")/comments" 2>/dev/null |
-      jq -c --argjson past "$past" --argjson files "$files" '
-        $past + {comments: [add // [] | .[] | select(.path as $p | $files | index($p)) | {author: .user.login, path, line, body}]}
+      jq -c --argjson past "$past" --argjson files "$files" --argjson max "$MAX_BODY_CHARS" '
+        def cut: if length > $max then .[:$max] + "…（以下略）" else . end;
+        $past + {comments: [add // [] | .[] | select(.path as $p | $files | index($p)) | {author: .user.login, path, line, body: (.body | cut)}]}
         | select(.comments | length > 0)' || true
   done | jq -s . >"$run/input/past_reviews.json"
 }
@@ -346,7 +367,19 @@ review() {
   [ "$round" -eq 1 ] || effort=low
   run_codex reviewer "$REVIEWER_MODEL" "$effort" \
     "\$reviewing-pull-requests を使って PR をレビューしてください。ラウンド: ${round}。入力のディレクトリ: $run/input"
-  run_codex advisor "$ADVISOR_MODEL" "$ADVISOR_EFFORT" \
+  # Nothing to check: no new findings and none carried over. The advisor would
+  # return the reviewer's JSON as it is, so it is not run.
+  # (確かめるものがない。今回の指摘も持ち越しもなければ、advisor は reviewer の JSON を
+  #  そのまま返すだけなので動かさない。)
+  if jq -e '.findings | length == 0' "$run/reviewer.json" >/dev/null && [ "$(jq length <<<"$open")" -eq 0 ]; then
+    jq '.previous = [] | .dropped = []' "$run/reviewer.json" >"$run/advisor.json"
+    return
+  fi
+  # Later rounds check fewer and smaller findings, so medium is enough.
+  # (2回目以降は確かめる指摘が少なく小さいので、medium で足りる。)
+  local advisor_effort=$ADVISOR_EFFORT
+  [ "$round" -eq 1 ] || advisor_effort=medium
+  run_codex advisor "$ADVISOR_MODEL" "$advisor_effort" \
     "\$checking-review-findings を使って指摘を確かめてください。ラウンド: ${round}。入力のディレクトリ: ${run}/input。reviewer が返した JSON: $run/reviewer.json"
 }
 
