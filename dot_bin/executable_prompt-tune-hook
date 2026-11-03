@@ -1,0 +1,100 @@
+#!/usr/bin/env python3
+# Claude Code の UserPromptSubmit の hook。新しい作業の依頼が来たら、作業の前に prompt-master の skill で
+# 依頼を整えた版を作って見せ、承認を待つよう指示を足す。
+# hook はプロンプトの本文を書き換えられず、additionalContext で文脈を足すことしかできないので、整えるのはモデルに任せる。
+# 承認・相槌・スラッシュコマンドや、agent 同士のやり取り（hc send、dev-flow.md のある worktree）には何も足さない。
+# 足すと、承認する人のいない agent が返事を待って止まる。
+# 調べられないときは何も足さずに通す（fail-open）。整えるのは「あると得」で、作業を止めてまでやることではない。
+# 使い方: settings.json の hooks.UserPromptSubmit に登録する。プロンプトに #notune を入れるとその回は素通しする
+#   `prompt-tune-hook test` で自己テスト
+# 参考: https://zenn.dev/su8/articles/996c50ae501275
+import json
+import os
+import re
+import subprocess
+import sys
+import tempfile
+
+BYPASS_MARK = "#notune"
+SKIP_PREFIXES = ("/", "!")
+# 日本語は1文字あたりの情報が多いので、CJK を2文字と数えて長さを測る。素の文字数だと、短めの依頼まで落ちる
+MIN_WEIGHTED_LEN = 80
+APPROVAL = re.compile(
+    r"^(はい|うん|ok|okay|yes|y|no|いいえ|お願いします|おねがいします|お願い|おねがい|進めて|続けて|やって"
+    r"|どうぞ|了解|承知|承認|それで|それでお願いします|いいね|良いね|lgtm|調整版で|原文で)[!！。．、\s]*$",
+    re.IGNORECASE,
+)
+# 他の agent からの返事は <hc from="t8 …"> の形で届く。handover と herdr-coding の依頼は、返事を hc send で返すよう頼む一文を含む
+AGENT_MESSAGE = re.compile(r"^<hc from=|\bhc send\b")
+
+CONTEXT = (
+    "[prompt-tune] このプロンプトが新しい作業の依頼なら、作業を始める前に prompt-master の skill で整えた版を作る。"
+    "対象ツールは、いま動いているこの Claude Code（あなた自身のモデル）とし、対象ツールを聞き返さない。"
+    "ユーザーの意図と頼んだ中身は変えず、変えてよいのは書き方・構造・範囲や完了条件の明示だけにする。"
+    "整えた版と、変えた点とその理由を2〜4点示し、承認を待つ。承認されたら整えた版で、断られたら原文のまま作業する。"
+    "原文で足りているなら「調整不要」と一言添えて、そのまま作業してよい。"
+    "前の質問への答え・続きの指示・ただの質問や雑談なら、この指示は無視する。"
+)
+
+
+def weighted_len(text):
+    return sum(2 if ord(ch) >= 0x3000 else 1 for ch in text)
+
+
+def in_dev_flow(cwd):
+    # running-dev-flow の worktree では、入力の多くが reviewer や driver からの hc send
+    try:
+        out = subprocess.run(["git", "-C", cwd, "rev-parse", "--absolute-git-dir"],
+                             capture_output=True, text=True, timeout=5)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return out.returncode == 0 and os.path.isfile(os.path.join(out.stdout.strip(), "dev-flow.md"))
+
+
+def should_tune(prompt, cwd):
+    p = prompt.strip()
+    if not p or p.startswith(SKIP_PREFIXES) or BYPASS_MARK in p:
+        return False
+    if APPROVAL.match(p) or weighted_len(p) < MIN_WEIGHTED_LEN:
+        return False
+    if AGENT_MESSAGE.search(p):
+        return False
+    return not in_dev_flow(cwd)
+
+
+def test():
+    long_ja = "ログイン画面のバリデーションを直したい。メールアドレスが空のときにエラーが出ないので、出るようにしてほしい。"
+    with tempfile.TemporaryDirectory() as plain:
+        assert should_tune(long_ja, plain)
+        for p in ["", "はい", "LGTM!", "進めて。", "/code-review high", "!ls", "#notune " + long_ja,
+                  "短い依頼を直して", long_ja + "\n結果は hc send t7 で返してほしい。",
+                  '<hc from="t8 reviewer">' + long_ja + "</hc>"]:
+            assert not should_tune(p, plain), p
+        subprocess.run(["git", "init", "-q", plain], check=True)
+        assert should_tune(long_ja, plain)
+        open(os.path.join(plain, ".git", "dev-flow.md"), "w").write("状態: 作業中\n")
+        assert not should_tune(long_ja, plain), "dev-flow.md のある worktree"
+    assert should_tune("Refactor the error handling under pkg/api so that swallowed exceptions are logged with context.", "/")
+    print("ok")
+
+
+def main():
+    if sys.argv[1:] == ["test"]:
+        test()
+        return
+    try:
+        payload = json.load(sys.stdin)
+        prompt = payload.get("prompt")
+        cwd = payload.get("cwd") or "."
+        if not isinstance(prompt, str) or not should_tune(prompt, cwd):
+            return
+    except Exception:
+        return
+    print(json.dumps({"hookSpecificOutput": {
+        "hookEventName": "UserPromptSubmit",
+        "additionalContext": CONTEXT,
+    }}, ensure_ascii=False))
+
+
+if __name__ == "__main__":
+    main()
