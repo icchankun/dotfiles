@@ -37,6 +37,12 @@
 
 set -eu
 
+# The graph sits at the top of the repository, so look there even from a
+# subdirectory; graphify also looks for it relative to the current directory.
+# Outside git, the current directory as before.
+# (グラフはリポジトリの一番上にあるので、サブディレクトリにいてもそこを見る。graphify も
+#  今のディレクトリからの相対で探すので、そこへ移ってから動かす。git の外では今のディレクトリ。)
+top=$(git rev-parse --show-toplevel 2>/dev/null) && cd "$top"
 [ -f graphify-out/graph.json ] || exit 0
 command -v graphify >/dev/null 2>&1 || exit 0
 exec graphify hook-guard "$1"
