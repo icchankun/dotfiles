@@ -44,7 +44,11 @@
       "Read(**/.env)",
       "Read(**/.env.*)",
       "Read(~/.ssh/*)",
+      "Read(~/.ssh/**)",
       "Bash(rm -rf *)",
+      "Bash(rm -fr *)",
+      "Bash(rm -Rf *)",
+      "Bash(rm -rF *)",
       "Bash(sudo *)",
       "Bash(gh pr merge*)"
     ],
