@@ -2,12 +2,10 @@
 
 # =============================================================================
 # codex-dep-report
-# Compare the shadow-mode verdicts of codex-dep-review with what I actually did
-# with each dependency update, to decide whether approving them on their own
-# is safe yet. Merging stays with a person either way.
-# (codex-dep-review のシャドーモードの判定と、自分が実際にその依存更新を
-# どうしたかを比べ、自動で approve させてよいかを決める材料にする。merge は
-# どちらにしても人がする。)
+# Compare the verdicts of codex-dep-review with what I actually did with each
+# dependency update, to see whether its automatic approvals can be trusted.
+# (codex-dep-review の判定と、自分が実際にその依存更新をどうしたかを比べ、
+# 自動の approve を任せ続けてよいかを見る。)
 #
 # Dependencies / 依存:
 #   - gh, jq, osascript (only with --notify / --notify のときだけ)
@@ -34,7 +32,7 @@
 
 set -euo pipefail
 
-# When the automatic approval may be turned on. (自動 approve に進んでよい目安。)
+# When the automatic approval has earned trust. (自動 approve を任せてよい目安。)
 readonly MIN_COUNTED=30
 readonly RECENT_WEEKS=4
 readonly MAX_OVERCAUTIOUS_PERCENT=20
@@ -112,6 +110,7 @@ records | jq -s \
   | {
       summary: "依存更新の判定: \($all.n) 件中 一致 \($all.agree) / 危ない外れ \($all.unsafe) / 慎重すぎた外れ \($all.overcautious)",
       ready: ($enough and $safe and $useful),
+      unsafe_recent: $recent.unsafe,
       markdown: ([
         "# 依存更新の判定と自分の判断（\($today)）",
         "",
@@ -122,7 +121,7 @@ records | jq -s \
         "",
         "まだ数えていないもの（open・bot が閉じた・読めない）: \(length - ($c | length)) 件",
         "",
-        "## 自動 approve に進む目安",
+        "## 自動 approve を任せてよい目安",
         "",
         "- \(if $enough then "✅" else "⬜" end) 判定が \($min) 件以上ある（\($all.n) 件）",
         "- \(if $safe then "✅" else "❌" end) 直近 \($weeks) 週で危ない外れが 0 件（\($recent.unsafe) 件）",
@@ -138,7 +137,11 @@ records | jq -s \
 
 jq -r .markdown "$STATE_DIR/deps-report.json" >"$REPORT"
 summary=$(jq -r .summary "$STATE_DIR/deps-report.json")
-[ "$(jq -r .ready "$STATE_DIR/deps-report.json")" = true ] && summary="$summary。自動 approve に進む目安を満たしています"
+if [ "$(jq -r .unsafe_recent "$STATE_DIR/deps-report.json")" != 0 ]; then
+  summary="$summary。直近に危ない外れがあります。自動 approve を止めるか見直してください"
+elif [ "$(jq -r .ready "$STATE_DIR/deps-report.json")" = true ]; then
+  summary="$summary。自動 approve を任せてよい目安を満たしています"
+fi
 printf '%s\n%s\n' "$summary" "$REPORT"
 
 if [ "$notify" = true ]; then
