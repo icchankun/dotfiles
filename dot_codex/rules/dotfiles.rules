@@ -33,6 +33,7 @@ prefix_rule(pattern = ["yarn", "--version"])
 prefix_rule(pattern = ["which"])
 prefix_rule(pattern = ["ls"])
 
-# 消す・権限を上げるコマンドは止める（permissions.deny）
+# 消す・権限を上げる・PR を merge するコマンドは止める（permissions.deny）
 prefix_rule(pattern = ["rm", ["-rf", "-fr", "-Rf", "-rF"]], decision = "forbidden", justification = "まとめて消すコマンドは使わない。消すファイルを1つずつ指定する", match = ["rm -rf build"], not_match = ["rm build/a.txt"])
 prefix_rule(pattern = ["sudo"], decision = "forbidden", justification = "権限を上げるコマンドは使わない。必要ならユーザーに頼む", match = ["sudo ls"])
+prefix_rule(pattern = ["gh", "pr", "merge"], decision = "forbidden", justification = "PR は merge しない。merge は人がする", match = ["gh pr merge 123 --squash", "gh pr merge --auto"], not_match = ["gh pr view 123"])
