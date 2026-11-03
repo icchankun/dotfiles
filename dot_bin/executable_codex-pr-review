@@ -332,7 +332,7 @@ update_graph() {
 run_codex() {
   local role="$1" model="$2" effort="$3" prompt="$4"
   if ! codex exec --ephemeral -m "$model" -c "model_reasoning_effort=$effort" -c 'default_permissions="dotfiles-readonly"' \
-    -C "$tree" --output-schema "$schema" -o "$run/$role.json" "$prompt" >"$run/$role.log" 2>&1; then
+    -C "$tree" --output-schema "$schema" -o "$run/$role.json" "$prompt" </dev/null >"$run/$role.log" 2>&1; then
     grep -i 'usage limit' "$run/$role.log" >&2 && exit 75
     die "the $role failed; see $run/$role.log"
   fi
@@ -345,9 +345,9 @@ review() {
   # is enough. (2回目以降は前回からの変更だけを読むので、軽い effort で足りる。)
   [ "$round" -eq 1 ] || effort=low
   run_codex reviewer "$REVIEWER_MODEL" "$effort" \
-    "\$reviewing-pull-requests を使って PR をレビューしてください。ラウンド: $round。入力のディレクトリ: $run/input"
+    "\$reviewing-pull-requests を使って PR をレビューしてください。ラウンド: ${round}。入力のディレクトリ: $run/input"
   run_codex advisor "$ADVISOR_MODEL" "$ADVISOR_EFFORT" \
-    "\$checking-review-findings を使って指摘を確かめてください。ラウンド: $round。入力のディレクトリ: $run/input。reviewer が返した JSON: $run/reviewer.json"
+    "\$checking-review-findings を使って指摘を確かめてください。ラウンド: ${round}。入力のディレクトリ: ${run}/input。reviewer が返した JSON: $run/reviewer.json"
 }
 
 # Drop the line of a finding that is outside the diff's hunks: GitHub rejects
@@ -431,7 +431,7 @@ build_review() {
 post_review() {
   local file="$1" event="$2" closing="${3:-}"
   jq --arg event "$event" --arg closing "$closing" --arg footer "$FOOTER" '
-    {commit_id, event, comments,
+    {commit_id, event: $event, comments,
      body: (.body + (if $closing == "" then "" else "\n\n" + $closing end) + "\n\n" + $footer + "\n\n" + .marker)}' "$file" |
     gh api -X POST "repos/$repo/pulls/$number/reviews" --input - --jq .html_url ||
     die "could not post the review; it is kept at $file"

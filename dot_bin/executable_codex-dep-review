@@ -307,7 +307,7 @@ run_codex() {
   local model="$1" effort="$2" out="$3"
   if ! codex exec --ephemeral -m "$model" -c "model_reasoning_effort=$effort" -c 'default_permissions="dotfiles-readonly"' \
     -C "$tree" --output-schema "$schema" -o "$out" \
-    "\$checking-library-updates を使って、この依存更新の PR を確かめてください。入力のディレクトリ: $run/input" >"$out.log" 2>&1; then
+    "\$checking-library-updates を使って、この依存更新の PR を確かめてください。入力のディレクトリ: ${run}/input" </dev/null >"$out.log" 2>&1; then
     grep -i 'usage limit' "$out.log" >&2 && exit 75
     die "Codex failed; see $out.log"
   fi
@@ -389,7 +389,7 @@ main() {
       die "could not approve; the review is kept at $run/comment.md"
   else
     if [ "$verdict" = ok ]; then
-      lead="依存更新を確かめました。ok と判断しましたが、approve は見送りました（$blocker）。"
+      lead="依存更新を確かめました。ok と判断しましたが、approve は見送りました（${blocker}）。"
       verdict=held
     else
       lead="依存更新を確かめました。approve はしていません。"

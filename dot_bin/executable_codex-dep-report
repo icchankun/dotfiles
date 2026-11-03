@@ -138,9 +138,9 @@ records | jq -s \
 jq -r .markdown "$STATE_DIR/deps-report.json" >"$REPORT"
 summary=$(jq -r .summary "$STATE_DIR/deps-report.json")
 if [ "$(jq -r .unsafe_recent "$STATE_DIR/deps-report.json")" != 0 ]; then
-  summary="$summary。直近に危ない外れがあります。自動 approve を止めるか見直してください"
+  summary="${summary}。直近に危ない外れがあります。自動 approve を止めるか見直してください"
 elif [ "$(jq -r .ready "$STATE_DIR/deps-report.json")" = true ]; then
-  summary="$summary。自動 approve を任せてよい目安を満たしています"
+  summary="${summary}。自動 approve を任せてよい目安を満たしています"
 fi
 printf '%s\n%s\n' "$summary" "$REPORT"
 
