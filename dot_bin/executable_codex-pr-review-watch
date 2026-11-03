@@ -24,10 +24,16 @@
 #     need this script. (自分個人にレビュー依頼が来た、draft でない open の PR を
 #     拾い、閉じるまで追い続ける。レビューを投稿すると GitHub は依頼を消すが、その
 #     あとのラウンドも見る必要があるため。)
-#   - Leaves out release pull requests, whose title starts with [リリース]: one
-#     set to merge automatically would be merged by the approval.
-#     (題名が [リリース] で始まるリリースの PR は外す。自動 merge にしてあると、
-#      approve で merge されてしまうため。)
+#   - Leaves out release pull requests: one set to merge automatically would be
+#     merged by the approval. A pull request counts as a release when its title
+#     has リリース or the word release, its head branch is release/* or
+#     release-*, or it has a label named release or リリース. The base branch
+#     alone does not decide it, since some repositories send every pull request
+#     to main. (リリースの PR は外す。自動 merge にしてあると、approve で merge
+#      されてしまうため。題名に「リリース」か単語の release がある、head の
+#      ブランチが release/* か release-*、release か リリース のラベルがある、の
+#      どれかならリリースとみなす。ベースのブランチだけでは決めない。すべての PR を
+#      main に出すリポジトリもあるため。)
 #   - Uses Codex on at most MAX_PRS pull requests, so a pile of requests does not
 #     drain the usage allowance in one go; the rest wait for the next run.
 #     (Codex を使うのは MAX_PRS 件まで。依頼がまとめて来ても、一度に利用枠を使い
@@ -53,7 +59,12 @@ set -euo pipefail
 
 readonly MAX_PRS=3
 readonly MAX_DEP_PRS=5
-readonly RELEASE_PREFIX='[リリース]'
+# What makes a pull request a release: its title, head branch or a label.
+# (リリースの PR とみなす条件。題名、head のブランチ、ラベルで見る。)
+readonly RELEASE_JQ='
+  (.title | test("リリース|\\brelease\\b"; "i"))
+  or (.headRefName | test("^release[/-]"; "i"))
+  or any(.labels[]?; .name | test("^(release|リリース)$"; "i"))'
 readonly REPOS_FILE="$HOME/.config/dev-flow/repos"
 readonly STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/codex-pr-review"
 readonly TRACKED="$STATE_DIR/tracked"
@@ -203,8 +214,8 @@ main() {
     [ "$used" -lt "$MAX_PRS" ] || { log "used Codex on $MAX_PRS pull requests; the rest wait"; break; }
 
     repo="${pr%%#*}" number="${pr##*#}"
-    state=$(gh pr view "$number" -R "$repo" --json state,isDraft,title | jq -r --arg release "$RELEASE_PREFIX" \
-      'if .state != "OPEN" then "closed" elif (.title | startswith($release)) then "release" elif .isDraft then "draft" else "open" end') ||
+    state=$(gh pr view "$number" -R "$repo" --json state,isDraft,title,headRefName,labels |
+      jq -r "def release: $RELEASE_JQ;"' if .state != "OPEN" then "closed" elif release then "release" elif .isDraft then "draft" else "open" end') ||
       { log "$pr: could not read"; continue; }
     case "$state" in
       closed) untrack "$pr"; log "$pr: closed; no longer followed"; continue ;;
