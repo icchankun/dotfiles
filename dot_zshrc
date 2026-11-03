@@ -9,7 +9,10 @@ fi
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 # init
-source $HOMEBREW_PREFIX/opt/zinit/zinit.zsh
+# zinit は mise で入らない（バイナリではなく zsh のスクリプト）ので、zinit の README の手順で、なければ clone する
+ZINIT_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git"
+[[ -d $ZINIT_HOME/.git ]] || git clone --quiet https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
+source "$ZINIT_HOME/zinit.zsh"
 
 zinit wait lucid light-mode for \
     OMZL::git.zsh \
