@@ -18,13 +18,13 @@ SECRETS = {
     },
 }
 
-# Claude Code の settings.json に対応する値
+# Claude Code の settings.json に対応する値。Codex の既定と同じものは書かない
+# （approval_policy は on-request、features.multi_agent は有効、features.memories は無効、tui.notifications は有効が既定。
+#  openai/codex の protocol.rs・features/src/lib.rs・config/src/types.rs で確かめた）
 MANAGED = {
     # effortLevel: medium。モデルは Codex の主力
     "model": "gpt-6.1-sol",
     "model_reasoning_effort": "medium",
-    # defaultMode: auto。確認はモデルが要ると判断したときだけ
-    "approval_policy": "on-request",
     "default_permissions": "dotfiles",
     "permissions": {
         "dotfiles": {
@@ -41,15 +41,7 @@ MANAGED = {
             "filesystem": SECRETS,
         },
     },
-    "features": {
-        # env の CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS に当たる。サブエージェントを使えるようにする
-        "multi_agent": True,
-        # autoMemoryEnabled: false
-        "memories": False,
-    },
     "tui": {
-        # inputNeededNotifEnabled / agentPushNotifEnabled
-        "notifications": True,
         # statusLine に当たる。Codex は決まった項目から選ぶ
         "status_line": ["model-with-reasoning", "five-hour-limit", "git-branch", "current-dir"],
     },
