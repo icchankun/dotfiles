@@ -1,7 +1,4 @@
 {
-  "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
-  },
   "attribution": {
     "sessionUrl": false
   },
@@ -28,17 +25,11 @@
       "Bash(gh search*)",
       "Bash(gh gist list*)",
       "Bash(gh gist view*)",
-      "Bash(git log*)",
-      "Bash(git diff*)",
-      "Bash(git status*)",
-      "Bash(git show*)",
       "Bash(bundle list*)",
       "Bash(bundle info*)",
       "Bash(ruby -v*)",
       "Bash(node -v*)",
-      "Bash(yarn --version*)",
-      "Bash(which *)",
-      "Bash(ls *)"
+      "Bash(yarn --version*)"
     ],
     "deny": [
       "Read(**/.env)",
@@ -57,7 +48,6 @@
   "hooks": {
     "SessionStart": [
       {
-        "matcher": "*",
         "hooks": [
           {
             "type": "command",
