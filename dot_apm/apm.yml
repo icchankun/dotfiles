@@ -34,6 +34,9 @@ dependencies:
       ref: a80e4c9d12d607631249d4d7d059f835d4b2f13a # v1.7.4
       skills:
         - find-skills
+    # 新しい作業の依頼を、作業の前に整える。~/.bin/prompt-tune-hook が呼ぶ
+    - git: nidhinjs/prompt-master
+      ref: 49b3a72469b1e7287d66387004ccfcca90e5968a # v1.8.2
     - git: cursor/plugins
       ref: e46364b8be46000b7df0f260550cd712afbb8d36
       path: pstack
