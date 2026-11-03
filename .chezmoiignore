@@ -4,3 +4,8 @@ docs/
 .config/herdr-app/mods/*/jsconfig.json
 graphify-out/
 CLAUDE.md
+README
+{{ if ne .chezmoi.os "darwin" -}}
+# launchd の plist は macOS だけ
+Library
+{{ end -}}
