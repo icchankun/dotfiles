@@ -8,6 +8,8 @@ zle -N select-history
 bindkey '^r' select-history
 
 # git worktree remove + cd to main worktree
+# ブランチは残し、worktree のディレクトリだけ消す。git wt -d / -D はブランチも消すので使わない。
+# git wt のフックは作るときだけ走り（wt.deletehook は設定していない）、ここで飛ばすものはない
 rm-wt() {
   local main_worktree target
   main_worktree=$(git worktree list | head -1 | awk '{print $1}')
