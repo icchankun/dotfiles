@@ -1,5 +1,5 @@
 lockfile_version: '2'
-generated_at: '2026-11-03T08:20:03.051567+00:00'
+generated_at: '2026-11-04T00:57:06.310987+00:00'
 apm_version: 0.31.0
 dependencies:
 - repo_url: anthropics/claude-plugins-official
@@ -945,9 +945,9 @@ dependencies:
 - repo_url: icchankun/skills
   name: icchankun-skills
   host: github.com
-  resolved_commit: 9bd976249189edc428ea62d52465650ecf0d2b59
+  resolved_commit: 5d19d410463832d3d4ccc5bb6a06a45cd1fcfea9
   resolved_ref: main
-  version: 9bd9762
+  version: 5d19d41
   package_type: marketplace_plugin
   deployed_files:
   - .agents/skills/capturing-screens
@@ -1135,7 +1135,7 @@ dependencies:
     .claude/skills/stacking-pull-requests/SKILL.md: sha256:2762e5d388391df894c9ae63bf69799e80d160c67d9bca99e5d304181129df14
     .claude/skills/uploading-pr-media/SKILL.md: sha256:e565b4ba2b8376fe9e662e49963fd08c0b89717746f7a3f72a514d61efd24916
     .claude/skills/writing-slack-messages/SKILL.md: sha256:bcfb94ee415fce216e87443d93b13803c9e64c966b8a1d6c939d784839e6dae4
-  content_hash: sha256:22cc485a58b118ebefbd720cba5de656a54863c4db9c772274f60345278d4598
+  content_hash: sha256:1705852e1deb7f44fe3b7620b830c040c68b29f3aee493e3ababeaa885f25f13
 - repo_url: microsoft/playwright-cli
   name: playwright-cli
   host: github.com
