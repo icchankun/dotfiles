@@ -37,6 +37,16 @@ dependencies:
     # 新しい作業の依頼を、作業の前に整える。~/.bin/prompt-tune-hook が呼ぶ
     - git: nidhinjs/prompt-master
       ref: 49b3a72469b1e7287d66387004ccfcca90e5968a # v1.8.2
+    # 計画や設計を、質問を重ねて詰める。grill-with-docs は grilling と domain-modeling を呼び、
+    # 決まった用語と判断を GLOSSARY.md と ADR に残す。to-questionnaire は自分で答えられない判断を、
+    # 知っている人に渡す質問票にする
+    - git: mattpocock/skills
+      ref: 4ae2317ddb22b046e26455e4f9c9b3aaaf62212d
+      skills:
+        - grilling
+        - grill-with-docs
+        - domain-modeling
+        - to-questionnaire
     - git: cursor/plugins
       ref: e46364b8be46000b7df0f260550cd712afbb8d36
       path: pstack
