@@ -18,3 +18,8 @@ node_modules/
 
 # graphify が各リポジトリに作るグラフ（生成物）
 graphify-out/
+
+# grill-with-docs（domain-modeling）が作る用語集と ADR。仕事のリポジトリのコミットに入れない
+GLOSSARY.md
+GLOSSARY-MAP.md
+**/docs/adr/
