@@ -8,18 +8,21 @@
 #
 # Dependencies / 依存:
 #   - gh, codex-pr-review, codex-dep-review, osascript (macOS notifications / macOS の通知)
-#   - the repositories whose dependency updates are checked, in DEV_FLOW_REPOS
-#     (space separated) or ~/.config/dev-flow/repos (one per line). Kept out of
-#     dotfiles, which are public. (依存更新を確かめるリポジトリ。DEV_FLOW_REPOS
-#     （空白区切り）か ~/.config/dev-flow/repos（1行に1つ）。dotfiles は公開して
-#      いるので、そこには入れない。)
+#   - the repositories to review, in DEV_FLOW_REPOS (space separated) or
+#     ~/.config/dev-flow/repos (one per line). Both the pull request reviews and
+#     the dependency update checks run only there. Kept out of dotfiles, which
+#     are public. (レビューするリポジトリ。DEV_FLOW_REPOS（空白区切り）か
+#      ~/.config/dev-flow/repos（1行に1つ）。PR のレビューも依存更新の確認も、
+#      ここに書いたリポジトリだけで動く。dotfiles は公開しているので、そこには
+#      入れない。)
 #
 # What a run does / 1回の実行ですること:
 #   - Only on weekdays from 9:00 to 20:00. (平日 9:00〜20:00 だけ動く。)
 #   - Does nothing on a machine without Codex, without a notification.
 #     (Codex が入っていない端末では、知らせずに何もしない。)
-#   - Picks up open, non-draft pull requests that request my review in person
-#     (user-review-requested:@me) and keeps following them until they close:
+#   - Picks up open, non-draft pull requests in those repositories that request
+#     my review in person (user-review-requested:@me) and keeps following them
+#     until they close:
 #     GitHub drops the request once a review is posted, but later rounds still
 #     need this script. (自分個人にレビュー依頼が来た、draft でない open の PR を
 #     拾い、閉じるまで追い続ける。レビューを投稿すると GitHub は依頼を消すが、その
@@ -108,20 +111,30 @@ reset_epoch() {
   echo $(($(date +%s) + 1800))
 }
 
-# Add the pull requests that request my review to the tracked list.
-# (自分にレビュー依頼が来た PR を、追いかける一覧に足す。)
+# Add the pull requests that request my review to the tracked list, keeping
+# only those in the repositories to review. Pull requests from a repository
+# taken off the list are dropped from it too.
+# (自分にレビュー依頼が来た PR を、追いかける一覧に足す。残すのはレビューする
+#  リポジトリのものだけ。リストから外したリポジトリの PR は、一覧からも外す。)
 discover() {
-  local found
+  local found repos
+  repos=$(review_repos)
+  if [ -z "$repos" ]; then
+    log "no repositories to review; set DEV_FLOW_REPOS or $REPOS_FILE"
+    : >"$TRACKED"
+    return 0
+  fi
   found=$(gh search prs "user-review-requested:@me" --state open --draft=false --limit 100 \
     --json repository,number --jq '.[] | "\(.repository.nameWithOwner)#\(.number)"') ||
     { log "could not search pull requests"; return 0; }
-  { cat "$TRACKED"; [ -z "$found" ] || printf '%s\n' "$found"; } | sort -u >"$TRACKED.new"
+  { cat "$TRACKED"; [ -z "$found" ] || printf '%s\n' "$found"; } | sort -u |
+    awk -F'#' 'NR == FNR { keep[tolower($0)] = 1; next } tolower($1) in keep' <(printf '%s\n' "$repos") - >"$TRACKED.new" || true
   mv "$TRACKED.new" "$TRACKED"
 }
 
-# The repositories whose dependency updates are checked.
-# (依存更新を確かめるリポジトリ。)
-dep_repos() {
+# The repositories to review: pull requests and dependency updates.
+# (レビューするリポジトリ。PR も依存更新も。)
+review_repos() {
   if [ -n "${DEV_FLOW_REPOS:-}" ]; then
     printf '%s\n' $DEV_FLOW_REPOS
   elif [ -f "$REPOS_FILE" ]; then
@@ -133,7 +146,7 @@ dep_repos() {
 # (それらのリポジトリの、draft でない open の依存更新。)
 dep_pull_requests() {
   local repo bot
-  dep_repos | while read -r repo; do
+  review_repos | while read -r repo; do
     for bot in app/renovate app/dependabot; do
       gh pr list -R "$repo" --author "$bot" --state open --json number,isDraft \
         --jq ".[] | select(.isDraft | not) | \"$repo#\(.number)\"" 2>/dev/null || log "$repo: could not list $bot"
