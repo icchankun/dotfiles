@@ -28,10 +28,15 @@
 #       (新しい push か、作者の新しい返信がある -> 次のラウンドをレビューする)
 #     - must or should left -> post a COMMENT review
 #       (must か should が残っている -> COMMENT のレビューを投稿する)
-#     - none left -> wait for CI, then approve with LGTM; if CI fails, post the
-#       review as a COMMENT without approving
-#       (残っていない -> CI を待って LGTM 付きで approve する。CI が落ちたら approve
-#        せずに COMMENT で投稿する)
+#     - none left -> wait for CI, then approve; if CI fails, post the review as a
+#       COMMENT without approving
+#       (残っていない -> CI を待って approve する。CI が落ちたら approve せずに
+#        COMMENT で投稿する)
+#   The wording follows the review comment templates: the labels, a section for
+#   findings outside the diff, what was checked and what was left out on purpose,
+#   and a reply on each inline thread whose finding was settled.
+#   (文面はレビューコメントのテンプレートに沿う。ラベル、差分の外の指摘の見出し、
+#    確認したことと指摘しなかった点、解消した指摘のインラインのスレッドへの返信。)
 #     - more than MAX_ROUNDS rounds -> stop and leave it to you
 #       (MAX_ROUNDS を超えた -> 止めて人に任せる)
 #
@@ -93,8 +98,9 @@ readonly SKIPPED_PATHSPECS=(
 # (conversation.json と past_reviews.json に残すコメントの本文の長さの上限。CI や
 #  カバレッジの bot は、レビューのコメントよりずっと長い報告を書く。)
 readonly MAX_BODY_CHARS=2000
-readonly LGTM='CI もすべて通っているので approve します。LGTM です！'
-readonly CI_FAILED='CI が通っていないので、approve は見送ります。'
+# Most commits of the pull request written to commits.md, newest first.
+# (commits.md に書く PR のコミットの数の上限。新しい順。)
+readonly MAX_PR_COMMITS=50
 # Ends every review and inline comment, so a reader can tell Codex wrote it and
 # not me. (レビューとインラインのコメントの最後に付ける。自分ではなく Codex が
 #  書いたと分かるように。)
@@ -264,6 +270,12 @@ write_input() {
     (.[2] | add // [] | map(who + {kind: "inline", id, in_reply_to: .in_reply_to_id, path, line, body: (.body | cut), created_at}))
     | sort_by(.created_at)' >"$run/input/conversation.json"
 
+  # The pull request's own commits: their messages say what was meant, and the
+  # advisor cites the commit that settled a finding.
+  # (PR のコミット。メッセージに意図が書かれていることがあり、advisor は指摘を
+  #  解消したコミットをここから引く。)
+  git -C "$bare" log -n "$MAX_PR_COMMITS" --format='### %h %as %an%n%n%s%n%n%b' "$merge_base..$head" >"$run/input/commits.md" || true
+
   git -C "$bare" diff --name-only "$diff_from" "$head" | head -n "$MAX_CONTEXT_FILES" >"$run/changed-files"
   write_guidance
   write_history
@@ -416,58 +428,123 @@ place_findings() {
 settle_findings() {
   jq --argjson open "$open" '
     (.previous | map({key: .id, value: .}) | from_entries) as $seen
-    | .previous = [$open[] | . as $f | ($seen[$f.id] // {status: "unresolved", note: ("「" + $f.title + "」の対応を確認できませんでした")}) + {id: $f.id, severity: $f.severity}]
+    | .previous = [$open[] | . as $f | ($seen[$f.id] // {status: "unresolved", note: ("「" + $f.title + "」の対応を確認できませんでした")}) + {id: $f.id, severity: $f.severity, title: $f.title, file: $f.file}]
     | .open = ([.findings[] | select(.severity != "fyi")] + [$open[] | select(.id as $id | any($seen[$id]; .status == "resolved" or .status == "explained") | not)])
     | .ready = ([.open[] | select(.severity == "must" or .severity == "should")] | length == 0)
   ' "$run/findings.json" >"$run/settled.json"
   mv "$run/settled.json" "$run/findings.json"
 }
 
-# Build the GitHub review: a body that lists every finding and a hidden marker
-# holding the open findings for the next round, plus one inline comment per new
-# finding. The event and the closing line are added once CI is known.
-# (GitHub のレビューを組み立てる。本文には指摘の一覧と、次のラウンドに持ち越す指摘を
-#  埋め込んだ隠しマーカーを入れ、今回の指摘ごとにインラインのコメントを付ける。
-#  event と締めの1行は、CI の結果が分かってから足す。)
+# Build the GitHub review from the settled findings, following the review comment
+# templates. The body has no closing line yet: the closings for an approval, a
+# comment and a failed CI are built here, and the one to use is picked when the
+# review is posted. The hidden marker holds the open findings for the next round.
+# (確定した指摘から、テンプレートに沿って GitHub のレビューを組み立てる。本文には
+#  まだ締めの1行を入れない。approve・コメント・CI 失敗の3つの締めをここで作り、
+#  投稿するときにどれを使うかを選ぶ。隠しマーカーには次のラウンドに持ち越す指摘を
+#  入れる。)
 build_review() {
   local saved
   saved=$(jq -c '{open}' "$run/findings.json" | base64 | tr -d '\n')
   jq --arg head "$head" --arg saved "$saved" --argjson round "$round" --arg footer "$FOOTER" '
     def order: {must: 0, should: 1, ask: 2, nit: 3, fyi: 4}[.severity];
     def tag: "[" + .severity + "]";
-    def list: map(tag + " " + .title + "（" + .file + "）") | join("\n");
+    def stop: sub("。$"; "");
+    def items: map("- " + .) | join("\n");
+    # The text of one finding: what happens, the suggestion, and how optional it is.
+    # (指摘1件の本文。何が起きるか、直し方の案、どれくらい任意か。)
+    def detail: .body
+      + (if .suggestion then "\n\n直し方の案：" + .suggestion else "" end)
+      + ({nit: "\n\n今のままでも動作に問題はありません。", ask: "\n\n意図どおりであれば対応は不要です。"}[.severity] // "");
+    def section($title; $lines): if ($lines | length) > 0 then ["", "## " + $title, ($lines | join("\n"))] else [] end;
     (.findings | sort_by(order)) as $f
-    | ((if $round == 1 then
-        ["レビューしました。"]
-        + ["", (if ($f | length) > 0 then "気になった点は以下です。" else "気になった点はありませんでした。" end)]
-        + (if ($f | length) > 0 then ["", ($f | list)] else [] end)
+    | [$f[] | select(.severity != "fyi")] as $main
+    | [$f[] | select(.severity == "fyi")] as $fyi
+    | [$main[] | select(.line == null)] as $outside
+    | (.open // []) as $open
+    | ([$open[] | select(.severity == "must" or .severity == "should") | .severity] | unique | sort_by({must: 0, should: 1}[.]) | map("[" + . + "]") | join(" / ")) as $blocking
+    | (if any($f[], $open[]; .severity == "nit") then "[nit] は任意です。" else "" end) as $nit
+    | (if any($open[]; .severity == "ask") then "[ask] の回答は待たずに approve します。" else "" end) as $ask
+    # Findings outside the diff cannot be inline, so they are written out in the body.
+    # (差分の外の指摘はインラインにできないので、本文に書き出す。)
+    | ($outside | map(["", "### " + tag + " " + .title, "", "差分の外のため本文に書きます。", "", detail])) as $outside_sections
+    | (if $round == 1 then
+        ["レビューしました。" + (.summary // "")]
+        + section("主な指摘"; $main | map("- " + tag + " " + .title + "（" + .file + "）"))
+        + ($outside_sections | add // [])
+        + section("インラインにしなかった点 / 範囲外";
+            ($fyi | map("- " + tag + " " + .title + (if .line == null then "：" + (.body | gsub("\n"; " ")) else "（インラインに書いています）" end)))
+            + (if .scope_note then ["- " + .scope_note] else [] end))
+        + section("確認したこと"; (.checked // []) | map("- " + .))
+        + section("指摘しなかった点"; (.not_flagged // []) | map("- " + .))
       else
-        ["対応ありがとうございます。前回の指摘への対応を確認しました。", "",
-         (.previous | sort_by(order) | map(tag + " " + .note) | join("\n"))]
-        + (if ($f | length) > 0 then ["", "新しく気になった点は以下です。", "", ($f | list)] else [] end)
-      end)
-      + (if .scope_note then ["", .scope_note] else [] end)) as $body
+        ["前回の指摘への対応を確認しました。（" + $head[:7] + " まで）"]
+        + section("前回の指摘"; .previous | sort_by(order) | map("- " + tag + " " + .title + " → "
+            + if .status == "resolved" then "✅ 対応を確認しました" + (if .commit then "（" + .commit + "）" else "" end)
+              elif .status == "explained" then "✅ 回答で了解しました"
+              elif .severity == "ask" then "⏳ 回答待ち"
+              else "⏳ 未対応です（" + (.note | stop) + "）" end))
+        + section("今回の指摘"; $f | map("- " + tag + " " + .title + (if .line == null then "（下に書いています）" else "（インラインに書いています）" end)))
+        + ($outside_sections | add // [])
+        + section("インラインにしなかった点 / 範囲外"; (if .scope_note then ["- " + .scope_note] else [] end))
+      end) as $body
     | {
         commit_id: $head,
         body: ($body | join("\n")),
+        closings: {
+          approve: ((if $round == 1 then "[must] / [should] の指摘は無く、CI も通っているので approve します。" else "CI もすべて通っているので approve します。" end) + $nit + $ask),
+          ci_failed: "[must] / [should] の指摘は無いですが、CI が通っていないので approve は見送ります。CI が通れば approve します。",
+          comment: ($blocking + " が直れば approve します。")
+        },
         marker: ("<!-- codex-review:v1 round=" + ($round | tostring) + " head=" + $head + " open=" + $saved + " -->"),
         ready,
         comments: [$f[] | select(.line != null) | {
           path: .file, line, side: "RIGHT",
-          body: (tag + " " + .title + "\n\n" + .body + (if .suggestion then "\n\n直し方の案: " + .suggestion else "" end) + "\n\n" + $footer)
+          body: (tag + " " + .title + "\n\n" + detail + "\n\n" + $footer)
+        }],
+        # A reply on the inline thread of each previous finding that was settled.
+        # (解消した前回の指摘の、インラインのスレッドへの返信。)
+        replies: [.previous[] | select(.status == "resolved" or .status == "explained") | {
+          severity, title, path: .file,
+          body: ((if .status == "resolved" then "確認しました。" + (.note | stop) + "。ありがとうございます！"
+                  else "回答ありがとうございます。" + (.note | stop) + "。" end) + "\n\n" + $footer)
         }]
       }' "$run/findings.json" >"$run/review.json"
 }
 
-# Post a built review with EVENT ($2) and an optional closing line ($3).
-# (組み立てたレビューを EVENT ($2) と、あれば締めの1行 ($3) を付けて投稿する。)
+# Post a built review with EVENT ($2) and the closing KIND ($3): approve,
+# ci_failed or comment. Then reply on the settled findings' inline threads.
+# (組み立てたレビューを EVENT ($2) と締めの種類 ($3: approve / ci_failed /
+#  comment) で投稿する。そのあと、解消した指摘のインラインのスレッドに返信する。)
 post_review() {
-  local file="$1" event="$2" closing="${3:-}"
-  jq --arg event "$event" --arg closing "$closing" --arg footer "$FOOTER" '
+  local file="$1" event="$2" kind="$3"
+  jq --arg event "$event" --arg kind "$kind" --arg footer "$FOOTER" '
     {commit_id, event: $event, comments,
-     body: (.body + (if $closing == "" then "" else "\n\n" + $closing end) + "\n\n" + $footer + "\n\n" + .marker)}' "$file" |
+     body: (.body + ((.closings // {})[$kind] // "" | if . == "" then "" else "\n\n" + . end) + "\n\n" + $footer + "\n\n" + .marker)}' "$file" |
     gh api -X POST "repos/$repo/pulls/$number/reviews" --input - --jq .html_url ||
     die "could not post the review; it is kept at $file"
+  post_replies "$file"
+}
+
+# Reply on the inline comment this script left for each settled finding. A
+# finding that was only in the review body has no thread, and a failed reply
+# does not undo the review. (解消した指摘ごとに、このスクリプトが付けたインラインの
+#  コメントに返信する。本文にだけ書いた指摘にはスレッドがない。返信に失敗しても、
+#  投稿したレビューはそのまま。)
+post_replies() {
+  local file="$1" threads reply id
+  [ "$(jq '.replies // [] | length' "$file")" -gt 0 ] || return 0
+  threads=$(gh api --paginate --slurp "repos/$repo/pulls/$number/comments" | jq -c --arg me "$me" '
+    add // [] | map(select(.user.login == $me and .in_reply_to_id == null))') || return 0
+  jq -c '.replies[]' "$file" | while read -r reply; do
+    id=$(jq -r --argjson reply "$reply" '
+      map(select(.path == $reply.path and (.body | startswith("[" + $reply.severity + "] " + $reply.title + "\n"))))
+      | sort_by(.created_at) | last | .id // empty' <<<"$threads")
+    [ -n "$id" ] || continue
+    jq -n --argjson reply "$reply" '{body: $reply.body}' |
+      gh api -X POST "repos/$repo/pulls/$number/comments/$id/replies" --input - >/dev/null ||
+      printf '%s#%s: could not reply on comment %s\n' "$repo" "$number" "$id" >&2
+  done
 }
 
 # A review with nothing left waits for CI: approve on pass, post without
@@ -477,19 +554,23 @@ post_review() {
 finish_when_ci_done() {
   local file="$1"
   case "$(ci_state)" in
-    pass) post_review "$file" APPROVE "$LGTM"; rm -f "$pending" ;;
-    fail) post_review "$file" COMMENT "$CI_FAILED"; rm -f "$pending" ;;
+    pass) post_review "$file" APPROVE approve; rm -f "$pending" ;;
+    fail) post_review "$file" COMMENT ci_failed; rm -f "$pending" ;;
     *) printf '%s#%s: waiting for CI\n' "$repo" "$number" ;;
   esac
 }
 
 show() {
   jq -r '.body' "$run/review.json"
-  jq -r '.comments[] | "\n--- \(.path):\(.line)\n\(.body)"' "$run/review.json"
-  jq -r '.dropped[]? | "\n(落とした指摘) \(.id): \(.reason)"' "$run/findings.json"
   if [ "$(jq -r .ready "$run/review.json")" = true ]; then
-    printf '\n(must と should なし。CI: %s。pass なら approve して「%s」を付ける)\n' "$(ci_state)" "$LGTM"
+    printf '\n(CI: %s。pass なら approve して、締めは次の1行)\n' "$(ci_state)"
+    jq -r '.closings.approve' "$run/review.json"
+  else
+    jq -r '"\n" + .closings.comment' "$run/review.json"
   fi
+  jq -r '.comments[] | "\n--- \(.path):\(.line)\n\(.body)"' "$run/review.json"
+  jq -r '.replies[] | "\n--- 返信 \(.path) [\(.severity)] \(.title)\n\(.body)"' "$run/review.json"
+  jq -r '.dropped[]? | "\n(落とした指摘) \(.id): \(.reason)"' "$run/findings.json"
   printf '\n(not posted; run again with --post. Saved in %s)\n' "$run"
 }
 
@@ -500,7 +581,7 @@ publish() {
     finish_when_ci_done "$pending"
   else
     rm -f "$pending"
-    post_review "$run/review.json" COMMENT
+    post_review "$run/review.json" COMMENT comment
   fi
 }
 
