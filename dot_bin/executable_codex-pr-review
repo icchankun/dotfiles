@@ -439,7 +439,6 @@ build_review() {
     (.findings | sort_by(order)) as $f
     | ((if $round == 1 then
         ["レビューしました。"]
-        + (if (.good_points | length) > 0 then ["", "良かった点:", (.good_points | map("- " + .) | join("\n"))] else [] end)
         + ["", (if ($f | length) > 0 then "気になった点は以下です。" else "気になった点はありませんでした。" end)]
         + (if ($f | length) > 0 then ["", ($f | list)] else [] end)
       else
