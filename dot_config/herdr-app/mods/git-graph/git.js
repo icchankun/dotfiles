@@ -13,9 +13,50 @@ export const STATUS = ["status", "--porcelain=v1", "-z", "--no-renames", "--untr
 export const UNCOMMITTED = "*";
 const FORMAT = "%x1e%H%x1f%P%x1f%an%x1f%ae%x1f%at%x1f%D%x1f%s";
 
-// Every branch, remote ones included, as one history.
-export function logArgs({ limit }) {
-  return ["log", "--exclude=refs/stash", "--all", "--date-order", "--decorate=full", `-n${limit}`, `--format=${FORMAT}`];
+// The history of the given refs, or of every branch when none are given.
+export function logArgs({ limit, refs }) {
+  const which = refs?.length ? refs : ["--exclude=refs/stash", "--all"];
+  return ["log", ...which, "--date-order", "--decorate=full", `-n${limit}`, `--format=${FORMAT}`];
+}
+
+// Only a few branches are drawn, so a repository with many branches still draws fast:
+// the checked-out branch, the branch it was cut from, main and develop. Each with its
+// remote branches of the same name.
+export const SHOWN = ["main", "develop"];
+// How many local branches are tried as the one the branch was cut from, newest first.
+export const PARENT_TRIES = 50;
+export const REF_ARGS = ["for-each-ref", "--sort=-committerdate", "--format=%(refname)", "refs/heads", "refs/remotes"];
+
+// `git for-each-ref` output: local branch names, and remote branches as { remote, name, ref }.
+export function parseBranches(text) {
+  const local = [], remote = [];
+  for (const ref of text.split("\n").filter(Boolean)) {
+    if (ref.startsWith("refs/heads/")) local.push(ref.slice(11));
+    else if (ref.startsWith("refs/remotes/") && !ref.endsWith("/HEAD")) {
+      const rest = ref.slice(13), slash = rest.indexOf("/");
+      if (slash > 0) remote.push({ remote: rest.slice(0, slash), name: rest.slice(slash + 1), ref });
+    }
+  }
+  return { local, remote };
+}
+
+// The branch this one was cut from: of the other local branches, the one the fewest
+// of HEAD's commits are missing from (`git rev-list --count <branch>..HEAD`). A branch
+// that already has every commit of HEAD (0) was cut from this one, or is the same, so it
+// is skipped. A tie goes to develop, then main, as creating-git-branches cuts from them.
+export function pickParent(counts) {
+  const rank = (name) => { const i = SHOWN.indexOf(name); return i < 0 ? SHOWN.length : SHOWN.length - 1 - i; };
+  return counts.filter((c) => c.count > 0)
+    .sort((a, b) => a.count - b.count || rank(a.name) - rank(b.name) || a.name.localeCompare(b.name))[0]?.name ?? null;
+}
+
+// The full refs to read: each shown name as a local branch and as every remote's branch
+// of that name, whichever exist, plus HEAD (a detached HEAD is in no branch).
+export function shownRefs(names, branches) {
+  const want = new Set(names.filter(Boolean)), refs = ["HEAD"];
+  for (const name of branches.local) if (want.has(name)) refs.push(`refs/heads/${name}`);
+  for (const r of branches.remote) if (want.has(r.name)) refs.push(r.ref);
+  return refs;
 }
 
 export function parseRefs(text) {
