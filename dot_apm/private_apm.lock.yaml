@@ -1,5 +1,5 @@
 lockfile_version: '2'
-generated_at: '2026-11-05T01:07:38.580690+00:00'
+generated_at: '2026-11-05T03:20:01.900894+00:00'
 apm_version: 0.31.0
 dependencies:
 - repo_url: anthropics/claude-plugins-official
@@ -971,9 +971,9 @@ dependencies:
 - repo_url: icchankun/skills
   name: icchankun-skills
   host: github.com
-  resolved_commit: 676af7192d01aa6e32891561e8fdcc62649420ef
+  resolved_commit: ebba675e64997070a56dbc938574e1827ffa4f11
   resolved_ref: main
-  version: 676af71
+  version: ebba675
   package_type: marketplace_plugin
   deployed_files:
   - .agents/skills/capturing-screens
@@ -1199,7 +1199,7 @@ dependencies:
     .claude/skills/tuning-japanese-prompts/SKILL.md: sha256:d45986fa5484810580ab457e587444b53329e0ff29e2fd8704e084efea5ffe1b
     .claude/skills/uploading-pr-media/SKILL.md: sha256:e5461f312f407c70ac3d823cb706eacb0d893bcc376e13152027c670c8d517b5
     .claude/skills/writing-slack-messages/SKILL.md: sha256:7f1d5415a693feac90b84c18f7fbae9663da162bbceea464a78f5e766131f3a9
-  content_hash: sha256:e01c7616fdf519573d752778312af6f2492580b212c22cca6d40180f709d755a
+  content_hash: sha256:d0467abef6ba37d59ac1b54e4247e5c7867472dac93e706633a4c0de1f126d28
 - repo_url: mattpocock/skills
   name: mattpocock-skills
   host: github.com
