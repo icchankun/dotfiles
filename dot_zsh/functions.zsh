@@ -1,4 +1,3 @@
-# select a previously executed command.
 function select-history() {
   BUFFER=$(\history -n -r 1 | peco --query "$LBUFFER")
   CURSOR=$#BUFFER
@@ -7,7 +6,6 @@ function select-history() {
 zle -N select-history
 bindkey '^r' select-history
 
-# git worktree remove + cd to main worktree
 # ブランチは残し、worktree のディレクトリだけ消す。git wt -d / -D はブランチも消すので使わない。
 # git wt のフックは作るときだけ走り（wt.deletehook は設定していない）、ここで飛ばすものはない
 rm-wt() {

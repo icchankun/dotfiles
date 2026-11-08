@@ -1,8 +1,5 @@
 // Comments on a commit message, sent to the space's agent as one message, the way
-// herdr-reviewr sends comments on a diff. "Review message" turns on commenting; then
-// click a line of the message (not a blank one) to comment on it, Enter adds the
-// comment, Send hands them all to the agent. Click a comment to edit
-// it (an empty edit removes it), or × to remove it.
+// herdr-reviewr sends comments on a diff.
 import { div } from "gpui-kit";
 import { v_flex, h_flex, TextareaState, Textarea } from "gpui-base";
 import { spaces, agents, terminals, exec, notify } from "herdr";
@@ -90,7 +87,7 @@ export class Review {
     this.line = null; this.editing = null;
   }
 
-  // Esc while typing: closes the input only, keeping the comments and the details.
+  // Closes the input and keeps the comments; false when there is nothing to close.
   cancel() {
     if (this.line === null && this.editing === null) return false;
     this.line = null; this.editing = null; this.input.set_value("");

@@ -19,11 +19,12 @@ gh = "latest"
 uv = "latest"
 # コードのグラフを手元で作る（解析に LLM を使わない）。skill の登録は run_onchange_after_install-graphify.sh
 "pipx:graphifyy" = "0.9.97"
-# zsh が使う（dot_zshrc, dot_zsh/）。zinit は mise で入らないので dot_zshrc が clone する
+# zsh が使う（dot_zshrc, dot_zsh/）
 peco = "latest"
 zoxide = "latest"
 direnv = "latest"
 "github:k1LoW/git-wt" = "latest"
+# dot_bin と statusline-terminal.sh が使う
 jq = "latest"
 fzf = "latest"
 # Claude Code の statusLine（dot_claude/settings.json）が動かす

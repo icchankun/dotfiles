@@ -80,7 +80,7 @@ repo_key() {
   printf '%s\n' "$path"
 }
 
-# develop when origin has it, or else the default branch. (git-auto-sync と同じ)
+# develop when origin has it, or else the default branch.
 base_branch() {
   local repo="$1" ref
   if git -C "$repo" show-ref --verify --quiet refs/remotes/origin/develop; then

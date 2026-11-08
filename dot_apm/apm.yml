@@ -7,10 +7,8 @@ targets:
   - codex
 dependencies:
   apm:
-    # my skills
     - git: icchankun/skills
       ref: main
-    # 3rd-party
     - git: GoogleChrome/modern-web-guidance
       ref: 5733cdd9f89b0f19119e855532f8b8ac7997ecb6
       skills:
@@ -29,7 +27,6 @@ dependencies:
       ref: 9e934dff8513710d3c5111fe28bc5b23564805db # v0.1.15
       skills:
         - herdr-core
-    # インストールは `npx skills add` を使わず、この apm.yml に追記する
     - git: vercel-labs/skills
       ref: a80e4c9d12d607631249d4d7d059f835d4b2f13a # v1.7.4
       skills:
@@ -37,9 +34,7 @@ dependencies:
     # 新しい作業の依頼を、作業の前に整える。~/.bin/prompt-tune-hook が呼ぶ
     - git: nidhinjs/prompt-master
       ref: 49b3a72469b1e7287d66387004ccfcca90e5968a # v1.8.2
-    # 計画や設計を、質問を重ねて詰める。grill-with-docs は grilling と domain-modeling を呼び、
-    # 決まった用語と判断を GLOSSARY.md と ADR に残す。to-questionnaire は自分で答えられない判断を、
-    # 知っている人に渡す質問票にする
+    # grill-with-docs が grilling と domain-modeling を呼ぶので、まとめて入れる
     - git: mattpocock/skills
       ref: 4ae2317ddb22b046e26455e4f9c9b3aaaf62212d
       skills:
@@ -63,12 +58,10 @@ dependencies:
       path: pstack
       skills:
         - typescript-best-practices
-    # official plugins（skills/commands/agents のみ）
-    # LSP 系（ruby-lsp, typescript-lsp）は
-    # settings.json の enabledPlugins で管理。pr-review-toolkit も同様で、
-    # herdr-coding が /pr-review-toolkit:review-pr の名前で呼ぶ。
-    # hooks: apm は hooks/ 内のスクリプトのみ展開し core/ 等の依存を含めない。
-    # LSP: 空リポジトリのため展開物がない。
+    # ここに並べる official plugins は skills/commands/agents だけのもの。次の3種類は apm では入れず、settings.json の enabledPlugins で入れる
+    # - hooks を持つ plugin：apm は hooks/ 内のスクリプトしか展開せず、core/ などの依存が入らない
+    # - LSP の ruby-lsp, typescript-lsp：リポジトリが空で、apm では何も展開されない
+    # - pr-review-toolkit：herdr-coding が /pr-review-toolkit:review-pr の名前で呼ぶ
     - git: anthropics/claude-plugins-official
       path: plugins/code-review
       ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2

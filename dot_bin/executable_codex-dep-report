@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-# =============================================================================
-# codex-dep-report
 # Compare the verdicts of codex-dep-review with what I actually did with each
 # dependency update, to see whether its verdicts can be trusted.
 # (codex-dep-review の判定と、自分が実際にその依存更新をどうしたかを比べ、
@@ -23,12 +21,11 @@
 #   merged after a person's commit   -> fix (直す必要があった)
 #   closed by a person               -> reject (入れないと判断した)
 #   reverted after the merge         -> revert (ok ではなかった)
-#   closed by the bot, or still open -> not counted (数えない)
+#   closed by the bot, still open, or unreadable -> not counted (数えない)
 #
 #   AI ok + me ok, AI needs_human + me not ok -> agree (一致)
 #   AI ok + me not ok                         -> unsafe miss (危ない外れ)
 #   AI needs_human + me ok                    -> over-cautious (慎重すぎた外れ)
-# =============================================================================
 
 set -euo pipefail
 
@@ -48,8 +45,6 @@ notify=false
 
 is_bot() { [[ "$1" =~ \[bot\]$ || "$1" =~ ^(renovate|dependabot)$ ]]; }
 
-# What happened to the pull request ($1 = owner/repo, $2 = number).
-# (PR がその後どうなったか。)
 outcome() {
   local repo="$1" number="$2" pr closer authors reverted
   pr=$(gh api "repos/$repo/pulls/$number" 2>/dev/null) || { echo unknown; return; }
@@ -73,8 +68,6 @@ outcome() {
   echo ok
 }
 
-# The last verdict of each pull request, with what I did.
-# (PR ごとの最後の判定と、自分の判断。)
 records() {
   jq -R -s -c '
     split("\n") | map(select(. != "") | split("\t") | {at: .[0], pr: .[1], head: .[2], verdict: .[3], reasons: (.[4] // "")})

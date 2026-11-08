@@ -19,8 +19,6 @@ SECRETS = {
 }
 
 # Claude Code の settings.json に対応する値。Codex の既定と同じものは書かない
-# （approval_policy は on-request、features.multi_agent は有効、features.memories は無効、tui.notifications は有効が既定。
-#  openai/codex の protocol.rs・features/src/lib.rs・config/src/types.rs で確かめた）
 MANAGED = {
     # effortLevel: medium。モデルは Codex の主力
     "model": "gpt-6.1-sol",

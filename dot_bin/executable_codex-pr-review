@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-# =============================================================================
-# codex-pr-review
 # Review a pull request someone else opened with Codex: a reviewer finds the
 # problems, an advisor checks each one against the code, and this script turns
 # what is left into a GitHub review.
@@ -31,13 +29,13 @@
 #     - none left -> wait for CI, then post a COMMENT review and leave the
 #       approval to me
 #       (残っていない -> CI を待って COMMENT のレビューを投稿し、approve は人に任せる)
+#     - more than MAX_ROUNDS rounds -> stop and leave it to you
+#       (MAX_ROUNDS を超えた -> 止めて人に任せる)
 #   The wording follows the review comment templates: the labels, a section for
 #   findings outside the diff, what was checked and what was left out on purpose,
 #   and a reply on each inline thread whose finding was settled.
 #   (文面はレビューコメントのテンプレートに沿う。ラベル、差分の外の指摘の見出し、
 #    確認したことと指摘しなかった点、解消した指摘のインラインのスレッドへの返信。)
-#     - more than MAX_ROUNDS rounds -> stop and leave it to you
-#       (MAX_ROUNDS を超えた -> 止めて人に任せる)
 #
 # Exit status / 終了コード:
 #   0   reviewed with Codex (Codex でレビューした)
@@ -62,10 +60,9 @@
 #     to itself (trusted folders) and so is not managed by chezmoi.
 #     (モデルは ~/.codex/config.toml ではなくここで決める。そのファイルは Codex が
 #      信頼したフォルダなどを自分で書き込むので、chezmoi では管理しない。)
-#   - Each run is kept under ~/.local/state/codex-pr-review/ for checking what
-#     Codex returned. (実行ごとの入力と Codex の結果は ~/.local/state/
-#      codex-pr-review/ に残す。)
-# =============================================================================
+#   - Each run's input and what Codex returned are kept under
+#     ~/.local/state/codex-pr-review/ for checking.
+#     (実行ごとの入力と Codex の結果は ~/.local/state/codex-pr-review/ に残す。)
 
 set -euo pipefail
 
@@ -102,9 +99,9 @@ readonly MAX_BODY_CHARS=2000
 # Most commits of the pull request written to commits.md, newest first.
 # (commits.md に書く PR のコミットの数の上限。新しい順。)
 readonly MAX_PR_COMMITS=50
-# Ends every review and inline comment, so a reader can tell Codex wrote it and
-# not me. (レビューとインラインのコメントの最後に付ける。自分ではなく Codex が
-#  書いたと分かるように。)
+# Ends every review, inline comment and reply, so a reader can tell Codex wrote
+# it and not me. (レビュー・インラインのコメント・返信の最後に付ける。自分ではなく
+#  Codex が書いたと分かるように。)
 readonly FOOTER='🤖 Generated with [Codex](https://openai.com/codex)'
 
 readonly STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/codex-pr-review"
@@ -207,8 +204,10 @@ author_replied() {
     [.[] | add // [] | .[] | select(.user.login == $author and .created_at > $since)] | length > 0' >/dev/null
 }
 
-# Where the CI of the head stands: pass, pending or fail. No checks counts as pass.
-# (head の CI の状態。pass / pending / fail。チェックがなければ pass とみなす。)
+# Where the CI of the head stands: pass, pending or fail. cancel counts as fail;
+# no checks, or a failed gh call, counts as pass.
+# (head の CI の状態。pass / pending / fail。cancel は fail。チェックがないか gh が
+#  失敗したときは pass とみなす。)
 ci_state() {
   local buckets
   buckets=$(gh pr checks "$number" -R "$repo" --json bucket --jq 'map(.bucket)' 2>/dev/null) || buckets='[]'
@@ -248,8 +247,6 @@ checkout() {
   fi
 }
 
-# Write what the skills read into the input directory.
-# (skill が読むものを入力のディレクトリに書く。)
 write_input() {
   run="$STATE_DIR/runs/$key/$head-$round"
   mkdir -p "$run/input"
@@ -375,8 +372,9 @@ run_codex() {
 
 review() {
   local effort=$REVIEWER_EFFORT
-  # Later rounds read only the change since the last review, so a lighter effort
-  # is enough. (2回目以降は前回からの変更だけを読むので、軽い effort で足りる。)
+  # Later rounds usually read only the change since the last review, so a lighter
+  # effort is enough. (2回目以降は原則、前回からの変更だけを読むので、軽い effort で
+  # 足りる。)
   [ "$round" -eq 1 ] || effort=low
   run_codex reviewer "$REVIEWER_MODEL" "$effort" \
     "\$reviewing-pull-requests を使って PR をレビューしてください。ラウンド: ${round}。入力のディレクトリ: $run/input"
@@ -502,8 +500,6 @@ build_review() {
           path: .file, line, side: "RIGHT",
           body: (tag + " " + .title + "\n\n" + detail + "\n\n" + $footer)
         }],
-        # A reply on the inline thread of each previous finding that was settled.
-        # (解消した前回の指摘の、インラインのスレッドへの返信。)
         replies: [.previous[] | select(.status == "resolved" or .status == "explained") | {
           severity, title, path: .file,
           body: ((if .status == "resolved" then "確認しました。" + (.note | stop) + "。ありがとうございます！"
@@ -512,10 +508,9 @@ build_review() {
       }' "$run/findings.json" >"$run/review.json"
 }
 
-# Post a built review with EVENT ($2) and the closing KIND ($3): ready,
-# ci_failed or comment. Then reply on the settled findings' inline threads.
-# (組み立てたレビューを EVENT ($2) と締めの種類 ($3: ready / ci_failed /
-#  comment) で投稿する。そのあと、解消した指摘のインラインのスレッドに返信する。)
+# Post a built review. kind is the closing line added to the body: ready,
+# ci_failed or comment. (組み立てたレビューを投稿する。kind は本文の最後に付ける
+#  締めの種類で、ready / ci_failed / comment。)
 post_review() {
   local file="$1" event="$2" kind="$3"
   jq --arg event "$event" --arg kind "$kind" --arg footer "$FOOTER" '
