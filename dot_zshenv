@@ -7,5 +7,6 @@ path=(
   /opt/homebrew/opt/sqlite/bin
   /opt/homebrew/opt/mysql@8.0/bin
   /opt/homebrew/opt/postgresql@16/bin
+  $HOME/.docker/bin
   $path
 )
