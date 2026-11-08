@@ -47,41 +47,33 @@ dependencies:
         - grill-with-docs
         - domain-modeling
         - to-questionnaire
+    # 実装の前の設計と、出す前の確認。ほかの engineering の skill は手持ちの skill とかぶるので入れない。
+    # path: engineering で入れると plugin の .mcp.json（slack や github など8つ）まで入るので、skill を1つずつ指す
+    - git: anthropics/knowledge-work-plugins
+      ref: e050c2ec856373787143d7057663a6ebd1277df3
+      path: engineering/skills/testing-strategy
+    - git: anthropics/knowledge-work-plugins
+      ref: e050c2ec856373787143d7057663a6ebd1277df3
+      path: engineering/skills/deploy-checklist
+    - git: anthropics/knowledge-work-plugins
+      ref: e050c2ec856373787143d7057663a6ebd1277df3
+      path: engineering/skills/system-design
     - git: cursor/plugins
       ref: e46364b8be46000b7df0f260550cd712afbb8d36
       path: pstack
       skills:
         - typescript-best-practices
     # official plugins（skills/commands/agents のみ）
-    # hooks 系（security-guidance）と LSP 系（ruby-lsp, typescript-lsp）は
+    # LSP 系（ruby-lsp, typescript-lsp）は
     # settings.json の enabledPlugins で管理。pr-review-toolkit も同様で、
-    # herdr-coding が /pr-review-toolkit:review-pr の名前で呼ぶうえ、
-    # apm で入れると agents/code-reviewer.md が feature-dev のものとぶつかる。
+    # herdr-coding が /pr-review-toolkit:review-pr の名前で呼ぶ。
     # hooks: apm は hooks/ 内のスクリプトのみ展開し core/ 等の依存を含めない。
     # LSP: 空リポジトリのため展開物がない。
-    - git: anthropics/claude-plugins-official
-      path: plugins/agent-sdk-dev
-      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-    - git: anthropics/claude-plugins-official
-      path: plugins/claude-code-setup
-      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-    - git: anthropics/claude-plugins-official
-      path: plugins/claude-md-management
-      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-    - git: anthropics/claude-plugins-official
-      path: plugins/code-modernization
-      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
     - git: anthropics/claude-plugins-official
       path: plugins/code-review
       ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
     - git: anthropics/claude-plugins-official
-      path: plugins/feature-dev
-      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-    - git: anthropics/claude-plugins-official
       path: plugins/frontend-design
-      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-    - git: anthropics/claude-plugins-official
-      path: plugins/mcp-tunnels
       ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
     - git: anthropics/claude-plugins-official
       path: plugins/playground
@@ -92,18 +84,7 @@ dependencies:
     - git: anthropics/claude-plugins-official
       path: plugins/session-report
       ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-  mcp:
-    - name: aws-documentation
-      registry: false
-      transport: stdio
-      command: uvx
-      args: ["awslabs.aws-documentation-mcp-server@latest"]
-      env:
-        FASTMCP_LOG_LEVEL: ERROR
-        AWS_DOCUMENTATION_PARTITION: aws
-    - name: gitmcp
-      registry: false
-      transport: http
-      url: https://gitmcp.io/docs
+  # AWS のドキュメントは deploy-on-aws plugin の awsknowledge で引く
+  mcp: []
 includes: auto
 scripts: {}
