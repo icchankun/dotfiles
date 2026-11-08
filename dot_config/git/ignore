@@ -23,3 +23,6 @@ graphify-out/
 GLOSSARY.md
 GLOSSARY-MAP.md
 **/docs/adr/
+
+# Claude Code のマシンごとの設定。リポジトリに入れない
+**/.claude/settings.local.json

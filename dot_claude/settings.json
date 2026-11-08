@@ -129,7 +129,9 @@
     "deploy-on-aws@claude-plugins-official": true,
     "humanizer@humanizer": true,
     "caveman@caveman": true,
-    "ponytail@ponytail": true
+    "ponytail@ponytail": true,
+    "databricks@claude-plugins-official": true,
+    "claude-security@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "humanizer": {
@@ -158,5 +160,7 @@
   "voiceEnabled": true,
   "agentPushNotifEnabled": true,
   "inputNeededNotifEnabled": true,
-  "cleanupPeriodDays": 14
+  "cleanupPeriodDays": 14,
+  "model": "opus",
+  "skipWorkflowUsageWarning": true
 }
