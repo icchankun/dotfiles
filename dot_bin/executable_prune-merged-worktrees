@@ -67,8 +67,8 @@ usage() {
   cat <<'USAGE'
 Usage: prune-merged-worktrees [-n] [-q] [--root DIR] [--depth N]
 
-Delete git worktrees/branches that are merged and gone from the remote.
-(マージ済みかつリモートから消えている worktree/branch を削除する。)
+Delete git worktrees/branches whose pull request has been merged.
+(PR がマージ済みの worktree/branch を削除する。)
 
   -n, --dry-run   Show what would be deleted without deleting.
                   (削除せず対象を表示するだけ。)
@@ -171,13 +171,12 @@ default_branch() {
   done
 }
 
-# Uncommitted or untracked changes? / 未コミット・未追跡の変更があるか
 is_dirty() {
   [[ -n "$(git -C "$1" status --porcelain 2>/dev/null)" ]]
 }
 
-# Remove directories left empty by `git worktree remove`, stopping at the repo
-# (worktree 削除後に空になった中間ディレクトリを、リポジトリ直下まで遡って掃除する)
+# Remove directories left empty by `git wt -D`, stopping at the repo
+# (`git wt -D` で空になった中間ディレクトリを、リポジトリ直下まで遡って掃除する)
 prune_empty_dirs() {
   local dir="$1" stop="$2"
   while [[ "$dir" != "$stop" && "$dir" != "/" ]]; do

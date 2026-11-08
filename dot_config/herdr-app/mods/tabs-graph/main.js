@@ -35,7 +35,7 @@ export default class Tabs extends View {
         }
       }
     }
-    // Until the restore lands (or something else won), the old state isn't a choice.
+    // Until the restore lands (or something else won), don't record the current panel state as this space's choice.
     if (this.pending) {
       if (this.pending.want !== now && Date.now() < this.pending.until) return;
       this.pending = null;
@@ -72,7 +72,7 @@ export default class Tabs extends View {
         .when(c.active, el => el.child(div().id(`close-${c.id}`).text_color(t.dim).on_mouse_down("left", stop).on_click((_e, cx) => { cx.stop_propagation(); run("tab.close", { id: c.id }); }).child(svg("mods/pane/close.svg").size(12))));
     };
     const root = layout(), sidebar = find(root, "sidebar"), w = window();
-    // Old saved rails and a dragged-narrow sidebar can be smaller than the window buttons.
+    // A dragged-narrow sidebar can be smaller than the window buttons.
     const lightsPadding = w?.platform === "macos" && w.titlebar === "none" && !w.fullscreen && root?.traffic_lights
       ? Math.max(10, (root.traffic_lights[0] + 64) / settings().zoom - (sidebar?.hidden ? 0 : sidebar?.size?.px ?? 0))
       : 10;

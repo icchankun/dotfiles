@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-# =============================================================================
-# codex-dep-review
 # Check a dependency update pull request from Renovate or Dependabot: gates
 # that need no AI first, then Codex with the checking-library-updates skill.
 # The verdict is posted as a comment. Approving and merging are always left to
@@ -31,8 +29,10 @@
 #     (変わったのは依存のファイルだけ。Dockerfile・compose・workflow は FROM・
 #      image:・uses: の行だけ)
 #   - every check passed (CI がすべて通っている)
-#   - no major version bump; for 0.x a minor bump counts as major
-#     (major を上げていない。0.x は minor も major 扱い)
+#   - no major version bump; for 0.x a minor bump counts as major. A version that
+#     cannot be read from the description stops here too.
+#     (major を上げていない。0.x は minor も major 扱い。PR の説明から版を読めない
+#      ときもここで止まる)
 #   - no new package in Gemfile.lock or package-lock.json
 #     (Gemfile.lock と package-lock.json に新しいパッケージが増えていない)
 #   How long a release has been out is left to Renovate's and Dependabot's own
@@ -44,14 +44,16 @@
 #   5   needs a person (自分で見る必要がある)
 #   6   ok: ready for me to approve (ok。approve するかを自分で決める)
 #   75  Codex's usage limit (Codex の利用枠切れ)
-#   The last line is `result: <verdict> <head>`. (最後の行に結果を出す。)
-# =============================================================================
+#   The last line is `result: <result> <head>`, where result is ok, needs_human,
+#   checked or waiting. (最後の行は `result: <結果> <head>`。結果は ok / needs_human /
+#   checked / waiting。)
 
 set -euo pipefail
 
 readonly CHECK_MODEL=gpt-6-luna
 readonly CHECK_EFFORT=low
-# Used again when the first pass is not confident. (最初の判断に自信がないときに使う。)
+# The model and effort for a second look when the first pass is not confident.
+# (最初の判断に自信がないときに、確かめ直すモデルと effort。)
 readonly RECHECK_MODEL=gpt-6.1-sol
 readonly RECHECK_EFFORT=medium
 
@@ -196,8 +198,8 @@ versions() {
     sed -E 's/`//g; s/^from //; s/ to / /; s/ (->|→) / /' | sort -u
 }
 
-# major.minor of a version, or nothing for a digest or something unreadable.
-# (版の major.minor。digest や読めないものは何も出さない。)
+# The major of a version (0.minor for 0.x), or nothing for a digest or something
+# unreadable. (版の major（0.x は 0.minor）。digest や読めないものは何も出さない。)
 major_of() {
   local v="${1#v}"
   [[ "$v" =~ ^([0-9]+)(\.([0-9]+))? ]] || return 0
@@ -208,13 +210,11 @@ major_of() {
 # (digest は英字の入った16進数。数字だけの版（日付など）は digest ではない。)
 is_digest() { [[ "$1" =~ ^(sha256:)?[0-9a-f]{7,64}$ && "$1" =~ [a-f] ]]; }
 
-# Run the gates and write gates.json. (ゲートを通し、gates.json に書く。)
 run_gates() {
   local file line from to bad=() pairs=() fails=() new
   local lines
   lines=$(changed_lines)
 
-  # Files and lines (ファイルと行)
   while IFS=$'\t' read -r file line; do
     [ -n "$file" ] || continue
     if [[ "$file" =~ $DEP_FILES ]]; then continue; fi
@@ -227,7 +227,6 @@ run_gates() {
     files_ok=false files_detail="依存以外の変更がある: $(printf '%s\n' "${bad[@]}" | sort -u | paste -sd ' ' -)"
   fi
 
-  # Versions (版)
   versions_ok=true versions_detail=
   while read -r from to; do
     [ -n "$from" ] || continue
@@ -247,7 +246,6 @@ run_gates() {
     versions_detail="major は上げていない: $(printf '%s\n' "${pairs[@]}" | paste -sd ',' - | sed 's/,/, /g')"
   fi
 
-  # New packages in the lockfiles (lockfile に増えたパッケージ)
   new=$(printf '%s\n' "$lines" | awk -F '\t' '
     $1 ~ /(^|\/)Gemfile\.lock$/ && match($2, /^[+-]    [A-Za-z0-9_.-]+ \(/) {
       name = substr($2, 6); sub(/ \(.*/, "", name); seen[substr($2, 1, 1) name] = 1 }

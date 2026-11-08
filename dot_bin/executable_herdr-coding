@@ -35,11 +35,13 @@
 #      付くので、再実行すればその driver のレビュー役が再利用される。label は
 #      agent-notify mod がレビュー役を通知しないための目印にもなる。)
 #   - The tab ends up holding only the driver and its reviewer: any other pane is
-#     closed, and another agent without a role sharing the tab is an error rather
-#     than something to close, since that is a driver a person talks to.
-#     (タブは driver とそのレビュー役だけになる。それ以外のペインは閉じるが、同じ
-#      タブに役割の label がない別の agent がいるときは閉じずにエラーで止める。
-#      それは人がやりとりする driver のため。)
+#     closed (one whose agent is still working is left open and reported), and
+#     another agent without a role sharing the tab is an error rather than
+#     something to close, since that is a driver a person talks to.
+#     (タブは driver とそのレビュー役だけになる。それ以外のペインは閉じるが、
+#      作業中の agent のペインは閉じず報告に残す。同じタブに役割の label がない
+#      別の agent がいるときは、人がやりとりする driver のため、閉じずにエラーで
+#      止める。)
 # =============================================================================
 
 set -euo pipefail
@@ -49,7 +51,7 @@ set -euo pipefail
 readonly CLAUDE_ARGS=(
   # MCP off: every server's tool definitions are resent on each request, and that
   # cost multiplies by the number of workers.
-  # (MCP 無効。ツール定義は毎リクエスト再送され、その費用が並列数の分だけ掛かる。)
+  # (MCP 無効。ツール定義は毎リクエスト再送され、その費用がワーカー数の分だけ掛かる。)
   --strict-mcp-config
   --mcp-config '{"mcpServers":{}}'
   # Notifications off: only the driver talks to the user, so a worker going idle
@@ -57,9 +59,9 @@ readonly CLAUDE_ARGS=(
   # (通知は無効。ユーザーとやりとりするのは driver だけなので、ワーカーが手を
   #  空けたことでユーザーを中断させない。)
   --settings '{"inputNeededNotifEnabled":false,"agentPushNotifEnabled":false}'
-  # Read-only commands pre-approved: with notifications off, a reviewer stopped at
+  # Pre-approve these commands. With notifications off, a reviewer stopped at
   # a permission prompt goes unnoticed and the review loop stalls.
-  # (読むだけのコマンドは事前に許可する。通知を切っているので、許可待ちで止まった
+  # (コマンドを事前に許可する。通知を切っているので、許可待ちで止まった
   #  reviewer には誰も気づかず、往復が止まる。)
   --allowedTools Read Grep Glob Agent Skill
   "Bash(git diff:*)" "Bash(git status:*)" "Bash(git log:*)" "Bash(git show:*)"
@@ -84,12 +86,6 @@ readonly CODEX_ARGS=(
   --ask-for-approval never
 )
 
-# The reviewer runs every round until the findings clear, so it defaults to the
-# cheaper model. For Claude Code, the bug-finding agent inside the review command
-# pins its own model, so this mainly sets who sorts the findings.
-# (レビュー役は指摘がなくなるまで毎ラウンド動くので、既定は安いモデルにする。
-#  Claude Code では、レビューコマンド内でバグを探すエージェントが自分でモデルを
-#  固定しているため、ここで決まるのは主に指摘の仕分けを担うモデル。)
 agent=
 model=
 
@@ -129,6 +125,12 @@ resolve_agent() {
     agent=$(hc get --json "$HC_TERMINAL_ID" | jq -r '(.status.app // .argv[0] // "") | ascii_downcase')
     case "$agent" in *codex*) agent=codex ;; *) agent=claude ;; esac
   fi
+  # The reviewer runs every round until the findings clear, so it defaults to the
+  # cheaper model. For Claude Code, the bug-finding agent inside the review command
+  # pins its own model, so this mainly sets who sorts the findings.
+  # (レビュー役は指摘がなくなるまで毎ラウンド動くので、既定は安いモデルにする。
+  #  Claude Code では、レビューコマンド内でバグを探すエージェントが自分でモデルを
+  #  固定しているため、ここで決まるのは主に指摘の仕分けを担うモデル。)
   case "$agent" in
     claude) model="${model:-sonnet}" ;;
     codex) model="${model:-gpt-6.1-sol}" ;;

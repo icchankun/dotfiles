@@ -94,8 +94,8 @@ fi
 
 git fetch --quiet origin -- "refs/heads/$base:refs/remotes/origin/$base" 2>/dev/null || exit 0
 
-# Full ref names, since a tag or a branch named like origin/main would make the
-# short names point somewhere else.
+# Full ref names, since a tag named main or a branch named origin/main would make
+# the short names point somewhere else.
 # (完全な ref の名前を使う。main という名前のタグや origin/main という名前の
 #  ブランチがあると、短い名前は別のものを指すため。)
 git show-ref --verify --quiet "refs/heads/$base" || exit 0
@@ -104,8 +104,8 @@ behind="$(git rev-list --count "$local_ref..$remote_ref")"
 (( behind > 0 )) || exit 0
 git merge-base --is-ancestor "$local_ref" "$remote_ref" || exit 0
 
-# The directory name is printed to the terminal, so drop anything that is not printable.
-# (ディレクトリ名は端末に出すので、表示できない文字を取り除く。)
+# The directory name is printed to the terminal, so keep only [:alnum:]._-.
+# (ディレクトリ名は端末に出すので、英数字と . _ - 以外を取り除く。)
 name="$(basename "$(dirname "$common")" | LC_ALL=C tr -cd '[:alnum:]._-')"
 checkout="$(git worktree list --porcelain | awk -v b="branch refs/heads/$base" '/^worktree /{p=substr($0,10)} $0==b{print p}')"
 

@@ -16,7 +16,7 @@
     <string>{{ .chezmoi.homeDir }}/.bin:{{ .chezmoi.homeDir }}/.local/bin:{{ .chezmoi.homeDir }}/.local/share/mise/shims:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
   </dict>
 
-  <!-- Every 10 minutes; codex-pr-review-watch only works on weekdays from 9:00 to 20:00 / 10分ごと。動くのは平日 9:00〜20:00 だけで、それは codex-pr-review-watch が見る -->
+  <!-- Every 10 minutes; codex-pr-review-watch only works on weekdays from 9:00 to 20:00 / 10分ごと。平日 9:00〜20:00 以外は codex-pr-review-watch が何もしない -->
   <key>StartInterval</key>
   <integer>600</integer>
 

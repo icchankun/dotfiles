@@ -1,9 +1,10 @@
-// Cloned from Herdr's spaces mod: each space's row also shows its branch's open GitHub
-// pull request (number and CI); click it to open the PR in the browser.
+// Each space's row also shows its branch's open GitHub pull request (number and CI);
+// click it to open the PR in the browser.
 // Workspace spaces: stable colored avatars, worktrees under their checkout,
-// grouped by machine when more than one is known. After a space's name, the repo
-// its first terminal is in now, only where unusual: branch, ahead/behind. Agent state lives in the agents list, not here. Click to
-// switch, right-click for its menu, drag to reorder.
+// grouped by machine when more than one is known. After a space's name, only what is
+// unusual about the repo its first terminal is in now: branch, ahead/behind.
+// Agent state lives in the agents list, not here.
+// Click to switch, right-click for its menu, drag to reorder.
 
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
@@ -28,7 +29,7 @@ function find(node, id) {
   return null;
 }
 
-// The sidebar's rail goes by its width, not a flag: dragging its edge narrows it too.
+// The sidebar is narrow by its width, not a flag: dragging its edge narrows it too.
 const narrow = () => (find(layout(), "sidebar")?.size?.px ?? Infinity) < 160;
 
 // Where a space is now: its first terminal's live folder, else where it was made.
@@ -62,7 +63,7 @@ export default class Spaces extends View {
     this.git = {}; // where() -> { name, branch, ahead, behind, repo, linked }, null: not a repo
     this.checked = {}; // where() -> when it was last looked at
     this.unsure = new Set(); // where()s git couldn't answer for (a machine away)
-    this.pending = new Set(); // where()s to look at next
+    this.pending = new Set();
     this.busy = {}; // pane -> an agent working or a program in front of its shell
     this.ready = {}; // machine -> its layout was readable at the last look
     this.at = {}; // space -> its where() at the last look
@@ -77,14 +78,12 @@ export default class Spaces extends View {
     this.folded = new Set(JSON.parse(localStorage.getItem("machines.folded") ?? "[]"));
     this.refreshMachines(cx);
     cx.timer.every(15000, cx => this.refreshMachines(cx));
-    // `git status` walks the whole tree, on another machine a process there:
-    // only when its answer could have changed (see `due`).
     cx.timer.every(250, (cx) => this.checkNew(cx));
     this.prs = {}; // `${repo}@${branch}` -> open PR or null
     cx.timer.every(PR_REFRESH_MS, (cx) => this.refreshPrs(cx, true));
   }
 
-  // One gh call per branch in turn; batch with `gh api graphql` if it gets slow.
+  // One gh call per branch in turn.
   refreshPrs(cx, all) {
     if (this.prBusy) return;
     const todo = new Map();
@@ -118,15 +117,16 @@ export default class Spaces extends View {
     if (sp.some((s) => !this.shown.has(s.id))) cx.notify();
   }
 
-  // Places whose git could have changed: new ones (a new space, a cd), where a
+  // `git status` walks the whole tree (on another machine, through a process there),
+  // so check only places whose answer could have changed: new ones (a new space, a cd), where a
   // command or an agent's turn just ended (a checkout, a commit, edits), those on
   // a machine that is back, and repos in view whose fallback is due.
   due(now, sp, ps) {
-    // Moved there: what it knew of that place may be old.
     const at = {};
     for (const s of sp) at[s.id] = where(s, ps);
     const keys = new Set(Object.values(at).filter((k) => JSON.parse(k)[1]));
     const due = new Set([...keys].filter((k) => !(k in this.git)));
+    // A space that moved (a cd): what is known of its new place may be old.
     for (const [id, k] of Object.entries(at)) if (this.at[id] && this.at[id] !== k && keys.has(k)) due.add(k);
     this.at = at;
     const spaceOf = {};
@@ -189,8 +189,7 @@ export default class Spaces extends View {
     this.checked[key] = Date.now();
     this.unsure.delete(key);
     try {
-      // No optional locks: a status that touched the index would wake the watch again.
-      // Writes nothing under .git (index lock, fsmonitor cookie): watch() would wake on it.
+      // Writes nothing under .git (index lock, fsmonitor cookie), or watch() would wake on it.
       const r = await exec("git", ["--no-optional-locks", "-c", "core.fsmonitor=false", "status", "--porcelain=v2", "--branch"], { cwd, on });
       if (r.code !== 0) {
         // Only git's own "no" is remembered as no repo; anything else is asked again.
@@ -236,7 +235,7 @@ export default class Spaces extends View {
   }
 
   menu(w) {
-    // A popup is as tall as its items; height is only the most.
+    // height is only a cap: a popup is as tall as its items.
     openOverlay({ mod: "menu", kind: "popup", width: 200, height: 260, props: { tab: "space", target: { id: w.id } } });
   }
 
