@@ -13,17 +13,12 @@
 #   1. Install dependencies
 #      brew install fzf jq
 #
-#   2. Make this script executable and place it somewhere on your PATH
-#      chmod +x rm-cc-session
-#      mv rm-cc-session /usr/local/bin/rm-cc-session
-#
 # Usage / 使い方:
 #   rm-cc-session
-#   (セッション一覧が fzf で表示される。)
 #   [Tab] select multiple  [ctrl-d] delete mode  [Esc] quit
 #   ([Tab] 複数選択 / [ctrl-d] 削除モード / [Esc] で終了)
-#   Session preview is shown in the right pane.
-#   (プレビューペインに会話の冒頭が表示される。)
+#   Session preview is shown in the right pane, from the start of the conversation.
+#   (プレビューは右側に、会話を先頭から表示する。)
 # =============================================================================
 
 PROJECTS_DIR="$HOME/.claude/projects"

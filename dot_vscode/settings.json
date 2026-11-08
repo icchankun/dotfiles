@@ -1,5 +1,4 @@
 {
-  // ========== Workbench ==========
   "workbench.colorTheme": "Nord",
   "workbench.productIconTheme": "fluent-icons",
   "workbench.startupEditor": "none",
@@ -13,7 +12,6 @@
   "workbench.layoutControl.enabled": false,
   "workbench.navigationControl.enabled": false,
 
-  // ========== Editor ==========
   "editor.fontSize": 18,
   "editor.fontFamily": "MesloLGS NF",
   "editor.tabSize": 2,
@@ -27,13 +25,11 @@
   },
   "diffEditor.ignoreTrimWhitespace": true,
 
-  // ========== Files ==========
   "files.autoSave": "afterDelay",
   "files.insertFinalNewline": true,
   "files.trimTrailingWhitespace": true,
   "files.trimFinalNewlines": true,
 
-  // ========== Terminal ==========
   "terminal.integrated.fontSize": 18,
   "terminal.integrated.defaultProfile.osx": "zsh",
   "terminal.integrated.stickyScroll.enabled": true,
@@ -41,11 +37,9 @@
   "terminal.integrated.scrollback": 10000,
   "terminal.external.osxExec": "Warp.app",
 
-  // ========== Window ==========
   "window.openFoldersInNewWindow": "off",
   "window.openFilesInNewWindow": "off",
 
-  // ========== Git ==========
   "scm.repositories.selectionMode": "single",
   "git-worktree-manager.worktreeCopyPatterns": [
     ".env",
@@ -58,7 +52,6 @@
   "git-worktree-manager.treeView.showFetchInTreeItem": false,
   "git-worktree-manager.treeView.showOpenExplorerInTreeItem": false,
 
-  // ========== Ruby ==========
   "rubyLsp.addonSettings": {
     "rspecCommand": "rspec -f d",
     "debug": true,
@@ -68,7 +61,6 @@
     "identifier": "asdf",
   },
 
-  // ========== Claude ==========
   "claudeCode.preferredLocation": "panel",
   "chat.agentsControl.enabled": false,
   "chat.mcp.discovery.enabled": {

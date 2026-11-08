@@ -9,7 +9,7 @@ import { READ, STATUS, LABEL, logArgs, parseLog, parseStatus, withUncommitted, l
 const icon = (name) => (name.includes("/") ? name : `mods/git-graph/icons/${name}.svg`);
 import { Review, Sender } from "./review.js";
 
-// The details under a commit grow with their content up to most of the panel, then scroll.
+// The floor of maxDetails(): details keep this much height even in a small panel.
 const DETAILS_MIN = 160;
 
 function location() {
@@ -254,7 +254,6 @@ export class Graph {
 
 
   graphWidth() { return Math.min(PAD * 2 + this.lanes * LANE, this.graphMax); }
-  // Where the description column ends: labels past it are clipped, so not clickable.
   // Pointer positions come in window units; layout sizes are these units times the zoom.
   unit() { return settings().zoom ?? 1; }
 
@@ -388,8 +387,6 @@ export class Graph {
       cx.notify();
     });
   }
-
-  // ---- drawing
 
   graphCell(row, commit, colors, t, width) {
     // Path coordinates are percentages of the cell, so they land where the dot's layout units do at any zoom.

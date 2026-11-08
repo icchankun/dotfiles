@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
 
-# =============================================================================
-# codex-pr-review-watch
-# Run codex-pr-review on the pull requests I am asked to review. Run by launchd
-# every 10 minutes. (レビューを頼まれた PR に codex-pr-review を流す。launchd が
-# 10分ごとに動かす。)
+# Run codex-pr-review on the pull requests I am asked to review.
+# (レビューを頼まれた PR に codex-pr-review を流す。)
 #
 # Dependencies / 依存:
 #   - gh, codex-pr-review, codex-dep-review, osascript (macOS notifications / macOS の通知)
@@ -29,15 +26,11 @@
 #     あとのラウンドも見る必要があるため。)
 #   - Leaves out release pull requests: they bundle changes already reviewed in
 #     their own pull requests, so reviewing them again only spends Codex's
-#     usage allowance. A pull request counts as a release when its title
-#     has リリース or the word release, its head branch is release/* or
-#     release-*, or it has a label named release or リリース. The base branch
-#     alone does not decide it, since some repositories send every pull request
-#     to main. (リリースの PR は外す。それぞれの PR でレビュー済みの変更を
-#      まとめたものなので、もう一度レビューしても Codex の利用枠を使うだけのため。
-#      題名に「リリース」か単語の release がある、head のブランチが release/* か
-#      release-*、release か リリース のラベルがある、のどれかならリリースとみなす。ベースのブランチだけでは決めない。すべての PR を
-#      main に出すリポジトリもあるため。)
+#     usage allowance. The base branch does not decide it, since some
+#     repositories send every pull request to main.
+#     (リリースの PR は外す。それぞれの PR でレビュー済みの変更をまとめたもの
+#      なので、もう一度レビューしても Codex の利用枠を使うだけなので。ベースの
+#      ブランチでは決めない（すべての PR を main に出すリポジトリもある）。)
 #   - Uses Codex on at most MAX_PRS pull requests, so a pile of requests does not
 #     drain the usage allowance in one go; the rest wait for the next run.
 #     (Codex を使うのは MAX_PRS 件まで。依頼がまとめて来ても、一度に利用枠を使い
@@ -55,17 +48,14 @@
 #     判断を比べ、要約を知らせる。)
 #   - Notifies only what needs me: a pull request ready for my approval, one
 #     handed over after too many rounds, a dependency update to approve or to
-#     check myself, a failure, and a pause. Each is notified once.
+#     check myself, a failure, and a pause. Each is notified once, a failure once a day.
 #     (知らせるのは自分が要るものだけ。approve を待つ PR、ラウンドが多すぎて任された
-#      PR、approve するか自分で見る依存更新、失敗、一時停止。同じものは1回だけ知らせる。)
-# =============================================================================
+#      PR、approve するか自分で見る依存更新、失敗、一時停止。同じものは1回だけ知らせる。失敗は1日1回。)
 
 set -euo pipefail
 
 readonly MAX_PRS=3
 readonly MAX_DEP_PRS=5
-# What makes a pull request a release: its title, head branch or a label.
-# (リリースの PR とみなす条件。題名、head のブランチ、ラベルで見る。)
 readonly RELEASE_JQ='
   (.title | test("リリース|\\brelease\\b"; "i"))
   or (.headRefName | test("^release[/-]"; "i"))
@@ -76,13 +66,14 @@ readonly TRACKED="$STATE_DIR/tracked"
 readonly PAUSED="$STATE_DIR/paused-until"
 readonly NOTIFIED="$STATE_DIR/notified"
 readonly LOCK="$STATE_DIR/watch.lock"
-# A lock older than this is left over from a run that died. (これより古いロックは、
-# 落ちた回の残りとみなす。)
+# A lock older than this is removed even if its pid is alive. (これより古いロックは、
+# pid が生きていても消す。)
 readonly LOCK_STALE_MINUTES=180
 
 log() { printf '%s %s\n' "$(date '+%F %T')" "$*"; }
 
-# Notify once per KEY ($1). (KEY ($1) ごとに1回だけ知らせる。)
+# Notify once per key; the keys already sent are in NOTIFIED.
+# (同じ key では1回だけ知らせる。知らせた key は NOTIFIED に記録する。)
 notify() {
   local key="$1" message="$2"
   grep -qxF "$key" "$NOTIFIED" && return 0
@@ -269,7 +260,7 @@ main() {
       0) used=$((used + 1)) ;;
       3) ;;
       4) notify "$pr:handover" "$pr はラウンドが多すぎるので、自分で見てください" ;;
-      # ponytail: 6 is counted as a Codex run even when only CI was checked, so a run may stop short of MAX_PRS
+      # 6 is counted as a Codex run even when only CI was checked, so a run may stop short of MAX_PRS
       6) used=$((used + 1)); notify "$pr:ready:$(grep -o 'pullrequestreview-[0-9]*' <<<"$out" | tail -n 1)" "$pr は指摘が残っておらず CI も通りました。approve するか見てください" ;;
       75) pause_for_limit "$out"; return 0 ;;
       *) notify "$pr:error:$(date +%F)" "$pr のレビューに失敗しました。~/Library/Logs/codex-pr-review.log を見てください" ;;

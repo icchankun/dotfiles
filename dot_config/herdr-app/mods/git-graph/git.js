@@ -1,12 +1,12 @@
 // Git for the graph, with no herdr imports so node can test it: reading the
 // history, the labels on each row, and a commit's files and diffs. Commands are
-// argv arrays, never a shell line. Trimmed to reading: agents run git.
+// argv arrays, never a shell line. Read-only: the git commands that change things are left to agents.
 
 // Reads write nothing under .git (no index refresh or lock, no fsmonitor
 // cookie), so the folder watch never wakes for the panel's own reads.
 // diff.external and core.hooksPath are also cleared, so a repository's own config runs nothing.
-// Filter drivers set in a repository's own .git/config still run on status.
-// A clone never copies .git/config, so this only bites a .git unpacked from an untrusted archive.
+// Filter drivers in a repository's own .git/config still run on status. A clone never
+// copies .git/config, so that only matters for a .git unpacked from an untrusted archive.
 export const READ = ["--no-optional-locks", "-c", "core.fsmonitor=false", "-c", "diff.autoRefreshIndex=false",
   "-c", "diff.external=", "-c", "core.hooksPath=/dev/null"];
 export const STATUS = ["status", "--porcelain=v1", "-z", "--no-renames", "--untracked-files=all"];
@@ -42,7 +42,7 @@ export function parseBranches(text) {
 
 // The branch this one was cut from: of the other local branches, the one the fewest
 // of HEAD's commits are missing from (`git rev-list --count <branch>..HEAD`). A branch
-// that already has every commit of HEAD (0) was cut from this one, or is the same, so it
+// that already has every commit of HEAD (0) was cut from the current branch, or is the same, so it
 // is skipped. A tie goes to develop, then main, as creating-git-branches cuts from them.
 export function pickParent(counts) {
   const rank = (name) => { const i = SHOWN.indexOf(name); return i < 0 ? SHOWN.length : SHOWN.length - 1 - i; };

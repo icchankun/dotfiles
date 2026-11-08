@@ -22,7 +22,7 @@
 #
 # Herdr.app switches to every space and tab it opens, so focus is put back on
 # the terminal that ran `git wt`: that session is usually still talking to you.
-# (Herdr.app は開いた space とタブに画面を切り替えるので、最後に `git wt` を
+# (Herdr.app は開いた space とタブに画面を切り替えるので、`git wt` を
 #  実行した terminal へフォーカスを戻す。そのセッションはたいてい会話中のため。)
 # =============================================================================
 set -eu
@@ -34,24 +34,19 @@ command -v herdr-app >/dev/null 2>&1 || exit 0
 # (すでに space がある worktree は、それを使い続け、2つ目を開かない。)
 herdr-app ls 2>/dev/null | jq -e --arg dir "$PWD" 'any(.spaces[]; .folder == $dir)' >/dev/null 2>&1 && exit 0
 
-# The driver is addressed by its terminal (`t7`) and carries role=driver and
-# driver=<terminal> labels, the same pair herdr-coding gives its reviewer, so a
-# request like "send it to t7's driver" can be resolved with `hc ls --label`.
-# Codex needs --no-daemon, or its commands run outside hc.
-# A failure to open must not turn a successful `git wt` into an error, but it is
-# reported so a missing space does not go unnoticed.
-# (driver は terminal の番地（`t7`）で呼ぶ。herdr-coding がレビュー役に付けるのと
-#  同じ role=driver と driver=<terminal> の label を付けるので、「t7 の driver に
-#  送って」のような頼みも `hc ls --label` で探せる。Codex は --no-daemon がないと
-#  コマンドが hc の外で動く。開けなかったことで成功した `git wt` をエラーには
-#  しないが、space が開かなかったことに気づけるよう1行で知らせる。)
 agent=$(git config --global --get herdr.driver 2>/dev/null || echo claude)
+# Codex needs --no-daemon, or its commands run outside hc.
+# (Codex は --no-daemon がないとコマンドが hc の外で動く。)
 case "$agent" in
   codex) driver_argv='["codex","--no-daemon"]' ;;
   *) agent=claude driver_argv='["claude"]' ;;
 esac
 argv='[]'
 command -v "$agent" >/dev/null 2>&1 && argv=$driver_argv
+# A failure to open must not turn a successful `git wt` into an error, but it is
+# reported so a missing space does not go unnoticed.
+# (開けなかったことで成功した `git wt` をエラーにはしないが、space が開かなかった
+#  ことに気づけるよう知らせる。)
 opened=$(herdr-app do space.new --folder "$PWD" --tab driver --argv "$argv" 2>&1) || {
   printf 'herdr-worktree-open: could not open %s in Herdr: %s\n' "$PWD" "$opened" >&2
   exit 0
@@ -59,6 +54,10 @@ opened=$(herdr-app do space.new --folder "$PWD" --tab driver --argv "$argv" 2>&1
 space=$(printf '%s' "$opened" | jq -r '.space // empty')
 terminal=$(printf '%s' "$opened" | jq -r '.terminal // empty')
 if [ "$argv" != '[]' ] && [ -n "$terminal" ]; then
+  # Labels role=driver and driver=<terminal>, the same keys herdr-coding gives its
+  # reviewer, so `hc ls --label` can find this driver.
+  # (role=driver と driver=<terminal> の label を付ける。herdr-coding がレビュー役に
+  #  付けるのと同じキーなので、`hc ls --label` でこの driver を探せる。)
   hc label "$terminal" role=driver "driver=$terminal" >/dev/null 2>&1 || true
   printf 'driver: %s (%s)\n' "$terminal" "$agent"
 fi
