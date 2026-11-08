@@ -126,7 +126,6 @@
   "enabledPlugins": {
     "ruby-lsp@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
-    "security-guidance@claude-plugins-official": true,
     "pr-review-toolkit@claude-plugins-official": true,
     "deploy-on-aws@claude-plugins-official": true,
     "humanizer@humanizer": true,
@@ -164,5 +163,6 @@
   "inputNeededNotifEnabled": true,
   "cleanupPeriodDays": 14,
   "model": "opus",
-  "skipWorkflowUsageWarning": true
+  "skipWorkflowUsageWarning": true,
+  "syncClaudeAiPlugins": false
 }
