@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # Claude Code と Codex の hook。git commit --amend と git push --force-with-lease を、
 # 引数を1つずつ確かめて安全な形のときだけ確認なしで通す。それ以外は何も出さず、ふだんの判断に任せる。
+# ただし安全と言えない force push は確認に回す。settings.json の allow に入れた形でも、リポジトリの設定が危なければ止めるため。
 # settings.json の allow は文字列の前方一致なので、git が受け付ける省略形（--rec で --receive-pack など）を塞げない。
 # 使い方: Claude Code は settings.json の hooks.PreToolUse（matcher: Bash）に登録する。
 #   Codex は ~/.codex/hooks.json の PermissionRequest（matcher: Bash）に `git-rewrite-guard --codex` で登録する。
@@ -77,7 +78,8 @@ SAFE_REMOTE_URL = re.compile(r"(https://github\.com/|git@github\.com:)[\w.-]+/[\
 
 def repo_config_safe(cwd):
     def git(*args):
-        return subprocess.run(["git", "-C", cwd, *args], capture_output=True, text=True)
+        # hook の timeout より先に切る。hook ごと時間切れになると、settings.json の allow だけで通ってしまう
+        return subprocess.run(["git", "-C", cwd, *args], capture_output=True, text=True, timeout=3)
 
     listing = git("config", "--show-scope", "--list", "-z")
     if listing.returncode != 0:
@@ -102,7 +104,7 @@ def repo_config_safe(cwd):
 
 
 def origin_repo(cwd):
-    url = subprocess.run(["git", "-C", cwd, "remote", "get-url", "origin"], capture_output=True, text=True).stdout.strip()
+    url = subprocess.run(["git", "-C", cwd, "remote", "get-url", "origin"], capture_output=True, text=True, timeout=3).stdout.strip()
     m = GITHUB_REPO.search(url)
     return m and m.group(1)
 
@@ -150,6 +152,11 @@ def allowed(command, cwd=".", origin_of=origin_repo, repo_safe=repo_config_safe)
     if args[:1] == ["push"]:
         return safe_push(args[1:], cwd, origin_of) and repo_safe(cwd)
     return False
+
+
+def lease_push(command):
+    # 引数に分けずに文字列で見る。分けられないコマンドを見逃すと、settings.json の allow だけで通ってしまう
+    return "--force-with-lease" in command
 
 
 def test():
@@ -205,6 +212,9 @@ def test():
         assert allowed(c, origin_of=origin_of, repo_safe=lambda cwd: True), c
     for c in ng:
         assert not allowed(c, origin_of=origin_of, repo_safe=lambda cwd: True), c
+    assert not allowed("git push --force-with-lease", origin_of=origin_of, repo_safe=lambda cwd: False), "設定が危ないリポジトリ"
+    assert lease_push("git push --force-with-lease") and lease_push("git -C x push --force-with-lease=a:b origin main")
+    assert not lease_push("git push origin main") and not lease_push("git commit --amend")
     with tempfile.TemporaryDirectory() as repo:
         def git(*args):
             subprocess.run(["git", "-C", repo, *args], check=True, capture_output=True)
@@ -238,7 +248,20 @@ if __name__ == "__main__":
         sys.exit()
     payload = json.load(sys.stdin)
     command = payload.get("tool_input", {}).get("command", "")
-    if not isinstance(command, str) or not allowed(command, payload.get("cwd", ".")):
+    if not isinstance(command, str):
+        sys.exit()
+    # 確かめる途中で落ちたら通さない。落ちたまま終わると、settings.json の allow だけで通ってしまう
+    try:
+        ok = allowed(command, payload.get("cwd", "."))
+    except Exception:
+        ok = False
+    if not ok:
+        if lease_push(command) and sys.argv[1:] != ["--codex"]:
+            print(json.dumps({"hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "permissionDecision": "ask",
+                "permissionDecisionReason": "git-rewrite-guard: force push の形かリポジトリの設定が安全と確かめられない",
+            }}))
         sys.exit()
     if sys.argv[1:] == ["--codex"]:
         print(json.dumps({"hookSpecificOutput": {

@@ -29,7 +29,8 @@
       "Bash(bundle info*)",
       "Bash(ruby -v*)",
       "Bash(node -v*)",
-      "Bash(yarn --version*)"
+      "Bash(yarn --version*)",
+      "Bash(git push --force-with-lease)"
     ],
     "deny": [
       "Read(**/.env)",
@@ -90,7 +91,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.bin/git-rewrite-guard"
+            "command": "~/.bin/git-rewrite-guard",
+            "timeout": 10
           }
         ]
       },
