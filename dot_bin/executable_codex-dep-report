@@ -3,9 +3,9 @@
 # =============================================================================
 # codex-dep-report
 # Compare the verdicts of codex-dep-review with what I actually did with each
-# dependency update, to see whether its automatic approvals can be trusted.
+# dependency update, to see whether its verdicts can be trusted.
 # (codex-dep-review の判定と、自分が実際にその依存更新をどうしたかを比べ、
-# 自動の approve を任せ続けてよいかを見る。)
+# その判定を信頼してよいかを見る。)
 #
 # Dependencies / 依存:
 #   - gh, jq, osascript (only with --notify / --notify のときだけ)
@@ -32,7 +32,7 @@
 
 set -euo pipefail
 
-# When the automatic approval has earned trust. (自動 approve を任せてよい目安。)
+# When the verdicts have earned trust. (判定を信頼してよい目安。)
 readonly MIN_COUNTED=30
 readonly RECENT_WEEKS=4
 readonly MAX_OVERCAUTIOUS_PERCENT=20
@@ -121,7 +121,7 @@ records | jq -s \
         "",
         "まだ数えていないもの（open・bot が閉じた・読めない）: \(length - ($c | length)) 件",
         "",
-        "## 自動 approve を任せてよい目安",
+        "## 判定を信頼してよい目安",
         "",
         "- \(if $enough then "✅" else "⬜" end) 判定が \($min) 件以上ある（\($all.n) 件）",
         "- \(if $safe then "✅" else "❌" end) 直近 \($weeks) 週で危ない外れが 0 件（\($recent.unsafe) 件）",
@@ -138,9 +138,9 @@ records | jq -s \
 jq -r .markdown "$STATE_DIR/deps-report.json" >"$REPORT"
 summary=$(jq -r .summary "$STATE_DIR/deps-report.json")
 if [ "$(jq -r .unsafe_recent "$STATE_DIR/deps-report.json")" != 0 ]; then
-  summary="${summary}。直近に危ない外れがあります。自動 approve を止めるか見直してください"
+  summary="${summary}。直近に危ない外れがあります。判定の仕方を見直してください"
 elif [ "$(jq -r .ready "$STATE_DIR/deps-report.json")" = true ]; then
-  summary="${summary}。自動 approve を任せてよい目安を満たしています"
+  summary="${summary}。判定を信頼してよい目安を満たしています"
 fi
 printf '%s\n%s\n' "$summary" "$REPORT"
 
