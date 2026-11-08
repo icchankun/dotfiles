@@ -32,6 +32,10 @@ hc ls --label role=reviewer --label driver="$HC_TERMINAL_ID"   # 自分の revie
 hc ls --label role=driver --label driver=t7                     # t7 の driver
 ```
 
+# コードコメントを書くとき
+
+コードを書く・直すときのコメントは `writing-code-comments` に従う。`ponytail:` のコメントは書かない。
+
 # ファイルを編集するとき
 
 ファイルの編集は、同じ応答の中でまとめて出す（Claude Code は Edit を並べ、Codex は1つの apply_patch に複数のファイルを入れる）。
