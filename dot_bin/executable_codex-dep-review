@@ -4,18 +4,15 @@
 # codex-dep-review
 # Check a dependency update pull request from Renovate or Dependabot: gates
 # that need no AI first, then Codex with the checking-library-updates skill.
-# An ok verdict is posted as an approval; anything else as a comment. Merging
-# is always left to a person.
+# The verdict is posted as a comment. Approving and merging are always left to
+# a person, since a pull request could talk Codex into an ok verdict.
 # (Renovate や Dependabot の依存更新の PR を確かめる。先に AI を使わないゲートを
 #  通し、通ったものだけを checking-library-updates の skill で Codex に見せる。
-#  判定が ok なら approve し、それ以外はコメントに残す。merge は必ず人がする。)
+#  判定はコメントに残す。PR の中身に誘導されて Codex が ok と判定することも
+#  あるので、approve と merge は必ず人がする。)
 #
-# Approval guards / approve を見送るとき:
-#   - the head moved while checking (確かめている間に head が変わった)
-#   - auto-merge is on, since the approval would merge it
-#     (auto-merge が有効。approve で merge されてしまうため)
-#   When a later head is not ok, my earlier approvals are dismissed.
-#   (あとの head が ok でなければ、前に出した approve を取り消す。)
+#   When a head is not ok, my approvals of earlier heads are dismissed.
+#   (ok でない head が来たら、前の head に出した自分の approve を取り消す。)
 #
 # Dependencies / 依存:
 #   - gh, git, jq, codex
@@ -42,11 +39,10 @@
 #   settings. (リリースからの日数は、Renovate と Dependabot の設定に任せる。)
 #
 # Exit status / 終了コード:
-#   0   ok: can be approved (自動で approve してよい)
 #   3   nothing to do: already checked this head, or CI is still running
 #       (することがない。この head は確かめ済みか、CI がまだ動いている)
-#   5   needs a person, or ok but the approval was held back
-#       (自分で見る必要がある。ok でも approve を見送った)
+#   5   needs a person (自分で見る必要がある)
+#   6   ok: ready for me to approve (ok。approve するかを自分で決める)
 #   75  Codex's usage limit (Codex の利用枠切れ)
 #   The last line is `result: <verdict> <head>`. (最後の行に結果を出す。)
 # =============================================================================
@@ -137,16 +133,6 @@ already_checked() {
     gh api --paginate --slurp "repos/$repo/pulls/$number/reviews"
   } | jq -s -e --arg me "$me" --arg head "$head" '
     map(add // []) | add | any(.[]; .user.login == $me and ((.body // "") | contains("<!-- codex-deps:v1 head=" + $head + " ")))' >/dev/null
-}
-
-# Why an ok verdict cannot be approved now, or nothing when it can.
-# (ok の判定を今は approve できない理由。できるなら何も出さない。)
-approval_blocker() {
-  local now
-  now=$(gh api "repos/$repo/pulls/$number") || { echo "PR を読み直せなかった"; return 0; }
-  if [ "$(jq -r .head.sha <<<"$now")" != "$head" ]; then echo "確かめている間に head が変わった"; return 0; fi
-  if [ "$(jq -r .state <<<"$now")" != open ]; then echo "PR が閉じられた"; return 0; fi
-  if [ "$(jq -r '.auto_merge != null' <<<"$now")" = true ]; then echo "auto-merge が有効なので、approve すると merge されてしまう"; fi
 }
 
 # Dismiss my approvals of earlier heads, and print a line for the comment.
@@ -332,7 +318,7 @@ gate_verdict() {
 build_comment() {
   jq -r --slurpfile gates "$run/input/gates.json" --arg head "$head" --arg footer "$FOOTER" --arg lead "$1" '
     def mark: if . then "✅" else "❌" end;
-    (if .verdict == "ok" then "自動で approve してよいと判断しました。" else "自分で見る必要があると判断しました。" end) as $title
+    (if .verdict == "ok" then "approve してよいと判断しました。" else "自分で見る必要があると判断しました。" end) as $title
     | [
         $lead,
         "",
@@ -382,15 +368,9 @@ main() {
     build_comment "依存更新を確かめました（まだ投稿していません）。"
     cat "$run/comment.md"
     printf '\n(not posted; run again with --post. Saved in %s)\n' "$run"
-  elif [ "$verdict" = ok ] && blocker=$(approval_blocker) && [ -z "$blocker" ]; then
-    build_comment "依存更新を確かめ、approve しました。merge は人がしてください。"
-    gh api -X POST "repos/$repo/pulls/$number/reviews" -f event=APPROVE -f commit_id="$head" \
-      -F "body=@$run/comment.md" --jq .html_url ||
-      die "could not approve; the review is kept at $run/comment.md"
   else
     if [ "$verdict" = ok ]; then
-      lead="依存更新を確かめました。ok と判断しましたが、approve は見送りました（${blocker}）。"
-      verdict=held
+      lead="依存更新を確かめました。approve と merge は人がしてください。"
     else
       lead="依存更新を確かめました。approve はしていません。"
       note=$(dismiss_my_approvals)
@@ -408,7 +388,8 @@ main() {
   fi
 
   printf 'result: %s %s\n' "$verdict" "$head"
-  [ "$verdict" = ok ] || exit 5
+  [ "$verdict" = ok ] && exit 6
+  exit 5
 }
 
 main "$@"

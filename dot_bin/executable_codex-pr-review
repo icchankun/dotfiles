@@ -28,10 +28,9 @@
 #       (新しい push か、作者の新しい返信がある -> 次のラウンドをレビューする)
 #     - must or should left -> post a COMMENT review
 #       (must か should が残っている -> COMMENT のレビューを投稿する)
-#     - none left -> wait for CI, then approve; if CI fails, post the review as a
-#       COMMENT without approving
-#       (残っていない -> CI を待って approve する。CI が落ちたら approve せずに
-#        COMMENT で投稿する)
+#     - none left -> wait for CI, then post a COMMENT review and leave the
+#       approval to me
+#       (残っていない -> CI を待って COMMENT のレビューを投稿し、approve は人に任せる)
 #   The wording follows the review comment templates: the labels, a section for
 #   findings outside the diff, what was checked and what was left out on purpose,
 #   and a reply on each inline thread whose finding was settled.
@@ -45,18 +44,20 @@
 #   3   Codex not needed: nothing new, or only CI was checked
 #       (Codex は使っていない。新しいことがないか、CI だけを見た)
 #   4   handed over after MAX_ROUNDS (MAX_ROUNDS を超えたので人に任せた)
+#   6   nothing left and CI passed: ready for me to approve
+#       (指摘が残っておらず CI も通った。approve するかを自分で決める)
 #   75  Codex's usage limit; the message says when it resets (Codex の利用枠切れ。
 #       戻る時刻はメッセージに出る)
 #
 # Notes / 補足:
 #   - Codex runs with the dotfiles-readonly permission profile from
 #     ~/.codex/config.toml: it only reads, cannot read ~/.ssh or .env files, and
-#     never gets GitHub credentials. Only this script posts, so a pull request
-#     cannot talk Codex into posting or approving.
+#     never gets GitHub credentials. Only this script posts, and it never
+#     approves: a pull request could still talk Codex out of its findings.
 #     (Codex は ~/.codex/config.toml の権限プロファイル dotfiles-readonly で動く。
 #      読むだけで、~/.ssh と .env は読めず、GitHub の権限も持たない。投稿するのは
-#      このスクリプトだけなので、PR の中身に誘導されても Codex が投稿や approve を
-#      することはない。)
+#      このスクリプトだけで、approve はしない。PR の中身に誘導されて、Codex が
+#      指摘を出さないこともあるため。)
 #   - Models are set here rather than in ~/.codex/config.toml, which Codex writes
 #     to itself (trusted folders) and so is not managed by chezmoi.
 #     (モデルは ~/.codex/config.toml ではなくここで決める。そのファイルは Codex が
@@ -419,12 +420,12 @@ place_findings() {
 # Settle the previous findings: one the advisor did not mention counts as still
 # open. Then the open list for the next round is the new findings plus the
 # previous ones left unresolved.
-# fyi needs no answer, so it is not carried over. Only must and should hold back
-# the approval; ask, nit and fyi do not.
+# fyi needs no answer, so it is not carried over. Only must and should keep the
+# review from being ready; ask, nit and fyi do not.
 # (前回の指摘を確定する。advisor が触れなかったものは残っているとみなす。次の
 #  ラウンドに持ち越すのは、今回の指摘と、解消していない前回の指摘。fyi は返事が
-#  要らないので持ち越さない。approve を止めるのは must と should だけで、ask・nit・
-#  fyi は止めない。)
+#  要らないので持ち越さない。must と should が残っていれば approve に進めず、ask・
+#  nit・fyi は止めない。)
 settle_findings() {
   jq --argjson open "$open" '
     (.previous | map({key: .id, value: .}) | from_entries) as $seen
@@ -436,11 +437,11 @@ settle_findings() {
 }
 
 # Build the GitHub review from the settled findings, following the review comment
-# templates. The body has no closing line yet: the closings for an approval, a
+# templates. The body has no closing line yet: the closings for a ready review, a
 # comment and a failed CI are built here, and the one to use is picked when the
 # review is posted. The hidden marker holds the open findings for the next round.
 # (確定した指摘から、テンプレートに沿って GitHub のレビューを組み立てる。本文には
-#  まだ締めの1行を入れない。approve・コメント・CI 失敗の3つの締めをここで作り、
+#  まだ締めの1行を入れない。指摘なし・コメント・CI 失敗の3つの締めをここで作り、
 #  投稿するときにどれを使うかを選ぶ。隠しマーカーには次のラウンドに持ち越す指摘を
 #  入れる。)
 build_review() {
@@ -464,7 +465,6 @@ build_review() {
     | (.open // []) as $open
     | ([$open[] | select(.severity == "must" or .severity == "should") | .severity] | unique | sort_by({must: 0, should: 1}[.]) | map("[" + . + "]") | join(" / ")) as $blocking
     | (if any($f[], $open[]; .severity == "nit") then "[nit] は任意です。" else "" end) as $nit
-    | (if any($open[]; .severity == "ask") then "[ask] の回答は待たずに approve します。" else "" end) as $ask
     # Findings outside the diff cannot be inline, so they are written out in the body.
     # (差分の外の指摘はインラインにできないので、本文に書き出す。)
     | ($outside | map(["", "### " + tag + " " + .title, "", "差分の外のため本文に書きます。", "", detail])) as $outside_sections
@@ -492,8 +492,8 @@ build_review() {
         commit_id: $head,
         body: ($body | join("\n")),
         closings: {
-          approve: ((if $round == 1 then "[must] / [should] の指摘は無く、CI も通っているので approve します。" else "CI もすべて通っているので approve します。" end) + $nit + $ask),
-          ci_failed: "[must] / [should] の指摘は無いですが、CI が通っていないので approve は見送ります。CI が通れば approve します。",
+          ready: ((if $round == 1 then "[must] / [should] の指摘は無く、CI も通っています。" else "[must] / [should] の指摘は残っておらず、CI も通っています。" end) + $nit),
+          ci_failed: "[must] / [should] の指摘は無いですが、CI が通っていません。",
           comment: ($blocking + " が直れば approve します。")
         },
         marker: ("<!-- codex-review:v1 round=" + ($round | tostring) + " head=" + $head + " open=" + $saved + " -->"),
@@ -512,9 +512,9 @@ build_review() {
       }' "$run/findings.json" >"$run/review.json"
 }
 
-# Post a built review with EVENT ($2) and the closing KIND ($3): approve,
+# Post a built review with EVENT ($2) and the closing KIND ($3): ready,
 # ci_failed or comment. Then reply on the settled findings' inline threads.
-# (組み立てたレビューを EVENT ($2) と締めの種類 ($3: approve / ci_failed /
+# (組み立てたレビューを EVENT ($2) と締めの種類 ($3: ready / ci_failed /
 #  comment) で投稿する。そのあと、解消した指摘のインラインのスレッドに返信する。)
 post_review() {
   local file="$1" event="$2" kind="$3"
@@ -547,14 +547,14 @@ post_replies() {
   done
 }
 
-# A review with nothing left waits for CI: approve on pass, post without
-# approving on fail, and keep it pending otherwise.
-# (残りのないレビューは CI を待つ。通れば approve、落ちれば approve せずに投稿し、
-#  まだなら保留のまま残す。)
+# A review with nothing left waits for CI: on pass, post it and exit 6 so that
+# I approve it myself; on fail, post it; otherwise keep it pending.
+# (残りのないレビューは CI を待つ。通れば投稿して 6 で終わり、approve は自分でする。
+#  落ちれば投稿し、まだなら保留のまま残す。)
 finish_when_ci_done() {
   local file="$1"
   case "$(ci_state)" in
-    pass) post_review "$file" APPROVE approve; rm -f "$pending" ;;
+    pass) post_review "$file" COMMENT ready; rm -f "$pending"; exit 6 ;;
     fail) post_review "$file" COMMENT ci_failed; rm -f "$pending" ;;
     *) printf '%s#%s: waiting for CI\n' "$repo" "$number" ;;
   esac
@@ -563,8 +563,8 @@ finish_when_ci_done() {
 show() {
   jq -r '.body' "$run/review.json"
   if [ "$(jq -r .ready "$run/review.json")" = true ]; then
-    printf '\n(CI: %s。pass なら approve して、締めは次の1行)\n' "$(ci_state)"
-    jq -r '.closings.approve' "$run/review.json"
+    printf '\n(CI: %s。pass なら締めは次の1行)\n' "$(ci_state)"
+    jq -r '.closings.ready' "$run/review.json"
   else
     jq -r '"\n" + .closings.comment' "$run/review.json"
   fi
