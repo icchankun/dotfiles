@@ -1,159 +1,7 @@
 lockfile_version: '2'
-generated_at: '2026-11-06T01:14:16.301364+00:00'
+generated_at: '2026-11-08T06:44:18.100692+00:00'
 apm_version: 0.31.0
 dependencies:
-- repo_url: anthropics/claude-plugins-official
-  name: agent-sdk-dev
-  host: github.com
-  resolved_commit: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-  resolved_ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-  version: '5744695'
-  virtual_path: plugins/agent-sdk-dev
-  is_virtual: true
-  package_type: apm_package
-  deployed_files:
-  - .claude/agents/agent-sdk-verifier-py.md
-  - .claude/agents/agent-sdk-verifier-ts.md
-  - .claude/commands/new-sdk-app.md
-  - .codex/agents/agent-sdk-verifier-py.toml
-  - .codex/agents/agent-sdk-verifier-ts.toml
-  deployed_file_hashes:
-    .claude/agents/agent-sdk-verifier-py.md: sha256:a72c50412f4f9940932cac0f3ca61d6ced7354b8ac8892e3f1507bcd2957006e
-    .claude/agents/agent-sdk-verifier-ts.md: sha256:68fe98341656fa242a5de9272165481d62b5670b2fff294961bc45a5c4ee57ea
-    .claude/commands/new-sdk-app.md: sha256:d10bb91b1e71b43e34719a29bd8ce1cd9d3a340439d0be9abaec26540b9e0c12
-    .codex/agents/agent-sdk-verifier-py.toml: sha256:6bd745ba76e58e7bd040ae0ecd2b9e7669416d906b1406c083a06fc91fc7060a
-    .codex/agents/agent-sdk-verifier-ts.toml: sha256:e15b81788425da53f70aef61f85b9ee8a71d48e2bc0e8e3ff1cb693bce391ea4
-  content_hash: sha256:172e22ebed363736d7fe243e3dc7b0ca1ee2ecfc5499d8437f330aa4d1f470ec
-- repo_url: anthropics/claude-plugins-official
-  name: claude-code-setup
-  host: github.com
-  resolved_commit: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-  resolved_ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-  version: 1.0.0
-  virtual_path: plugins/claude-code-setup
-  is_virtual: true
-  package_type: skill_bundle
-  deployed_files:
-  - .agents/skills/claude-automation-recommender
-  - .agents/skills/claude-automation-recommender/SKILL.md
-  - .agents/skills/claude-automation-recommender/references/hooks-patterns.md
-  - .agents/skills/claude-automation-recommender/references/mcp-servers.md
-  - .agents/skills/claude-automation-recommender/references/plugins-reference.md
-  - .agents/skills/claude-automation-recommender/references/skills-reference.md
-  - .agents/skills/claude-automation-recommender/references/subagent-templates.md
-  - .claude/skills/claude-automation-recommender
-  - .claude/skills/claude-automation-recommender/SKILL.md
-  - .claude/skills/claude-automation-recommender/references/hooks-patterns.md
-  - .claude/skills/claude-automation-recommender/references/mcp-servers.md
-  - .claude/skills/claude-automation-recommender/references/plugins-reference.md
-  - .claude/skills/claude-automation-recommender/references/skills-reference.md
-  - .claude/skills/claude-automation-recommender/references/subagent-templates.md
-  deployed_file_hashes:
-    .agents/skills/claude-automation-recommender/SKILL.md: sha256:441c57e26f0931b64dd085deaad9213c4e3efea27d916dd7443cd33c7e338227
-    .agents/skills/claude-automation-recommender/references/hooks-patterns.md: sha256:7b6e91b53aa0f1ed471fd66e177de17a88c1d6620ce95f5c8e8cdfebd20d939e
-    .agents/skills/claude-automation-recommender/references/mcp-servers.md: sha256:0f62bf84869d7e982e5dc15ebc789bb4734175b7d7b824051548c615ba79aa97
-    .agents/skills/claude-automation-recommender/references/plugins-reference.md: sha256:6570ff4c853253b3f15fb62e5d540cbf0ce3371936437791dde8fb53b7d444f3
-    .agents/skills/claude-automation-recommender/references/skills-reference.md: sha256:b4b57d953526a07146d5757ca5332034b9b4b4eeba839e4bb08111398c94556f
-    .agents/skills/claude-automation-recommender/references/subagent-templates.md: sha256:7f9a107d8619ff96fea07d5a17da31b269cec0ee343e5a9ff643c0d6cb4ba944
-    .claude/skills/claude-automation-recommender/SKILL.md: sha256:441c57e26f0931b64dd085deaad9213c4e3efea27d916dd7443cd33c7e338227
-    .claude/skills/claude-automation-recommender/references/hooks-patterns.md: sha256:7b6e91b53aa0f1ed471fd66e177de17a88c1d6620ce95f5c8e8cdfebd20d939e
-    .claude/skills/claude-automation-recommender/references/mcp-servers.md: sha256:0f62bf84869d7e982e5dc15ebc789bb4734175b7d7b824051548c615ba79aa97
-    .claude/skills/claude-automation-recommender/references/plugins-reference.md: sha256:6570ff4c853253b3f15fb62e5d540cbf0ce3371936437791dde8fb53b7d444f3
-    .claude/skills/claude-automation-recommender/references/skills-reference.md: sha256:b4b57d953526a07146d5757ca5332034b9b4b4eeba839e4bb08111398c94556f
-    .claude/skills/claude-automation-recommender/references/subagent-templates.md: sha256:7f9a107d8619ff96fea07d5a17da31b269cec0ee343e5a9ff643c0d6cb4ba944
-  content_hash: sha256:0d5e04178f68e6b309317411227873ce7715086cd96f30281be1f2b2abd1ce79
-- repo_url: anthropics/claude-plugins-official
-  name: claude-md-management
-  host: github.com
-  resolved_commit: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-  resolved_ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-  version: 1.0.0
-  virtual_path: plugins/claude-md-management
-  is_virtual: true
-  package_type: skill_bundle
-  deployed_files:
-  - .agents/skills/claude-md-improver
-  - .agents/skills/claude-md-improver/SKILL.md
-  - .agents/skills/claude-md-improver/references/quality-criteria.md
-  - .agents/skills/claude-md-improver/references/templates.md
-  - .agents/skills/claude-md-improver/references/update-guidelines.md
-  - .claude/commands/revise-claude-md.md
-  - .claude/skills/claude-md-improver
-  - .claude/skills/claude-md-improver/SKILL.md
-  - .claude/skills/claude-md-improver/references/quality-criteria.md
-  - .claude/skills/claude-md-improver/references/templates.md
-  - .claude/skills/claude-md-improver/references/update-guidelines.md
-  deployed_file_hashes:
-    .agents/skills/claude-md-improver/SKILL.md: sha256:b06c7420be08ca1c7f6d75f7f4709fdb787624a2d363e2f8052216d8c780f85b
-    .agents/skills/claude-md-improver/references/quality-criteria.md: sha256:383def16b05dca948297dd1acb33f007cb1b1b2c368454d424c5634348a8bab1
-    .agents/skills/claude-md-improver/references/templates.md: sha256:de0aa3ac30120a0c77f9cd82738a75ed8326864f98feb89356a253f2deaf3ab0
-    .agents/skills/claude-md-improver/references/update-guidelines.md: sha256:02a158d6ca41a0ab702a67a213e92205f09c073cea53796633251bc62fd7ec55
-    .claude/commands/revise-claude-md.md: sha256:749dc2d70bd14cfad56b424e23205ae3cc81dca9378c869e3c895a78197cdd69
-    .claude/skills/claude-md-improver/SKILL.md: sha256:b06c7420be08ca1c7f6d75f7f4709fdb787624a2d363e2f8052216d8c780f85b
-    .claude/skills/claude-md-improver/references/quality-criteria.md: sha256:383def16b05dca948297dd1acb33f007cb1b1b2c368454d424c5634348a8bab1
-    .claude/skills/claude-md-improver/references/templates.md: sha256:de0aa3ac30120a0c77f9cd82738a75ed8326864f98feb89356a253f2deaf3ab0
-    .claude/skills/claude-md-improver/references/update-guidelines.md: sha256:02a158d6ca41a0ab702a67a213e92205f09c073cea53796633251bc62fd7ec55
-  content_hash: sha256:7fcdd91cd4c5ff063663a201eb570c2a7037d1ae047aaa518f176efc6a63632a
-- repo_url: anthropics/claude-plugins-official
-  name: code-modernization
-  host: github.com
-  resolved_commit: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-  resolved_ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-  version: '5744695'
-  virtual_path: plugins/code-modernization
-  is_virtual: true
-  package_type: apm_package
-  deployed_files:
-  - .claude/agents/architecture-critic.md
-  - .claude/agents/business-rules-extractor.md
-  - .claude/agents/legacy-analyst.md
-  - .claude/agents/scaffolder.md
-  - .claude/agents/security-auditor.md
-  - .claude/agents/test-engineer.md
-  - .claude/agents/version-delta-analyst.md
-  - .claude/commands/modernize-assess.md
-  - .claude/commands/modernize-brief.md
-  - .claude/commands/modernize-extract-rules.md
-  - .claude/commands/modernize-harden.md
-  - .claude/commands/modernize-map.md
-  - .claude/commands/modernize-preflight.md
-  - .claude/commands/modernize-reimagine.md
-  - .claude/commands/modernize-status.md
-  - .claude/commands/modernize-transform.md
-  - .claude/commands/modernize-uplift.md
-  - .codex/agents/architecture-critic.toml
-  - .codex/agents/business-rules-extractor.toml
-  - .codex/agents/legacy-analyst.toml
-  - .codex/agents/scaffolder.toml
-  - .codex/agents/security-auditor.toml
-  - .codex/agents/test-engineer.toml
-  - .codex/agents/version-delta-analyst.toml
-  deployed_file_hashes:
-    .claude/agents/architecture-critic.md: sha256:a1de2a6a3d5a208a5722dd3902dcb2488ff9a879a5494f34a170518126495065
-    .claude/agents/business-rules-extractor.md: sha256:aa718e013a378929adcd83a2c3efdc75266fbf69b3e31eebe085e617005d1491
-    .claude/agents/legacy-analyst.md: sha256:a0125d35744dc04482834b7f0354de7ed76f1ed02fb83f2dd4476c3f8a5d7892
-    .claude/agents/scaffolder.md: sha256:67686ebb1b7eb6884e7eef386cd03463582e3b8458fea54715ac7f85a242ad78
-    .claude/agents/security-auditor.md: sha256:0910739fa2df087ff5566ea1f34271f5fdd7569c16621ca14e01c1cca2c379d6
-    .claude/agents/test-engineer.md: sha256:2bb01314295aef845536e1677ef28a6dbfecb9375d95b8c1489b7c82dc8481c1
-    .claude/agents/version-delta-analyst.md: sha256:984c7cf4c74d93c1e138908cadf3fc1e8608cdf347cffd6a788fb2aaffa8e034
-    .claude/commands/modernize-assess.md: sha256:abff811bc729926ec88fba16f216060d512c3244699a8e91e1077a0556f7bd14
-    .claude/commands/modernize-brief.md: sha256:f851d43b76c9bcc81fd8fb04b419345cea6963738c9ea6933969aa44565c0325
-    .claude/commands/modernize-extract-rules.md: sha256:c61b6eaaebc3823f2c5fdb1a2c05c562a52b4f7d0ad6a1e8c8f42a22b9752b76
-    .claude/commands/modernize-harden.md: sha256:2d1b83ff429768e4997f1ddea47dc989520b886256330e6ff2877046d929320c
-    .claude/commands/modernize-map.md: sha256:7952d021c2379a41ddac02e5ab8177b8d9cdccb24f959bbd72f65fb2eba53c8e
-    .claude/commands/modernize-preflight.md: sha256:9d7f77b98e0ec3d1d295a6c75c08b36110996f4fd41aed13881ba319c79a564c
-    .claude/commands/modernize-reimagine.md: sha256:7b1c18bd5d4d06e0350a83eda23491e03db9e892742ef11aa947e13429d88679
-    .claude/commands/modernize-status.md: sha256:67a39b4a8b8e552ce95e13768a6a02a7e0a0b780a82800c987ae4d0f4f66543e
-    .claude/commands/modernize-transform.md: sha256:39d03f9d92066d0df27a15814b6ee5fd0f6c8fb11ec9cb5fefdc61e266502af0
-    .claude/commands/modernize-uplift.md: sha256:c300d193c841acb45245eac07953a324681587981aa0049871af5c36c3b28398
-    .codex/agents/architecture-critic.toml: sha256:82e853e84903ce0a95347be887b00c157d7443b4c2f9ec48aa9eeeac1737b4cb
-    .codex/agents/business-rules-extractor.toml: sha256:dc6f4df0b396f2d8aad2168c258cfbb53bd4a9cebb9dc86e5ae1de4a9613704e
-    .codex/agents/legacy-analyst.toml: sha256:34d37975650696a374e50dc31583e79bf121647d9324425514dd043946c6f66d
-    .codex/agents/scaffolder.toml: sha256:a10855f93092150c0fef4c0b6105a847722b6761a53bd2931a57daa4f22f23d7
-    .codex/agents/security-auditor.toml: sha256:3f6bd9a245d7d736c14fa30a9dc6e70047c4377862be4f61d98d95bc0dc89df7
-    .codex/agents/test-engineer.toml: sha256:f20ae30855868dabf8870a2ac56fc3aa25569fe3c3091e8decb0954dc5766d72
-    .codex/agents/version-delta-analyst.toml: sha256:975b59ad83d5e503a50f4ce573ec3676f80a37835959ae0e9112e970c072de07
-  content_hash: sha256:be48b4d5242835a01a032f1598300c28934788cf7f9258ed233369eeda5f0f44
 - repo_url: anthropics/claude-plugins-official
   name: code-review
   host: github.com
@@ -168,32 +16,6 @@ dependencies:
   deployed_file_hashes:
     .claude/commands/code-review.md: sha256:8520c75ee89a853b88a11822c50d96a9db8dae6f40776870240a82441f7451e0
   content_hash: sha256:50ef86d4ab3e7629a9bba91e79a17c563239fbf097650fbfea40d67f4e8c6afe
-- repo_url: anthropics/claude-plugins-official
-  name: feature-dev
-  host: github.com
-  resolved_commit: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-  resolved_ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-  version: '5744695'
-  virtual_path: plugins/feature-dev
-  is_virtual: true
-  package_type: apm_package
-  deployed_files:
-  - .claude/agents/code-architect.md
-  - .claude/agents/code-explorer.md
-  - .claude/agents/code-reviewer.md
-  - .claude/commands/feature-dev.md
-  - .codex/agents/code-architect.toml
-  - .codex/agents/code-explorer.toml
-  - .codex/agents/code-reviewer.toml
-  deployed_file_hashes:
-    .claude/agents/code-architect.md: sha256:c50fb08d59a4bbd19660860626a049e44cf1a2b0c1cf782e6c7a99ba7e71b0c3
-    .claude/agents/code-explorer.md: sha256:3b277703de7458988ec3b8021c716f79f642e174950ed332629310f68322029a
-    .claude/agents/code-reviewer.md: sha256:a7df173bf77a00da5584c6401a1061524fdbe477b6fef5dd496d4c7a9113c78c
-    .claude/commands/feature-dev.md: sha256:656a01ce40782ee849c444916362df0e4e4173afcd33313777fa86021d89994b
-    .codex/agents/code-architect.toml: sha256:adbd9094b97953ed001b3ceaa4664c46b58ef97478b495fb84bd24c8f619f1e4
-    .codex/agents/code-explorer.toml: sha256:b2f82af012a033ba946464e3195e85533f08fec04f3b2082ee8735ee7f5bdcb1
-    .codex/agents/code-reviewer.toml: sha256:65c86ee9608822619c44f9325cdb604ea7f68d161c11bcfab75f91cc4801c577
-  content_hash: sha256:edd6683fac4dc589afbded62059d5fe533bceafc25ca65c1430abaaaeec1a878
 - repo_url: anthropics/claude-plugins-official
   name: frontend-design
   host: github.com
@@ -216,20 +38,6 @@ dependencies:
     .claude/skills/frontend-design/LICENSE.txt: sha256:0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594
     .claude/skills/frontend-design/SKILL.md: sha256:1608ea77fbb6fc30d13a97d12cfa8ebf31358d40f0dd97beed24829d6b3f45dd
   content_hash: sha256:de72f358260d07457ae909ef9771b80fa32ab027ea3d1ebd28b0e51ef1b22a6a
-- repo_url: anthropics/claude-plugins-official
-  name: mcp-tunnels
-  host: github.com
-  resolved_commit: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-  resolved_ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-  version: '5744695'
-  virtual_path: plugins/mcp-tunnels
-  is_virtual: true
-  package_type: apm_package
-  deployed_files:
-  - .claude/commands/create-docker-mcp-tunnel.md
-  deployed_file_hashes:
-    .claude/commands/create-docker-mcp-tunnel.md: sha256:436054833b40e5729dc11a0585701bd7df507d96c391544c48932ab74fee88cc
-  content_hash: sha256:b28562f623c991328cb077470155c91c04d6011fe9e0c26366a6c17d6c69f1f2
 - repo_url: anthropics/claude-plugins-official
   name: playground
   host: github.com
@@ -324,6 +132,60 @@ dependencies:
     .claude/skills/session-report/analyze-sessions.mjs: sha256:7e660e93b4089e9262c822f36f7233f55b77d2d6d7e19dd664596cd90c6331ea
     .claude/skills/session-report/template.html: sha256:b2981488f8e9eeadb305330e8f6ddf795b0360d756a7f1f175f8320811202fc3
   content_hash: sha256:4c0724cd997c628a9cb2ef09101e78b44a2d58ee22d35f85b1445a37162b8311
+- repo_url: anthropics/knowledge-work-plugins
+  name: deploy-checklist
+  host: github.com
+  resolved_commit: e050c2ec856373787143d7057663a6ebd1277df3
+  resolved_ref: e050c2ec856373787143d7057663a6ebd1277df3
+  version: unknown
+  virtual_path: engineering/skills/deploy-checklist
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/deploy-checklist
+  - .agents/skills/deploy-checklist/SKILL.md
+  - .claude/skills/deploy-checklist
+  - .claude/skills/deploy-checklist/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/deploy-checklist/SKILL.md: sha256:85ca53dc471970e3e12c36ec814ebf5f6cb9419016c55adb05ff34789bae3be9
+    .claude/skills/deploy-checklist/SKILL.md: sha256:85ca53dc471970e3e12c36ec814ebf5f6cb9419016c55adb05ff34789bae3be9
+  content_hash: sha256:7d123150a37b0010cf7158de6ddd64863ec64e7af08ed4e58a54decca9911006
+- repo_url: anthropics/knowledge-work-plugins
+  name: system-design
+  host: github.com
+  resolved_commit: e050c2ec856373787143d7057663a6ebd1277df3
+  resolved_ref: e050c2ec856373787143d7057663a6ebd1277df3
+  version: unknown
+  virtual_path: engineering/skills/system-design
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/system-design
+  - .agents/skills/system-design/SKILL.md
+  - .claude/skills/system-design
+  - .claude/skills/system-design/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/system-design/SKILL.md: sha256:8f28eca99f2208872fc2483fcc93326b628f4f73116e91309a95e05da86a0ab5
+    .claude/skills/system-design/SKILL.md: sha256:8f28eca99f2208872fc2483fcc93326b628f4f73116e91309a95e05da86a0ab5
+  content_hash: sha256:5915b5f79ae74f20473c4922075b091f290374d26b26c927af9c767102424ac4
+- repo_url: anthropics/knowledge-work-plugins
+  name: testing-strategy
+  host: github.com
+  resolved_commit: e050c2ec856373787143d7057663a6ebd1277df3
+  resolved_ref: e050c2ec856373787143d7057663a6ebd1277df3
+  version: unknown
+  virtual_path: engineering/skills/testing-strategy
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/testing-strategy
+  - .agents/skills/testing-strategy/SKILL.md
+  - .claude/skills/testing-strategy
+  - .claude/skills/testing-strategy/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/testing-strategy/SKILL.md: sha256:5c5e95830754bbdd838213fa05fc8f07523f591fd558fd3c86031ffd479f7a9e
+    .claude/skills/testing-strategy/SKILL.md: sha256:5c5e95830754bbdd838213fa05fc8f07523f591fd558fd3c86031ffd479f7a9e
+  content_hash: sha256:2fe64e97a596e862cd946bb8cddbbf4e9f1e1f21ca817f586111a25af474d0f8
 - repo_url: cursor/plugins
   name: pstack
   host: github.com
@@ -1114,7 +976,7 @@ dependencies:
     .agents/skills/capturing-screens/SKILL.md: sha256:ef0dfcbab7338aaaea751f127ba3dd066420f72cc0b8f7a2fa526d466be662a8
     .agents/skills/checking-library-updates/SKILL.md: sha256:c4c8179b9daa04482d78fa1e22bdb9cb32806a4285b6934d1baf4a7b4cce18d6
     .agents/skills/checking-library-updates/schemas/verdict.json: sha256:a06ec4a04da88a2025ccd8fc9af58c2a928946f2628d4c33274e04a3b58057cf
-    .agents/skills/checking-review-findings/SKILL.md: sha256:7d2226d55beb2e8c5a1d801b272e273a03d2113a0f2416bb17560613d37d5c8e
+    .agents/skills/checking-review-findings/SKILL.md: sha256:b6997e6aafc0706fcc59274c9693826713fac357fb5f53b7456e593589173468
     .agents/skills/committing-git-changes/SKILL.md: sha256:7d46357efa4cbeae845bd615094bd79d4e78fff03e6f84d26d370367034ccb4f
     .agents/skills/committing-git-changes/references/comments.md: sha256:52af0034f8e83c1b18139c0b497d61b8e32034c8b9777d20adfff3c27043285c
     .agents/skills/committing-git-changes/references/message.md: sha256:5f030360c85d9fa367b3d06084472172c6ef31780d19687870a27b2a8ac3a0e0
@@ -1122,7 +984,7 @@ dependencies:
     .agents/skills/committing-git-changes/scripts/check_gitmoji.py: sha256:1fce5b77808742433de08d123fe745a383bc9b10aad43b1decad53be31607a92
     .agents/skills/creating-git-branches/SKILL.md: sha256:4e7635a41f85b4a78a172fc03bae1bb66384151dfa7cd4c4dd1ad97fd7ee105d
     .agents/skills/creating-pull-requests/SKILL.md: sha256:1b79c2f560dab09a7b147cc707f3c2201f60460c1b0841a08480a09638f3bc62
-    .agents/skills/dispatching-tasks/SKILL.md: sha256:c530dd729e49e16e0faa5ab747ad3a628433567f054c8f7838b54ef8e5275209
+    .agents/skills/dispatching-tasks/SKILL.md: sha256:ecab2a7fc5edb9f0a67a70a3aae660fa95132d3cf2b90c4b0bd0a1340b9cf711
     .agents/skills/following-repo-conventions/SKILL.md: sha256:1ff7ae645a9c87d0cea105bdfe416bb5145a06147a1a0ec545c3a6fc3eae8f85
     .agents/skills/handover/SKILL.md: sha256:c031393648789c6c176a8ef53ba15866938eb2b0ede709e91b4b79ac690fe849
     .agents/skills/herdr-coding/SKILL.md: sha256:9329dcbc1caab174ce3cdfb791aeef4074d95a605a23e35d9c2da9838b2c401e
@@ -1140,17 +1002,17 @@ dependencies:
     .agents/skills/resolving-pr-reviews/scripts/fetch_pr_comments.rb: sha256:10ea01b24972edf58d28183d4a072fe2fc7492213e4c1d6fd191761870162d12
     .agents/skills/reviewing-git-diffs/SKILL.md: sha256:23b7267a3cf376f958c1090487dc3cd50307a69a9fc6ca67cc61e2129c4485fc
     .agents/skills/reviewing-git-diffs/scripts/snapshot.sh: sha256:53af0f4be563a48423831dc37366d0019c08ee794f96b6933d376741abecf218
-    .agents/skills/reviewing-pull-requests/SKILL.md: sha256:491ac7c641543b181389238b46a653801556a37bf98082af884ba67cb1c18191
+    .agents/skills/reviewing-pull-requests/SKILL.md: sha256:bd2ea74d12f57b3cb69409b5388110053c81c22946a7cddd601eb39f0f59ade2
     .agents/skills/reviewing-pull-requests/references/guidelines/backend.md: sha256:8623e13a1ec2ecef86cdd024e85cccf0b1d006b413075bb288d2a58e5224baa0
     .agents/skills/reviewing-pull-requests/references/guidelines/common.md: sha256:61176736594fa5c3678698220edbeef456081b3bf85f4dbbf362d5627e913a4f
-    .agents/skills/reviewing-pull-requests/references/input.md: sha256:298073bea24a1cfccc435c509d0e2e4bce28c13a2770bae394f7753a500544b8
+    .agents/skills/reviewing-pull-requests/references/input.md: sha256:1b99752a1d9da2b1dd5cc9ecab58f6d25130937b3a45c564d90aa1c7151c7890
     .agents/skills/reviewing-pull-requests/references/pr-content.md: sha256:b29cefc7f62337a3c6d2872f5080d2dcf6154a4638ead8009084640bfced5726
-    .agents/skills/reviewing-pull-requests/references/viewpoints.md: sha256:cad8a11b68e1829c7f5d8b1f7c49eb037d2584b9132ce6546cf9c77a887a65d2
-    .agents/skills/reviewing-pull-requests/schemas/findings.json: sha256:0df496514d6e463863472811b6c0a0b37e05c87d03eb55585a0c79d73e34c09f
+    .agents/skills/reviewing-pull-requests/references/viewpoints.md: sha256:96221638b656b15af3912f7a9a3432d6aae7f95c5eb62f7dc1d84adad0c3a4bf
+    .agents/skills/reviewing-pull-requests/schemas/findings.json: sha256:323c799e5d25767885e01a89a930f17a2be66b8a4775368ba1473d78ab471684
     .agents/skills/reviewing-writing/SKILL.md: sha256:af8f9ab52b192a455244729ef416c9f65a40ffe0589eee0f03764be87e305ef6
     .agents/skills/reviewing-writing/references/diagrams.md: sha256:abde99251c333a6700f2c2e908737e0562b2e14ab6c9eee5b97669cdea8f04da
     .agents/skills/reviewing-writing/textlintrc.json: sha256:2005a62818e93015b12b4095c211fc0628e15c3e7f778b37133197f9db5285bf
-    .agents/skills/running-dev-flow/SKILL.md: sha256:feee7624506752ba9978c0c31a6531d8821f382e26121d42e34a7f9a363cdcc6
+    .agents/skills/running-dev-flow/SKILL.md: sha256:2cc72345ea8ad1eb7ee5c9f6467eefcdf20f2189fd760b0c372c3ffba7b4a1f3
     .agents/skills/stacking-pull-requests/SKILL.md: sha256:2762e5d388391df894c9ae63bf69799e80d160c67d9bca99e5d304181129df14
     .agents/skills/tuning-japanese-prompts/SKILL.md: sha256:d45986fa5484810580ab457e587444b53329e0ff29e2fd8704e084efea5ffe1b
     .agents/skills/uploading-pr-media/SKILL.md: sha256:e5461f312f407c70ac3d823cb706eacb0d893bcc376e13152027c670c8d517b5
@@ -1158,7 +1020,7 @@ dependencies:
     .claude/skills/capturing-screens/SKILL.md: sha256:ef0dfcbab7338aaaea751f127ba3dd066420f72cc0b8f7a2fa526d466be662a8
     .claude/skills/checking-library-updates/SKILL.md: sha256:c4c8179b9daa04482d78fa1e22bdb9cb32806a4285b6934d1baf4a7b4cce18d6
     .claude/skills/checking-library-updates/schemas/verdict.json: sha256:a06ec4a04da88a2025ccd8fc9af58c2a928946f2628d4c33274e04a3b58057cf
-    .claude/skills/checking-review-findings/SKILL.md: sha256:7d2226d55beb2e8c5a1d801b272e273a03d2113a0f2416bb17560613d37d5c8e
+    .claude/skills/checking-review-findings/SKILL.md: sha256:b6997e6aafc0706fcc59274c9693826713fac357fb5f53b7456e593589173468
     .claude/skills/committing-git-changes/SKILL.md: sha256:7d46357efa4cbeae845bd615094bd79d4e78fff03e6f84d26d370367034ccb4f
     .claude/skills/committing-git-changes/references/comments.md: sha256:52af0034f8e83c1b18139c0b497d61b8e32034c8b9777d20adfff3c27043285c
     .claude/skills/committing-git-changes/references/message.md: sha256:5f030360c85d9fa367b3d06084472172c6ef31780d19687870a27b2a8ac3a0e0
@@ -1166,7 +1028,7 @@ dependencies:
     .claude/skills/committing-git-changes/scripts/check_gitmoji.py: sha256:1fce5b77808742433de08d123fe745a383bc9b10aad43b1decad53be31607a92
     .claude/skills/creating-git-branches/SKILL.md: sha256:4e7635a41f85b4a78a172fc03bae1bb66384151dfa7cd4c4dd1ad97fd7ee105d
     .claude/skills/creating-pull-requests/SKILL.md: sha256:1b79c2f560dab09a7b147cc707f3c2201f60460c1b0841a08480a09638f3bc62
-    .claude/skills/dispatching-tasks/SKILL.md: sha256:c530dd729e49e16e0faa5ab747ad3a628433567f054c8f7838b54ef8e5275209
+    .claude/skills/dispatching-tasks/SKILL.md: sha256:ecab2a7fc5edb9f0a67a70a3aae660fa95132d3cf2b90c4b0bd0a1340b9cf711
     .claude/skills/following-repo-conventions/SKILL.md: sha256:1ff7ae645a9c87d0cea105bdfe416bb5145a06147a1a0ec545c3a6fc3eae8f85
     .claude/skills/handover/SKILL.md: sha256:c031393648789c6c176a8ef53ba15866938eb2b0ede709e91b4b79ac690fe849
     .claude/skills/herdr-coding/SKILL.md: sha256:9329dcbc1caab174ce3cdfb791aeef4074d95a605a23e35d9c2da9838b2c401e
@@ -1184,17 +1046,17 @@ dependencies:
     .claude/skills/resolving-pr-reviews/scripts/fetch_pr_comments.rb: sha256:10ea01b24972edf58d28183d4a072fe2fc7492213e4c1d6fd191761870162d12
     .claude/skills/reviewing-git-diffs/SKILL.md: sha256:23b7267a3cf376f958c1090487dc3cd50307a69a9fc6ca67cc61e2129c4485fc
     .claude/skills/reviewing-git-diffs/scripts/snapshot.sh: sha256:53af0f4be563a48423831dc37366d0019c08ee794f96b6933d376741abecf218
-    .claude/skills/reviewing-pull-requests/SKILL.md: sha256:491ac7c641543b181389238b46a653801556a37bf98082af884ba67cb1c18191
+    .claude/skills/reviewing-pull-requests/SKILL.md: sha256:bd2ea74d12f57b3cb69409b5388110053c81c22946a7cddd601eb39f0f59ade2
     .claude/skills/reviewing-pull-requests/references/guidelines/backend.md: sha256:8623e13a1ec2ecef86cdd024e85cccf0b1d006b413075bb288d2a58e5224baa0
     .claude/skills/reviewing-pull-requests/references/guidelines/common.md: sha256:61176736594fa5c3678698220edbeef456081b3bf85f4dbbf362d5627e913a4f
-    .claude/skills/reviewing-pull-requests/references/input.md: sha256:298073bea24a1cfccc435c509d0e2e4bce28c13a2770bae394f7753a500544b8
+    .claude/skills/reviewing-pull-requests/references/input.md: sha256:1b99752a1d9da2b1dd5cc9ecab58f6d25130937b3a45c564d90aa1c7151c7890
     .claude/skills/reviewing-pull-requests/references/pr-content.md: sha256:b29cefc7f62337a3c6d2872f5080d2dcf6154a4638ead8009084640bfced5726
-    .claude/skills/reviewing-pull-requests/references/viewpoints.md: sha256:cad8a11b68e1829c7f5d8b1f7c49eb037d2584b9132ce6546cf9c77a887a65d2
-    .claude/skills/reviewing-pull-requests/schemas/findings.json: sha256:0df496514d6e463863472811b6c0a0b37e05c87d03eb55585a0c79d73e34c09f
+    .claude/skills/reviewing-pull-requests/references/viewpoints.md: sha256:96221638b656b15af3912f7a9a3432d6aae7f95c5eb62f7dc1d84adad0c3a4bf
+    .claude/skills/reviewing-pull-requests/schemas/findings.json: sha256:323c799e5d25767885e01a89a930f17a2be66b8a4775368ba1473d78ab471684
     .claude/skills/reviewing-writing/SKILL.md: sha256:af8f9ab52b192a455244729ef416c9f65a40ffe0589eee0f03764be87e305ef6
     .claude/skills/reviewing-writing/references/diagrams.md: sha256:abde99251c333a6700f2c2e908737e0562b2e14ab6c9eee5b97669cdea8f04da
     .claude/skills/reviewing-writing/textlintrc.json: sha256:2005a62818e93015b12b4095c211fc0628e15c3e7f778b37133197f9db5285bf
-    .claude/skills/running-dev-flow/SKILL.md: sha256:feee7624506752ba9978c0c31a6531d8821f382e26121d42e34a7f9a363cdcc6
+    .claude/skills/running-dev-flow/SKILL.md: sha256:2cc72345ea8ad1eb7ee5c9f6467eefcdf20f2189fd760b0c372c3ffba7b4a1f3
     .claude/skills/stacking-pull-requests/SKILL.md: sha256:2762e5d388391df894c9ae63bf69799e80d160c67d9bca99e5d304181129df14
     .claude/skills/tuning-japanese-prompts/SKILL.md: sha256:d45986fa5484810580ab457e587444b53329e0ff29e2fd8704e084efea5ffe1b
     .claude/skills/uploading-pr-media/SKILL.md: sha256:e5461f312f407c70ac3d823cb706eacb0d893bcc376e13152027c670c8d517b5
@@ -1376,78 +1238,6 @@ dependencies:
 deployments:
 - kind: project-relative
   target: claude
-  value: .claude/agents/agent-sdk-verifier-py.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/agent-sdk-dev
-  active_owner: anthropics/claude-plugins-official/plugins/agent-sdk-dev
-  content_hash: sha256:a72c50412f4f9940932cac0f3ca61d6ced7354b8ac8892e3f1507bcd2957006e
-- kind: project-relative
-  target: claude
-  value: .claude/agents/agent-sdk-verifier-ts.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/agent-sdk-dev
-  active_owner: anthropics/claude-plugins-official/plugins/agent-sdk-dev
-  content_hash: sha256:68fe98341656fa242a5de9272165481d62b5670b2fff294961bc45a5c4ee57ea
-- kind: project-relative
-  target: claude
-  value: .claude/agents/architecture-critic.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/code-modernization
-  active_owner: anthropics/claude-plugins-official/plugins/code-modernization
-  content_hash: sha256:a1de2a6a3d5a208a5722dd3902dcb2488ff9a879a5494f34a170518126495065
-- kind: project-relative
-  target: claude
-  value: .claude/agents/business-rules-extractor.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/code-modernization
-  active_owner: anthropics/claude-plugins-official/plugins/code-modernization
-  content_hash: sha256:aa718e013a378929adcd83a2c3efdc75266fbf69b3e31eebe085e617005d1491
-- kind: project-relative
-  target: claude
-  value: .claude/agents/code-architect.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/feature-dev
-  active_owner: anthropics/claude-plugins-official/plugins/feature-dev
-  content_hash: sha256:c50fb08d59a4bbd19660860626a049e44cf1a2b0c1cf782e6c7a99ba7e71b0c3
-- kind: project-relative
-  target: claude
-  value: .claude/agents/code-explorer.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/feature-dev
-  active_owner: anthropics/claude-plugins-official/plugins/feature-dev
-  content_hash: sha256:3b277703de7458988ec3b8021c716f79f642e174950ed332629310f68322029a
-- kind: project-relative
-  target: claude
-  value: .claude/agents/code-reviewer.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/feature-dev
-  active_owner: anthropics/claude-plugins-official/plugins/feature-dev
-  content_hash: sha256:a7df173bf77a00da5584c6401a1061524fdbe477b6fef5dd496d4c7a9113c78c
-- kind: project-relative
-  target: claude
-  value: .claude/agents/legacy-analyst.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/code-modernization
-  active_owner: anthropics/claude-plugins-official/plugins/code-modernization
-  content_hash: sha256:a0125d35744dc04482834b7f0354de7ed76f1ed02fb83f2dd4476c3f8a5d7892
-- kind: project-relative
-  target: claude
   value: .claude/agents/poteto-agent.md
   runtime: null
   scope: project
@@ -1457,42 +1247,6 @@ deployments:
   content_hash: sha256:d9c01a5222acf8310ea8f5ee5034a5aa07c9c559d244cc0e76f45b7769767c2f
 - kind: project-relative
   target: claude
-  value: .claude/agents/scaffolder.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/code-modernization
-  active_owner: anthropics/claude-plugins-official/plugins/code-modernization
-  content_hash: sha256:67686ebb1b7eb6884e7eef386cd03463582e3b8458fea54715ac7f85a242ad78
-- kind: project-relative
-  target: claude
-  value: .claude/agents/security-auditor.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/code-modernization
-  active_owner: anthropics/claude-plugins-official/plugins/code-modernization
-  content_hash: sha256:0910739fa2df087ff5566ea1f34271f5fdd7569c16621ca14e01c1cca2c379d6
-- kind: project-relative
-  target: claude
-  value: .claude/agents/test-engineer.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/code-modernization
-  active_owner: anthropics/claude-plugins-official/plugins/code-modernization
-  content_hash: sha256:2bb01314295aef845536e1677ef28a6dbfecb9375d95b8c1489b7c82dc8481c1
-- kind: project-relative
-  target: claude
-  value: .claude/agents/version-delta-analyst.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/code-modernization
-  active_owner: anthropics/claude-plugins-official/plugins/code-modernization
-  content_hash: sha256:984c7cf4c74d93c1e138908cadf3fc1e8608cdf347cffd6a788fb2aaffa8e034
-- kind: project-relative
-  target: claude
   value: .claude/commands/code-review.md
   runtime: null
   scope: project
@@ -1500,132 +1254,6 @@ deployments:
   - anthropics/claude-plugins-official/plugins/code-review
   active_owner: anthropics/claude-plugins-official/plugins/code-review
   content_hash: sha256:8520c75ee89a853b88a11822c50d96a9db8dae6f40776870240a82441f7451e0
-- kind: project-relative
-  target: claude
-  value: .claude/commands/create-docker-mcp-tunnel.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/mcp-tunnels
-  active_owner: anthropics/claude-plugins-official/plugins/mcp-tunnels
-  content_hash: sha256:436054833b40e5729dc11a0585701bd7df507d96c391544c48932ab74fee88cc
-- kind: project-relative
-  target: claude
-  value: .claude/commands/feature-dev.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/feature-dev
-  active_owner: anthropics/claude-plugins-official/plugins/feature-dev
-  content_hash: sha256:656a01ce40782ee849c444916362df0e4e4173afcd33313777fa86021d89994b
-- kind: project-relative
-  target: claude
-  value: .claude/commands/modernize-assess.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/code-modernization
-  active_owner: anthropics/claude-plugins-official/plugins/code-modernization
-  content_hash: sha256:abff811bc729926ec88fba16f216060d512c3244699a8e91e1077a0556f7bd14
-- kind: project-relative
-  target: claude
-  value: .claude/commands/modernize-brief.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/code-modernization
-  active_owner: anthropics/claude-plugins-official/plugins/code-modernization
-  content_hash: sha256:f851d43b76c9bcc81fd8fb04b419345cea6963738c9ea6933969aa44565c0325
-- kind: project-relative
-  target: claude
-  value: .claude/commands/modernize-extract-rules.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/code-modernization
-  active_owner: anthropics/claude-plugins-official/plugins/code-modernization
-  content_hash: sha256:c61b6eaaebc3823f2c5fdb1a2c05c562a52b4f7d0ad6a1e8c8f42a22b9752b76
-- kind: project-relative
-  target: claude
-  value: .claude/commands/modernize-harden.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/code-modernization
-  active_owner: anthropics/claude-plugins-official/plugins/code-modernization
-  content_hash: sha256:2d1b83ff429768e4997f1ddea47dc989520b886256330e6ff2877046d929320c
-- kind: project-relative
-  target: claude
-  value: .claude/commands/modernize-map.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/code-modernization
-  active_owner: anthropics/claude-plugins-official/plugins/code-modernization
-  content_hash: sha256:7952d021c2379a41ddac02e5ab8177b8d9cdccb24f959bbd72f65fb2eba53c8e
-- kind: project-relative
-  target: claude
-  value: .claude/commands/modernize-preflight.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/code-modernization
-  active_owner: anthropics/claude-plugins-official/plugins/code-modernization
-  content_hash: sha256:9d7f77b98e0ec3d1d295a6c75c08b36110996f4fd41aed13881ba319c79a564c
-- kind: project-relative
-  target: claude
-  value: .claude/commands/modernize-reimagine.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/code-modernization
-  active_owner: anthropics/claude-plugins-official/plugins/code-modernization
-  content_hash: sha256:7b1c18bd5d4d06e0350a83eda23491e03db9e892742ef11aa947e13429d88679
-- kind: project-relative
-  target: claude
-  value: .claude/commands/modernize-status.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/code-modernization
-  active_owner: anthropics/claude-plugins-official/plugins/code-modernization
-  content_hash: sha256:67a39b4a8b8e552ce95e13768a6a02a7e0a0b780a82800c987ae4d0f4f66543e
-- kind: project-relative
-  target: claude
-  value: .claude/commands/modernize-transform.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/code-modernization
-  active_owner: anthropics/claude-plugins-official/plugins/code-modernization
-  content_hash: sha256:39d03f9d92066d0df27a15814b6ee5fd0f6c8fb11ec9cb5fefdc61e266502af0
-- kind: project-relative
-  target: claude
-  value: .claude/commands/modernize-uplift.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/code-modernization
-  active_owner: anthropics/claude-plugins-official/plugins/code-modernization
-  content_hash: sha256:c300d193c841acb45245eac07953a324681587981aa0049871af5c36c3b28398
-- kind: project-relative
-  target: claude
-  value: .claude/commands/new-sdk-app.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/agent-sdk-dev
-  active_owner: anthropics/claude-plugins-official/plugins/agent-sdk-dev
-  content_hash: sha256:d10bb91b1e71b43e34719a29bd8ce1cd9d3a340439d0be9abaec26540b9e0c12
-- kind: project-relative
-  target: claude
-  value: .claude/commands/revise-claude-md.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/claude-md-management
-  active_owner: anthropics/claude-plugins-official/plugins/claude-md-management
-  content_hash: sha256:749dc2d70bd14cfad56b424e23205ae3cc81dca9378c869e3c895a78197cdd69
 - kind: project-relative
   target: claude
   value: .claude/skills/capturing-screens
@@ -1688,115 +1316,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:7d2226d55beb2e8c5a1d801b272e273a03d2113a0f2416bb17560613d37d5c8e
-- kind: project-relative
-  target: claude
-  value: .claude/skills/claude-automation-recommender
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/claude-code-setup
-  active_owner: anthropics/claude-plugins-official/plugins/claude-code-setup
-  content_hash: null
-- kind: project-relative
-  target: claude
-  value: .claude/skills/claude-automation-recommender/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/claude-code-setup
-  active_owner: anthropics/claude-plugins-official/plugins/claude-code-setup
-  content_hash: sha256:441c57e26f0931b64dd085deaad9213c4e3efea27d916dd7443cd33c7e338227
-- kind: project-relative
-  target: claude
-  value: .claude/skills/claude-automation-recommender/references/hooks-patterns.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/claude-code-setup
-  active_owner: anthropics/claude-plugins-official/plugins/claude-code-setup
-  content_hash: sha256:7b6e91b53aa0f1ed471fd66e177de17a88c1d6620ce95f5c8e8cdfebd20d939e
-- kind: project-relative
-  target: claude
-  value: .claude/skills/claude-automation-recommender/references/mcp-servers.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/claude-code-setup
-  active_owner: anthropics/claude-plugins-official/plugins/claude-code-setup
-  content_hash: sha256:0f62bf84869d7e982e5dc15ebc789bb4734175b7d7b824051548c615ba79aa97
-- kind: project-relative
-  target: claude
-  value: .claude/skills/claude-automation-recommender/references/plugins-reference.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/claude-code-setup
-  active_owner: anthropics/claude-plugins-official/plugins/claude-code-setup
-  content_hash: sha256:6570ff4c853253b3f15fb62e5d540cbf0ce3371936437791dde8fb53b7d444f3
-- kind: project-relative
-  target: claude
-  value: .claude/skills/claude-automation-recommender/references/skills-reference.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/claude-code-setup
-  active_owner: anthropics/claude-plugins-official/plugins/claude-code-setup
-  content_hash: sha256:b4b57d953526a07146d5757ca5332034b9b4b4eeba839e4bb08111398c94556f
-- kind: project-relative
-  target: claude
-  value: .claude/skills/claude-automation-recommender/references/subagent-templates.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/claude-code-setup
-  active_owner: anthropics/claude-plugins-official/plugins/claude-code-setup
-  content_hash: sha256:7f9a107d8619ff96fea07d5a17da31b269cec0ee343e5a9ff643c0d6cb4ba944
-- kind: project-relative
-  target: claude
-  value: .claude/skills/claude-md-improver
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/claude-md-management
-  active_owner: anthropics/claude-plugins-official/plugins/claude-md-management
-  content_hash: null
-- kind: project-relative
-  target: claude
-  value: .claude/skills/claude-md-improver/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/claude-md-management
-  active_owner: anthropics/claude-plugins-official/plugins/claude-md-management
-  content_hash: sha256:b06c7420be08ca1c7f6d75f7f4709fdb787624a2d363e2f8052216d8c780f85b
-- kind: project-relative
-  target: claude
-  value: .claude/skills/claude-md-improver/references/quality-criteria.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/claude-md-management
-  active_owner: anthropics/claude-plugins-official/plugins/claude-md-management
-  content_hash: sha256:383def16b05dca948297dd1acb33f007cb1b1b2c368454d424c5634348a8bab1
-- kind: project-relative
-  target: claude
-  value: .claude/skills/claude-md-improver/references/templates.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/claude-md-management
-  active_owner: anthropics/claude-plugins-official/plugins/claude-md-management
-  content_hash: sha256:de0aa3ac30120a0c77f9cd82738a75ed8326864f98feb89356a253f2deaf3ab0
-- kind: project-relative
-  target: claude
-  value: .claude/skills/claude-md-improver/references/update-guidelines.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/claude-md-management
-  active_owner: anthropics/claude-plugins-official/plugins/claude-md-management
-  content_hash: sha256:02a158d6ca41a0ab702a67a213e92205f09c073cea53796633251bc62fd7ec55
+  content_hash: sha256:b6997e6aafc0706fcc59274c9693826713fac357fb5f53b7456e593589173468
 - kind: project-relative
   target: claude
   value: .claude/skills/committing-git-changes
@@ -1889,6 +1409,24 @@ deployments:
   content_hash: sha256:1b79c2f560dab09a7b147cc707f3c2201f60460c1b0841a08480a09638f3bc62
 - kind: project-relative
   target: claude
+  value: .claude/skills/deploy-checklist
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/knowledge-work-plugins/engineering/skills/deploy-checklist
+  active_owner: anthropics/knowledge-work-plugins/engineering/skills/deploy-checklist
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/deploy-checklist/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/knowledge-work-plugins/engineering/skills/deploy-checklist
+  active_owner: anthropics/knowledge-work-plugins/engineering/skills/deploy-checklist
+  content_hash: sha256:85ca53dc471970e3e12c36ec814ebf5f6cb9419016c55adb05ff34789bae3be9
+- kind: project-relative
+  target: claude
   value: .claude/skills/dispatching-tasks
   runtime: null
   scope: project
@@ -1904,7 +1442,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:c530dd729e49e16e0faa5ab747ad3a628433567f054c8f7838b54ef8e5275209
+  content_hash: sha256:ecab2a7fc5edb9f0a67a70a3aae660fa95132d3cf2b90c4b0bd0a1340b9cf711
 - kind: project-relative
   target: claude
   value: .claude/skills/domain-modeling
@@ -3884,7 +3422,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:491ac7c641543b181389238b46a653801556a37bf98082af884ba67cb1c18191
+  content_hash: sha256:bd2ea74d12f57b3cb69409b5388110053c81c22946a7cddd601eb39f0f59ade2
 - kind: project-relative
   target: claude
   value: .claude/skills/reviewing-pull-requests/references/guidelines/backend.md
@@ -3911,7 +3449,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:298073bea24a1cfccc435c509d0e2e4bce28c13a2770bae394f7753a500544b8
+  content_hash: sha256:1b99752a1d9da2b1dd5cc9ecab58f6d25130937b3a45c564d90aa1c7151c7890
 - kind: project-relative
   target: claude
   value: .claude/skills/reviewing-pull-requests/references/pr-content.md
@@ -3929,7 +3467,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:cad8a11b68e1829c7f5d8b1f7c49eb037d2584b9132ce6546cf9c77a887a65d2
+  content_hash: sha256:96221638b656b15af3912f7a9a3432d6aae7f95c5eb62f7dc1d84adad0c3a4bf
 - kind: project-relative
   target: claude
   value: .claude/skills/reviewing-pull-requests/schemas/findings.json
@@ -3938,7 +3476,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:0df496514d6e463863472811b6c0a0b37e05c87d03eb55585a0c79d73e34c09f
+  content_hash: sha256:323c799e5d25767885e01a89a930f17a2be66b8a4775368ba1473d78ab471684
 - kind: project-relative
   target: claude
   value: .claude/skills/reviewing-writing
@@ -3992,7 +3530,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:feee7624506752ba9978c0c31a6531d8821f382e26121d42e34a7f9a363cdcc6
+  content_hash: sha256:2cc72345ea8ad1eb7ee5c9f6467eefcdf20f2189fd760b0c372c3ffba7b4a1f3
 - kind: project-relative
   target: claude
   value: .claude/skills/session-report
@@ -4047,6 +3585,42 @@ deployments:
   - icchankun/skills
   active_owner: icchankun/skills
   content_hash: sha256:2762e5d388391df894c9ae63bf69799e80d160c67d9bca99e5d304181129df14
+- kind: project-relative
+  target: claude
+  value: .claude/skills/system-design
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/knowledge-work-plugins/engineering/skills/system-design
+  active_owner: anthropics/knowledge-work-plugins/engineering/skills/system-design
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/system-design/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/knowledge-work-plugins/engineering/skills/system-design
+  active_owner: anthropics/knowledge-work-plugins/engineering/skills/system-design
+  content_hash: sha256:8f28eca99f2208872fc2483fcc93326b628f4f73116e91309a95e05da86a0ab5
+- kind: project-relative
+  target: claude
+  value: .claude/skills/testing-strategy
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/knowledge-work-plugins/engineering/skills/testing-strategy
+  active_owner: anthropics/knowledge-work-plugins/engineering/skills/testing-strategy
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/testing-strategy/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/knowledge-work-plugins/engineering/skills/testing-strategy
+  active_owner: anthropics/knowledge-work-plugins/engineering/skills/testing-strategy
+  content_hash: sha256:5c5e95830754bbdd838213fa05fc8f07523f591fd558fd3c86031ffd479f7a9e
 - kind: project-relative
   target: claude
   value: .claude/skills/to-questionnaire
@@ -4217,115 +3791,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:7d2226d55beb2e8c5a1d801b272e273a03d2113a0f2416bb17560613d37d5c8e
-- kind: project-relative
-  target: codex
-  value: .agents/skills/claude-automation-recommender
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/claude-code-setup
-  active_owner: anthropics/claude-plugins-official/plugins/claude-code-setup
-  content_hash: null
-- kind: project-relative
-  target: codex
-  value: .agents/skills/claude-automation-recommender/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/claude-code-setup
-  active_owner: anthropics/claude-plugins-official/plugins/claude-code-setup
-  content_hash: sha256:441c57e26f0931b64dd085deaad9213c4e3efea27d916dd7443cd33c7e338227
-- kind: project-relative
-  target: codex
-  value: .agents/skills/claude-automation-recommender/references/hooks-patterns.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/claude-code-setup
-  active_owner: anthropics/claude-plugins-official/plugins/claude-code-setup
-  content_hash: sha256:7b6e91b53aa0f1ed471fd66e177de17a88c1d6620ce95f5c8e8cdfebd20d939e
-- kind: project-relative
-  target: codex
-  value: .agents/skills/claude-automation-recommender/references/mcp-servers.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/claude-code-setup
-  active_owner: anthropics/claude-plugins-official/plugins/claude-code-setup
-  content_hash: sha256:0f62bf84869d7e982e5dc15ebc789bb4734175b7d7b824051548c615ba79aa97
-- kind: project-relative
-  target: codex
-  value: .agents/skills/claude-automation-recommender/references/plugins-reference.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/claude-code-setup
-  active_owner: anthropics/claude-plugins-official/plugins/claude-code-setup
-  content_hash: sha256:6570ff4c853253b3f15fb62e5d540cbf0ce3371936437791dde8fb53b7d444f3
-- kind: project-relative
-  target: codex
-  value: .agents/skills/claude-automation-recommender/references/skills-reference.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/claude-code-setup
-  active_owner: anthropics/claude-plugins-official/plugins/claude-code-setup
-  content_hash: sha256:b4b57d953526a07146d5757ca5332034b9b4b4eeba839e4bb08111398c94556f
-- kind: project-relative
-  target: codex
-  value: .agents/skills/claude-automation-recommender/references/subagent-templates.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/claude-code-setup
-  active_owner: anthropics/claude-plugins-official/plugins/claude-code-setup
-  content_hash: sha256:7f9a107d8619ff96fea07d5a17da31b269cec0ee343e5a9ff643c0d6cb4ba944
-- kind: project-relative
-  target: codex
-  value: .agents/skills/claude-md-improver
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/claude-md-management
-  active_owner: anthropics/claude-plugins-official/plugins/claude-md-management
-  content_hash: null
-- kind: project-relative
-  target: codex
-  value: .agents/skills/claude-md-improver/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/claude-md-management
-  active_owner: anthropics/claude-plugins-official/plugins/claude-md-management
-  content_hash: sha256:b06c7420be08ca1c7f6d75f7f4709fdb787624a2d363e2f8052216d8c780f85b
-- kind: project-relative
-  target: codex
-  value: .agents/skills/claude-md-improver/references/quality-criteria.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/claude-md-management
-  active_owner: anthropics/claude-plugins-official/plugins/claude-md-management
-  content_hash: sha256:383def16b05dca948297dd1acb33f007cb1b1b2c368454d424c5634348a8bab1
-- kind: project-relative
-  target: codex
-  value: .agents/skills/claude-md-improver/references/templates.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/claude-md-management
-  active_owner: anthropics/claude-plugins-official/plugins/claude-md-management
-  content_hash: sha256:de0aa3ac30120a0c77f9cd82738a75ed8326864f98feb89356a253f2deaf3ab0
-- kind: project-relative
-  target: codex
-  value: .agents/skills/claude-md-improver/references/update-guidelines.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/claude-md-management
-  active_owner: anthropics/claude-plugins-official/plugins/claude-md-management
-  content_hash: sha256:02a158d6ca41a0ab702a67a213e92205f09c073cea53796633251bc62fd7ec55
+  content_hash: sha256:b6997e6aafc0706fcc59274c9693826713fac357fb5f53b7456e593589173468
 - kind: project-relative
   target: codex
   value: .agents/skills/committing-git-changes
@@ -4418,6 +3884,24 @@ deployments:
   content_hash: sha256:1b79c2f560dab09a7b147cc707f3c2201f60460c1b0841a08480a09638f3bc62
 - kind: project-relative
   target: codex
+  value: .agents/skills/deploy-checklist
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/knowledge-work-plugins/engineering/skills/deploy-checklist
+  active_owner: anthropics/knowledge-work-plugins/engineering/skills/deploy-checklist
+  content_hash: null
+- kind: project-relative
+  target: codex
+  value: .agents/skills/deploy-checklist/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/knowledge-work-plugins/engineering/skills/deploy-checklist
+  active_owner: anthropics/knowledge-work-plugins/engineering/skills/deploy-checklist
+  content_hash: sha256:85ca53dc471970e3e12c36ec814ebf5f6cb9419016c55adb05ff34789bae3be9
+- kind: project-relative
+  target: codex
   value: .agents/skills/dispatching-tasks
   runtime: null
   scope: project
@@ -4433,7 +3917,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:c530dd729e49e16e0faa5ab747ad3a628433567f054c8f7838b54ef8e5275209
+  content_hash: sha256:ecab2a7fc5edb9f0a67a70a3aae660fa95132d3cf2b90c4b0bd0a1340b9cf711
 - kind: project-relative
   target: codex
   value: .agents/skills/domain-modeling
@@ -6413,7 +5897,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:491ac7c641543b181389238b46a653801556a37bf98082af884ba67cb1c18191
+  content_hash: sha256:bd2ea74d12f57b3cb69409b5388110053c81c22946a7cddd601eb39f0f59ade2
 - kind: project-relative
   target: codex
   value: .agents/skills/reviewing-pull-requests/references/guidelines/backend.md
@@ -6440,7 +5924,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:298073bea24a1cfccc435c509d0e2e4bce28c13a2770bae394f7753a500544b8
+  content_hash: sha256:1b99752a1d9da2b1dd5cc9ecab58f6d25130937b3a45c564d90aa1c7151c7890
 - kind: project-relative
   target: codex
   value: .agents/skills/reviewing-pull-requests/references/pr-content.md
@@ -6458,7 +5942,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:cad8a11b68e1829c7f5d8b1f7c49eb037d2584b9132ce6546cf9c77a887a65d2
+  content_hash: sha256:96221638b656b15af3912f7a9a3432d6aae7f95c5eb62f7dc1d84adad0c3a4bf
 - kind: project-relative
   target: codex
   value: .agents/skills/reviewing-pull-requests/schemas/findings.json
@@ -6467,7 +5951,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:0df496514d6e463863472811b6c0a0b37e05c87d03eb55585a0c79d73e34c09f
+  content_hash: sha256:323c799e5d25767885e01a89a930f17a2be66b8a4775368ba1473d78ab471684
 - kind: project-relative
   target: codex
   value: .agents/skills/reviewing-writing
@@ -6521,7 +6005,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:feee7624506752ba9978c0c31a6531d8821f382e26121d42e34a7f9a363cdcc6
+  content_hash: sha256:2cc72345ea8ad1eb7ee5c9f6467eefcdf20f2189fd760b0c372c3ffba7b4a1f3
 - kind: project-relative
   target: codex
   value: .agents/skills/session-report
@@ -6576,6 +6060,42 @@ deployments:
   - icchankun/skills
   active_owner: icchankun/skills
   content_hash: sha256:2762e5d388391df894c9ae63bf69799e80d160c67d9bca99e5d304181129df14
+- kind: project-relative
+  target: codex
+  value: .agents/skills/system-design
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/knowledge-work-plugins/engineering/skills/system-design
+  active_owner: anthropics/knowledge-work-plugins/engineering/skills/system-design
+  content_hash: null
+- kind: project-relative
+  target: codex
+  value: .agents/skills/system-design/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/knowledge-work-plugins/engineering/skills/system-design
+  active_owner: anthropics/knowledge-work-plugins/engineering/skills/system-design
+  content_hash: sha256:8f28eca99f2208872fc2483fcc93326b628f4f73116e91309a95e05da86a0ab5
+- kind: project-relative
+  target: codex
+  value: .agents/skills/testing-strategy
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/knowledge-work-plugins/engineering/skills/testing-strategy
+  active_owner: anthropics/knowledge-work-plugins/engineering/skills/testing-strategy
+  content_hash: null
+- kind: project-relative
+  target: codex
+  value: .agents/skills/testing-strategy/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/knowledge-work-plugins/engineering/skills/testing-strategy
+  active_owner: anthropics/knowledge-work-plugins/engineering/skills/testing-strategy
+  content_hash: sha256:5c5e95830754bbdd838213fa05fc8f07523f591fd558fd3c86031ffd479f7a9e
 - kind: project-relative
   target: codex
   value: .agents/skills/to-questionnaire
@@ -6686,78 +6206,6 @@ deployments:
   content_hash: sha256:7f1d5415a693feac90b84c18f7fbae9663da162bbceea464a78f5e766131f3a9
 - kind: project-relative
   target: codex
-  value: .codex/agents/agent-sdk-verifier-py.toml
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/agent-sdk-dev
-  active_owner: anthropics/claude-plugins-official/plugins/agent-sdk-dev
-  content_hash: sha256:6bd745ba76e58e7bd040ae0ecd2b9e7669416d906b1406c083a06fc91fc7060a
-- kind: project-relative
-  target: codex
-  value: .codex/agents/agent-sdk-verifier-ts.toml
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/agent-sdk-dev
-  active_owner: anthropics/claude-plugins-official/plugins/agent-sdk-dev
-  content_hash: sha256:e15b81788425da53f70aef61f85b9ee8a71d48e2bc0e8e3ff1cb693bce391ea4
-- kind: project-relative
-  target: codex
-  value: .codex/agents/architecture-critic.toml
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/code-modernization
-  active_owner: anthropics/claude-plugins-official/plugins/code-modernization
-  content_hash: sha256:82e853e84903ce0a95347be887b00c157d7443b4c2f9ec48aa9eeeac1737b4cb
-- kind: project-relative
-  target: codex
-  value: .codex/agents/business-rules-extractor.toml
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/code-modernization
-  active_owner: anthropics/claude-plugins-official/plugins/code-modernization
-  content_hash: sha256:dc6f4df0b396f2d8aad2168c258cfbb53bd4a9cebb9dc86e5ae1de4a9613704e
-- kind: project-relative
-  target: codex
-  value: .codex/agents/code-architect.toml
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/feature-dev
-  active_owner: anthropics/claude-plugins-official/plugins/feature-dev
-  content_hash: sha256:adbd9094b97953ed001b3ceaa4664c46b58ef97478b495fb84bd24c8f619f1e4
-- kind: project-relative
-  target: codex
-  value: .codex/agents/code-explorer.toml
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/feature-dev
-  active_owner: anthropics/claude-plugins-official/plugins/feature-dev
-  content_hash: sha256:b2f82af012a033ba946464e3195e85533f08fec04f3b2082ee8735ee7f5bdcb1
-- kind: project-relative
-  target: codex
-  value: .codex/agents/code-reviewer.toml
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/feature-dev
-  active_owner: anthropics/claude-plugins-official/plugins/feature-dev
-  content_hash: sha256:65c86ee9608822619c44f9325cdb604ea7f68d161c11bcfab75f91cc4801c577
-- kind: project-relative
-  target: codex
-  value: .codex/agents/legacy-analyst.toml
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/code-modernization
-  active_owner: anthropics/claude-plugins-official/plugins/code-modernization
-  content_hash: sha256:34d37975650696a374e50dc31583e79bf121647d9324425514dd043946c6f66d
-- kind: project-relative
-  target: codex
   value: .codex/agents/poteto-agent.toml
   runtime: null
   scope: project
@@ -6765,101 +6213,4 @@ deployments:
   - cursor/plugins/pstack
   active_owner: cursor/plugins/pstack
   content_hash: sha256:e46bbb3636cb56a383e822ae8004b56997bb9ca09f8dde799c8f4f2d311cd7e3
-- kind: project-relative
-  target: codex
-  value: .codex/agents/scaffolder.toml
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/code-modernization
-  active_owner: anthropics/claude-plugins-official/plugins/code-modernization
-  content_hash: sha256:a10855f93092150c0fef4c0b6105a847722b6761a53bd2931a57daa4f22f23d7
-- kind: project-relative
-  target: codex
-  value: .codex/agents/security-auditor.toml
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/code-modernization
-  active_owner: anthropics/claude-plugins-official/plugins/code-modernization
-  content_hash: sha256:3f6bd9a245d7d736c14fa30a9dc6e70047c4377862be4f61d98d95bc0dc89df7
-- kind: project-relative
-  target: codex
-  value: .codex/agents/test-engineer.toml
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/code-modernization
-  active_owner: anthropics/claude-plugins-official/plugins/code-modernization
-  content_hash: sha256:f20ae30855868dabf8870a2ac56fc3aa25569fe3c3091e8decb0954dc5766d72
-- kind: project-relative
-  target: codex
-  value: .codex/agents/version-delta-analyst.toml
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/code-modernization
-  active_owner: anthropics/claude-plugins-official/plugins/code-modernization
-  content_hash: sha256:975b59ad83d5e503a50f4ce573ec3676f80a37835959ae0e9112e970c072de07
-- kind: uri
-  target: mcp
-  value: aws-documentation
-  runtime: claude
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: null
-- kind: uri
-  target: mcp
-  value: gitmcp
-  runtime: claude
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: null
-- kind: uri
-  target: mcp
-  value: aws-documentation
-  runtime: codex
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: null
-- kind: uri
-  target: mcp
-  value: gitmcp
-  runtime: codex
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: null
-mcp_servers:
-- aws-documentation
-- gitmcp
-mcp_configs:
-  aws-documentation:
-    name: aws-documentation
-    transport: stdio
-    env:
-      FASTMCP_LOG_LEVEL: ERROR
-      AWS_DOCUMENTATION_PARTITION: aws
-    args:
-    - awslabs.aws-documentation-mcp-server@latest
-    registry: false
-    command: uvx
-  gitmcp:
-    name: gitmcp
-    transport: http
-    registry: false
-    url: https://gitmcp.io/docs
-mcp_target_servers:
-  claude:
-  - aws-documentation
-  - gitmcp
-  codex:
-  - aws-documentation
-  - gitmcp
+mcp_target_servers: {}
