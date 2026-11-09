@@ -3,6 +3,9 @@
 # 引数を1つずつ確かめて安全な形のときだけ確認なしで通す。それ以外は何も出さず、ふだんの判断に任せる。
 # ただし安全と言えない force push は確認に回す。settings.json の allow に入れた形でも、リポジトリの設定が危なければ止めるため。
 # settings.json の allow は文字列の前方一致なので、git が受け付ける省略形（--rec で --receive-pack など）を塞げない。
+# ready の PR の履歴は、レビュアーが追っている差分を変えるので書き換えさせない。push 済みコミットの amend は deny して Claude に新しいコミットを積ませる。
+# force push は base への rebase 後などに必要なので、確認に回す。auto モードでは && でつないだ形も確認なしで動くので、この判定はコマンド全体を解析して行う。
+# 解析するのはシェルの区切りと引用符までで、bash -c の中身や python から呼ぶ git は見ない。
 # 使い方: Claude Code は settings.json の hooks.PreToolUse（matcher: Bash）に登録する。
 #   Codex は ~/.codex/hooks.json の PermissionRequest（matcher: Bash）に `git-rewrite-guard --codex` で登録する。
 #   Codex の PreToolUse は allow を返しても確認を飛ばさず、確認を決めるのは PermissionRequest のため。
@@ -25,6 +28,8 @@ BRANCH = re.compile(r"^[\w][\w./-]*$")
 LEASE = re.compile(r"^--force-with-lease(=[\w./-]+:[0-9a-f]{7,40})?$")
 # -F で任意のファイルを読ませると、読めないはずの中身をメッセージに入れて持ち出せる。symlink で外を指せないよう、実体のパスで見る
 MSG_DIR = os.path.join(os.path.realpath("/tmp"), f"claude-{os.getuid()}")
+SHELL_PUNCTUATION = "();<>|&\n"
+UNVERIFIED = "PR の状態を確かめられません。履歴を書き換えてよいと分かっているなら Yes、そうでなければ No。"
 
 
 def msg_dir_trusted():
@@ -76,14 +81,14 @@ SAFE_LOCAL_KEYS = re.compile(
 SAFE_REMOTE_URL = re.compile(r"(https://github\.com/|git@github\.com:)[\w.-]+/[\w.-]+")
 
 
-def repo_config_safe(cwd):
+def repo_config_problem(cwd):
     def git(*args):
         # hook の timeout より先に切る。hook ごと時間切れになると、settings.json の allow だけで通ってしまう
         return subprocess.run(["git", "-C", cwd, *args], capture_output=True, text=True, timeout=3)
 
     listing = git("config", "--show-scope", "--list", "-z")
     if listing.returncode != 0:
-        return False
+        return "読めない git の設定"
     parts = listing.stdout.split("\0")
     for scope, entry in zip(parts[0::2], parts[1::2]):
         if scope not in ("local", "worktree", "command"):
@@ -91,16 +96,21 @@ def repo_config_safe(cwd):
         key, _, value = entry.partition("\n")
         if re.fullmatch(r"remote\.[^=\n]+\.url", key, re.IGNORECASE):
             if not SAFE_REMOTE_URL.fullmatch(value):
-                return False
+                return f"設定 {key}"
         elif re.fullmatch(r"branch\.[^=\n]+\.remote", key, re.IGNORECASE):
             # branch.*.remote には URL も書ける。引数なしの push の送り先になるので、origin だけにする
             if value not in ("origin", "."):
-                return False
+                return f"設定 {key}"
         elif scope == "command" or not SAFE_LOCAL_KEYS.fullmatch(key):
-            return False
+            return f"設定 {key}"
     hooks = git("rev-parse", "--git-path", "hooks").stdout.strip()
     hooks = hooks if os.path.isabs(hooks) else os.path.join(cwd, hooks)
-    return not any(not f.endswith(".sample") for f in (os.listdir(hooks) if os.path.isdir(hooks) else []))
+    installed = [f for f in (os.listdir(hooks) if os.path.isdir(hooks) else []) if not f.endswith(".sample")]
+    return f"hook {installed[0]}" if installed else None
+
+
+def repo_config_safe(cwd):
+    return repo_config_problem(cwd) is None
 
 
 def origin_repo(cwd):
@@ -154,9 +164,115 @@ def allowed(command, cwd=".", origin_of=origin_repo, repo_safe=repo_config_safe)
     return False
 
 
+def simple_commands(command):
+    lexer = shlex.shlex(command, posix=True, punctuation_chars=SHELL_PUNCTUATION)
+    lexer.whitespace = " \t\r"
+    lexer.whitespace_split = True
+    lexer.commenters = ""
+    words = []
+    for token in lexer:
+        if set(token) <= set(SHELL_PUNCTUATION):
+            if words:
+                yield words
+            words = []
+        else:
+            words.append(token.strip("`"))
+    if words:
+        yield words
+
+
+def git_rewrites(command):
+    rewrites = []
+    directory = None
+    try:
+        for words in simple_commands(command):
+            if words[0] == "cd" and len(words) > 1:
+                directory = words[1]
+            names = [os.path.basename(w) for w in words]
+            if "git" not in names:
+                continue
+            args = words[names.index("git") + 1:]
+            target = directory
+            while len(args) >= 2 and args[0] in ("-c", "-C"):
+                if args[0] == "-C":
+                    target = args[1]
+                args = args[2:]
+            if args[:1] == ["commit"] and "--amend" in args:
+                rewrites.append(("amend", target))
+            elif args[:1] == ["push"] and any(a.startswith("--force-with-lease") for a in args):
+                rewrites.append(("lease", target))
+            elif args[:1] == ["push"] and any(a == "-f" or a.startswith("--force") for a in args):
+                rewrites.append(("force", target))
+    except ValueError:
+        # 引用符が閉じていないと解析できない。見逃すより、文字列に含まれれば書き換えとして扱う
+        if "--amend" in command:
+            rewrites.append(("amend", None))
+        if "--force-with-lease" in command:
+            rewrites.append(("lease", None))
+        elif "--force" in command:
+            rewrites.append(("force", None))
+    return rewrites
+
+
 def lease_push(command):
-    # 引数に分けずに文字列で見る。分けられないコマンドを見逃すと、settings.json の allow だけで通ってしまう
-    return "--force-with-lease" in command
+    return any(kind == "lease" for kind, _ in git_rewrites(command))
+
+
+def resolve(cwd, target):
+    return os.path.join(cwd, os.path.expanduser(target)) if target else cwd
+
+
+def head_pushed(cwd):
+    unpushed = subprocess.run(["git", "-C", cwd, "rev-list", "-1", "HEAD", "--not", "--remotes"],
+                              capture_output=True, text=True, timeout=3, check=True)
+    return not unpushed.stdout.strip()
+
+
+def ready_pr_number(cwd):
+    # 作業先で mise を動かすとそのリポジトリの mise の設定を読んでしまうので、gh の場所はホームで引く
+    gh = subprocess.run(["mise", "which", "gh"], cwd=os.path.expanduser("~"),
+                        capture_output=True, text=True, timeout=3, check=True).stdout.strip()
+    view = subprocess.run([gh, "pr", "view", "--json", "number,isDraft,state"], cwd=cwd, capture_output=True, text=True, timeout=5)
+    if view.returncode != 0:
+        if "no pull requests found" in view.stderr:
+            return None
+        raise RuntimeError(view.stderr)
+    pr = json.loads(view.stdout)
+    return pr["number"] if pr["state"] == "OPEN" and not pr["isDraft"] else None
+
+
+def rewrite_decision(command, cwd=".", pushed=head_pushed, ready=ready_pr_number):
+    decision = None
+    for kind, target in git_rewrites(command):
+        where = resolve(cwd, target)
+        try:
+            # まだ push していないコミットの amend は、レビュアーの見ている履歴を変えない
+            if kind == "amend" and not pushed(where):
+                continue
+            number = ready(where)
+        except Exception:
+            decision = decision or ("ask", UNVERIFIED)
+            continue
+        if number is None:
+            continue
+        if kind == "amend":
+            return ("deny", f"ready の PR #{number} の push 済みコミットは amend しない。新しいコミットを積む。"
+                            "どうしても amend するなら、ユーザーが `! git commit --amend` で実行する。")
+        decision = ("ask", f"ready の PR #{number} を force push で書き換え、レビュアーが見ている差分が変わります。"
+                           "base への rebase 後なら Yes、それ以外は No（新しいコミットを積みます）。")
+    return decision
+
+
+def unsafe_push_reason(command, cwd):
+    target = next(target for kind, target in git_rewrites(command) if kind == "lease")
+    try:
+        problem = repo_config_problem(resolve(cwd, target))
+    except Exception:
+        problem = "読めない git の設定"
+    if problem:
+        return f"リポジトリに {problem} があるため、この force push は安全と確かめられません。心当たりがなければ No。"
+    return ("この force push は、確認なしで通せる形ではありません（別のコマンドとの連結、origin 以外への送信、refspec の指定など）。"
+            "自分が頼んだ push なら Yes、心当たりがなければ No。")
 
 
 def test():
@@ -214,18 +330,58 @@ def test():
         assert not allowed(c, origin_of=origin_of, repo_safe=lambda cwd: True), c
     assert not allowed("git push --force-with-lease", origin_of=origin_of, repo_safe=lambda cwd: False), "設定が危ないリポジトリ"
     assert lease_push("git push --force-with-lease") and lease_push("git -C x push --force-with-lease=a:b origin main")
+    assert lease_push("echo a\ngit push --force-with-lease") and lease_push("echo $(git push --force-with-lease)")
+    assert lease_push("echo `git push --force-with-lease`") and lease_push("FOO=1 /usr/bin/git push --force-with-lease")
     assert not lease_push("git push origin main") and not lease_push("git commit --amend")
+    assert not lease_push("""run "git push --force-with-lease" ~/repo""") and not lease_push("grep -- --force-with-lease a.md")
+    assert not lease_push("echo 'git push --force-with-lease && x'") and not lease_push("git commit -m '--force-with-lease を許す'")
+    assert lease_push("""echo "it's; git push --force-with-lease"'"""), "解析できないときは文字列で見る"
+
+    def decide(command, pushed=True, ready=12):
+        decision = rewrite_decision(command, pushed=lambda cwd: pushed, ready=lambda cwd: ready)
+        return decision and decision[0]
+
+    def unverified(cwd):
+        raise RuntimeError("gh が動かない")
+
+    assert decide("git status") is None and decide("grep -- --amend notes.md | head") is None
+    assert decide("printf 'git commit --amend'") is None
+    assert decide("git commit --amend --no-edit") == "deny" and decide("git add a && git commit --amend -m x") == "deny"
+    assert decide("git commit --amend", ready=None) is None, "draft の PR か、PR がないとき"
+    assert decide("git commit --amend", pushed=False) is None, "push していないコミット"
+    assert decide("git push --force-with-lease") == "ask" and decide("git push -f origin x") == "ask"
+    assert decide("git push --force", pushed=False) == "ask", "push は HEAD の状態によらず確かめる"
+    assert decide("git push --force-with-lease", ready=None) is None
+    assert decide("git commit --amend && git push --force-with-lease") == "deny"
+    assert decide("git commit --amend && git push --force-with-lease", pushed=False) == "ask"
+    assert rewrite_decision("git push --force", ready=unverified) == ("ask", UNVERIFIED)
+    assert "#12" in rewrite_decision("git push --force", ready=lambda cwd: 12)[1]
+    seen = []
+
+    def record(cwd):
+        seen.append(cwd)
+
+    rewrite_decision("cd /x/a && git commit --amend", pushed=lambda cwd: True, ready=record)
+    rewrite_decision("git -C /x/b push --force-with-lease", ready=record)
+    rewrite_decision("git push --force", cwd="/x/c", ready=record)
+    assert seen == ["/x/a", "/x/b", "/x/c"], seen
     with tempfile.TemporaryDirectory() as repo:
         def git(*args):
             subprocess.run(["git", "-C", repo, *args], check=True, capture_output=True)
 
         git("init", "-q")
+        git("-c", "user.name=a", "-c", "user.email=a@example.com", "-c", "commit.gpgsign=false", "commit", "-q", "--allow-empty", "-m", "x")
+        assert not head_pushed(repo)
+        git("update-ref", "refs/remotes/origin/x", "HEAD")
+        assert head_pushed(repo)
+        git("update-ref", "-d", "refs/remotes/origin/x")
         git("remote", "add", "origin", "git@github.com:me/skills.git")
         assert repo_config_safe(repo)
         git("config", "branch.main.remote", "origin")
         assert repo_config_safe(repo)
         git("config", "branch.main.remote", "https://evil.example/x.git")
         assert not repo_config_safe(repo), "branch.*.remote に URL"
+        assert repo_config_problem(repo) == "設定 branch.main.remote", repo_config_problem(repo)
         git("config", "--unset", "branch.main.remote")
         for key, value in [("core.fsmonitor", "touch x"), ("core.sshCommand", "touch x"), ("remote.origin.pushurl", "x"),
                            ("core.hooksPath", "/x"), ("alias.ci", "!touch x"), ("remote.origin.receivepack", "x")]:
@@ -238,7 +394,7 @@ def test():
         git("remote", "set-url", "origin", "git@github.com:me/skills.git")
         hook = os.path.join(repo, ".git", "hooks", "pre-commit")
         open(hook, "w").write("#!/bin/sh\ntouch x\n")
-        assert not repo_config_safe(repo)
+        assert repo_config_problem(repo) == "hook pre-commit", repo_config_problem(repo)
     print("ok")
 
 
@@ -251,16 +407,20 @@ if __name__ == "__main__":
     if not isinstance(command, str):
         sys.exit()
     # 確かめる途中で落ちたら通さない。落ちたまま終わると、settings.json の allow だけで通ってしまう
+    cwd = payload.get("cwd", ".")
     try:
-        ok = allowed(command, payload.get("cwd", "."))
+        ok = allowed(command, cwd)
     except Exception:
         ok = False
-    if not ok:
-        if lease_push(command) and sys.argv[1:] != ["--codex"]:
+    decision = rewrite_decision(command, cwd)
+    if not decision and not ok and lease_push(command):
+        decision = ("ask", unsafe_push_reason(command, cwd))
+    if decision or not ok:
+        if decision and sys.argv[1:] != ["--codex"]:
             print(json.dumps({"hookSpecificOutput": {
                 "hookEventName": "PreToolUse",
-                "permissionDecision": "ask",
-                "permissionDecisionReason": "git-rewrite-guard: force push の形かリポジトリの設定が安全と確かめられない",
+                "permissionDecision": decision[0],
+                "permissionDecisionReason": f"git-rewrite-guard: {decision[1]}",
             }}))
         sys.exit()
     if sys.argv[1:] == ["--codex"]:
