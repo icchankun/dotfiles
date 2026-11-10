@@ -48,7 +48,7 @@ hc ls --label role=driver --label driver=t7                     # t7 の driver
 
 # モデルの重さ
 
-skill や指示が「軽いモデル」「標準のモデル」「重いモデル」と書いたら、次のモデルを使う。モデルが廃止されたら、この表だけを直す。
+skill や指示が「軽いモデル」「標準のモデル」「重いモデル」と書いたら、次のモデルを使う。モデルが廃止されたら、この表と、dotfiles（`~/.local/share/chezmoi`）でモデル名を直書きしている次のファイルを直す：`dot_bin/executable_codex-pr-review`、`dot_bin/executable_codex-dep-review`、`dot_bin/executable_herdr-coding`、`dot_codex/modify_config.toml.tmpl`、`dot_claude/settings.json`。
 
 | 重さ | Claude Code | Codex |
 |---|---|---|
