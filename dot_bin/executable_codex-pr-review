@@ -56,10 +56,10 @@
 #      読むだけで、~/.ssh と .env は読めず、GitHub の権限も持たない。投稿するのは
 #      このスクリプトだけで、approve はしない。PR の中身に誘導されて、Codex が
 #      指摘を出さないこともあるため。)
-#   - Models are set here rather than in ~/.codex/config.toml, which Codex writes
-#     to itself (trusted folders) and so is not managed by chezmoi.
-#     (モデルは ~/.codex/config.toml ではなくここで決める。そのファイルは Codex が
-#      信頼したフォルダなどを自分で書き込むので、chezmoi では管理しない。)
+#   - Models are set here, not read from ~/.codex/config.toml: /model in Codex
+#     rewrites that value, and each role needs its own effort.
+#     (モデルは ~/.codex/config.toml の値を使わず、ここで決める。その値は Codex の
+#      /model で書き換わり、役割ごとに effort も変えるため。)
 #   - Each run's input and what Codex returned are kept under
 #     ~/.local/state/codex-pr-review/ for checking.
 #     (実行ごとの入力と Codex の結果は ~/.local/state/codex-pr-review/ に残す。)

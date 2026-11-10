@@ -193,8 +193,8 @@ remove_claude_sessions() {
   [[ -d "$dir" ]] && rm -rf "$dir"
 }
 
-# Delete the worktree (if any) and the branch with git wt, so its hooks run
-# (git wt で worktree とブランチを消す。git wt のフックを走らせるため)
+# Delete the worktree (if any) and the branch together with git wt
+# (git wt で worktree とブランチをまとめて消す)
 # 未コミットの変更は呼び出し側で確かめているので、-D で消す。
 delete_branch() {
   local repo="$1" branch="$2" wt="$3" out
