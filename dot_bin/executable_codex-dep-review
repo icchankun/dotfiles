@@ -1,46 +1,34 @@
 #!/usr/bin/env bash
 
-# Check a dependency update pull request from Renovate or Dependabot: gates
-# that need no AI first, then Codex with the checking-library-updates skill.
-# The verdict is posted as a comment. Approving and merging are always left to
-# a person, since a pull request could talk Codex into an ok verdict.
-# (Renovate や Dependabot の依存更新の PR を確かめる。先に AI を使わないゲートを
-#  通し、通ったものだけを checking-library-updates の skill で Codex に見せる。
-#  判定はコメントに残す。PR の中身に誘導されて Codex が ok と判定することも
-#  あるので、approve と merge は必ず人がする。)
+# Renovate や Dependabot の依存更新の PR を確かめる。先に AI を使わないゲートを
+# 通し、通ったものだけを checking-library-updates の skill で Codex に見せる。
+# 判定はコメントに残す。PR の中身に誘導されて Codex が ok と判定することも
+# あるので、approve と merge は必ず人がする。
 #
-#   When a head is not ok, my approvals of earlier heads are dismissed.
-#   (ok でない head が来たら、前の head に出した自分の approve を取り消す。)
+#   ok でない head が来たら、前の head に出した自分の approve を取り消す。
 #
-# Dependencies / 依存:
+# 依存:
 #   - gh, git, jq, codex
 #   - the checking-library-updates skill (icchankun/skills, deployed by apm)
 #
-# Usage / 使い方:
+# 使い方:
 #   codex-dep-review [--post] <PR URL | owner/repo#number>
 #
-#   Without --post the verdict is printed and nothing is sent to GitHub.
-#   (--post を付けなければ、判定を表示するだけで GitHub には送らない。)
+#   --post を付けなければ、判定を表示するだけで GitHub には送らない。
 #
-# Gates / ゲート (no AI / AI を使わない):
+# ゲート (AI を使わない):
 #   - opened by renovate[bot] or dependabot[bot] (作成者が bot)
-#   - only dependency files changed, and in a Dockerfile, a compose file or a
-#     workflow only the FROM, image: or uses: lines
-#     (変わったのは依存のファイルだけ。Dockerfile・compose・workflow は FROM・
-#      image:・uses: の行だけ)
+#   - 変わったのは依存のファイルだけ。Dockerfile・compose・workflow は FROM・
+#     image:・uses: の行だけ
 #   - every check passed (CI がすべて通っている)
-#   - no major version bump; for 0.x a minor bump counts as major. A version that
-#     cannot be read from the description stops here too.
-#     (major を上げていない。0.x は minor も major 扱い。PR の説明から版を読めない
-#      ときもここで止まる)
-#   - no new package in Gemfile.lock or package-lock.json
-#     (Gemfile.lock と package-lock.json に新しいパッケージが増えていない)
+#   - major を上げていない。0.x は minor も major 扱い。PR の説明から版を読めない
+#     ときもここで止まる
+#   - Gemfile.lock と package-lock.json に新しいパッケージが増えていない
 #   How long a release has been out is left to Renovate's and Dependabot's own
-#   settings. (リリースからの日数は、Renovate と Dependabot の設定に任せる。)
+#   リリースからの日数は、Renovate と Dependabot の設定に任せる。
 #
-# Exit status / 終了コード:
-#   3   nothing to do: already checked this head, or CI is still running
-#       (することがない。この head は確かめ済みか、CI がまだ動いている)
+# 終了コード:
+#   3   することがない。この head は確かめ済みか、CI がまだ動いている
 #   5   needs a person (自分で見る必要がある)
 #   6   ok: ready for me to approve (ok。approve するかを自分で決める)
 #   75  Codex's usage limit (Codex の利用枠切れ)
@@ -52,13 +40,11 @@ set -euo pipefail
 
 readonly CHECK_MODEL=gpt-6-luna
 readonly CHECK_EFFORT=low
-# The model and effort for a second look when the first pass is not confident.
-# (最初の判断に自信がないときに、確かめ直すモデルと effort。)
+# 最初の判断に自信がないときに、確かめ直すモデルと effort。
 readonly RECHECK_MODEL=gpt-6.1-sol
 readonly RECHECK_EFFORT=medium
 
-# Ends every comment, so a reader can tell Codex wrote it and not me.
-# (コメントの最後に付ける。自分ではなく Codex が書いたと分かるように。)
+# コメントの最後に付ける。自分ではなく Codex が書いたと分かるように。
 readonly FOOTER='🤖 Generated with [Codex](https://openai.com/codex)'
 
 readonly STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/codex-pr-review"
@@ -127,8 +113,7 @@ load_pull_request() {
   mkdir -p "$run/input"
 }
 
-# A head that already has this script's comment or review was checked.
-# (このスクリプトのコメントか review がある head は、確かめ済み。)
+# このスクリプトのコメントか review がある head は、確かめ済み。
 already_checked() {
   {
     gh api --paginate --slurp "repos/$repo/issues/$number/comments"
@@ -137,8 +122,7 @@ already_checked() {
     map(add // []) | add | any(.[]; .user.login == $me and ((.body // "") | contains("<!-- codex-deps:v1 head=" + $head + " ")))' >/dev/null
 }
 
-# Dismiss my approvals of earlier heads, and print a line for the comment.
-# (前の head に出した自分の approve を取り消し、コメントに書く1行を出す。)
+# 前の head に出した自分の approve を取り消し、コメントに書く1行を出す。
 dismiss_my_approvals() {
   local ids id failed=0
   ids=$(gh api --paginate --slurp "repos/$repo/pulls/$number/reviews" |
@@ -176,8 +160,7 @@ checkout() {
   git -C "$tree" diff --no-color --no-ext-diff --src-prefix=a/ --dst-prefix=b/ "$merge_base" "$head" >"$run/input/diff.patch"
 }
 
-# The changed lines of each file as "file<TAB>+line" or "file<TAB>-line".
-# (ファイルごとの変わった行を「ファイル<TAB>+行」か「ファイル<TAB>-行」で出す。)
+# ファイルごとの変わった行を「ファイル<TAB>+行」か「ファイル<TAB>-行」で出す。
 changed_lines() {
   awk '
     /^diff --git / { file = ""; next }
@@ -190,24 +173,21 @@ changed_lines() {
   ' "$run/input/diff.patch"
 }
 
-# Versions from the bot's description: Renovate's table (`1.2.3` -> `1.3.0`)
-# and Dependabot's sentence (from 1.2.3 to 1.3.0).
-# (bot の説明から版を読む。Renovate の表と、Dependabot の文。)
+# bot の説明から版を読む。Renovate の表と、Dependabot の文。
 versions() {
   jq -r '.body // ""' <<<"$pr" | grep -oE '`[^`]+` (->|→) `[^`]+`|from `?[0-9A-Za-z._+-]*[0-9A-Za-z]`? to `?[0-9A-Za-z._+-]*[0-9A-Za-z]`?' |
     sed -E 's/`//g; s/^from //; s/ to / /; s/ (->|→) / /' | sort -u
 }
 
 # The major of a version (0.minor for 0.x), or nothing for a digest or something
-# unreadable. (版の major（0.x は 0.minor）。digest や読めないものは何も出さない。)
+# 版の major（0.x は 0.minor）。digest や読めないものは何も出さない。
 major_of() {
   local v="${1#v}"
   [[ "$v" =~ ^([0-9]+)(\.([0-9]+))? ]] || return 0
   if [ "${BASH_REMATCH[1]}" = 0 ]; then printf '0.%s\n' "${BASH_REMATCH[3]:-0}"; else printf '%s\n' "${BASH_REMATCH[1]}"; fi
 }
 
-# A digest has hex letters; a version made only of digits (a date) is not one.
-# (digest は英字の入った16進数。数字だけの版（日付など）は digest ではない。)
+# digest は英字の入った16進数。数字だけの版（日付など）は digest ではない。
 is_digest() { [[ "$1" =~ ^(sha256:)?[0-9a-f]{7,64}$ && "$1" =~ [a-f] ]]; }
 
 run_gates() {
@@ -305,8 +285,7 @@ check_with_codex() {
   fi
 }
 
-# The verdict when a gate fails: Codex is not asked, to save tokens.
-# (ゲートで落ちたときの判定。トークンを節約するため Codex には聞かない。)
+# ゲートで落ちたときの判定。トークンを節約するため Codex には聞かない。
 gate_verdict() {
   jq '{verdict: "needs_human", reasons: [.gates[] | select(.ok | not) | .name + ": " + .detail],
        summary: "ゲートで止まったので、Codex では確かめていません。", packages: [], breaking: [], other_reviews: []}' \

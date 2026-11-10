@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 
-# Run codex-pr-review on the pull requests I am asked to review.
-# (レビューを頼まれた PR に codex-pr-review を流す。)
+# レビューを頼まれた PR に codex-pr-review を流す。
 #
-# Dependencies / 依存:
-#   - gh, codex-pr-review, codex-dep-review, osascript (macOS notifications / macOS の通知)
+# 依存:
+#   - gh, codex-pr-review, codex-dep-review, osascript (macOS の通知)
 #   - the repositories to review, in DEV_FLOW_REPOS (space separated) or
 #     ~/.config/dev-flow/repos (one per line). Both the pull request reviews and
 #     the dependency update checks run only there. Kept out of dotfiles, which
@@ -13,10 +12,9 @@
 #      ここに書いたリポジトリだけで動く。dotfiles は公開しているので、そこには
 #      入れない。)
 #
-# What a run does / 1回の実行ですること:
+# 1回の実行ですること:
 #   - Only on weekdays from 9:00 to 20:00. (平日 9:00〜20:00 だけ動く。)
-#   - Does nothing on a machine without Codex, without a notification.
-#     (Codex が入っていない端末では、知らせずに何もしない。)
+#   - Codex が入っていない端末では、知らせずに何もしない。
 #   - Picks up open, non-draft pull requests in those repositories that request
 #     my review in person (user-review-requested:@me) and keeps following them
 #     until they close:
@@ -24,17 +22,11 @@
 #     need this script. (自分個人にレビュー依頼が来た、draft でない open の PR を
 #     拾い、閉じるまで追い続ける。レビューを投稿すると GitHub は依頼を消すが、その
 #     あとのラウンドも見る必要があるため。)
-#   - Leaves out release pull requests: they bundle changes already reviewed in
-#     their own pull requests, so reviewing them again only spends Codex's
-#     usage allowance. The base branch does not decide it, since some
-#     repositories send every pull request to main.
-#     (リリースの PR は外す。それぞれの PR でレビュー済みの変更をまとめたもの
-#      なので、もう一度レビューしても Codex の利用枠を使うだけなので。ベースの
-#      ブランチでは決めない（すべての PR を main に出すリポジトリもある）。)
-#   - Uses Codex on at most MAX_PRS pull requests, so a pile of requests does not
-#     drain the usage allowance in one go; the rest wait for the next run.
-#     (Codex を使うのは MAX_PRS 件まで。依頼がまとめて来ても、一度に利用枠を使い
-#      切らないため。残りは次の回に回す。)
+#   - リリースの PR は外す。それぞれの PR でレビュー済みの変更をまとめたもの
+#     なので、もう一度レビューしても Codex の利用枠を使うだけなので。ベースの
+#     ブランチでは決めない（すべての PR を main に出すリポジトリもある）。
+#   - Codex を使うのは MAX_PRS 件まで。依頼がまとめて来ても、一度に利用枠を使い
+#     切らないため。残りは次の回に回す。
 #   - When Codex hits its usage limit, pauses until the reset time Codex gives,
 #     and resumes with the pull requests left. (Codex の利用枠が切れたら、Codex が
 #     示す時刻まで止め、残りの PR から再開する。)
@@ -46,11 +38,8 @@
 #   - Once a week, runs codex-dep-report to compare those verdicts with what I
 #     did, and notifies the summary. (週に1回、codex-dep-report でその判定と自分の
 #     判断を比べ、要約を知らせる。)
-#   - Notifies only what needs me: a pull request ready for my approval, one
-#     handed over after too many rounds, a dependency update to approve or to
-#     check myself, a failure, and a pause. Each is notified once, a failure once a day.
-#     (知らせるのは自分が要るものだけ。approve を待つ PR、ラウンドが多すぎて任された
-#      PR、approve するか自分で見る依存更新、失敗、一時停止。同じものは1回だけ知らせる。失敗は1日1回。)
+#   - 知らせるのは自分が要るものだけ。approve を待つ PR、ラウンドが多すぎて任された
+#     PR、approve するか自分で見る依存更新、失敗、一時停止。同じものは1回だけ知らせる。失敗は1日1回。
 
 set -euo pipefail
 
@@ -72,8 +61,7 @@ readonly LOCK_STALE_MINUTES=180
 
 log() { printf '%s %s\n' "$(date '+%F %T')" "$*"; }
 
-# Notify once per key; the keys already sent are in NOTIFIED.
-# (同じ key では1回だけ知らせる。知らせた key は NOTIFIED に記録する。)
+# 同じ key では1回だけ知らせる。知らせた key は NOTIFIED に記録する。
 notify() {
   local key="$1" message="$2"
   grep -qxF "$key" "$NOTIFIED" && return 0
@@ -88,10 +76,7 @@ in_working_hours() {
   [ "$dow" -le 5 ] && [ "$hour" -ge 9 ] && [ "$hour" -lt 20 ]
 }
 
-# The epoch Codex says its allowance comes back, read from its error
-# ("Try again at 3:45 PM." or "... at Nov 2nd, 2026 3:45 PM."). 30 minutes from
-# now when the time cannot be read.
-# (Codex のエラーから、利用枠が戻る時刻を epoch で読む。読めなければ30分後にする。)
+# Codex のエラーから、利用枠が戻る時刻を epoch で読む。読めなければ30分後にする。
 reset_epoch() {
   local at
   at=$(printf '%s' "$1" | grep -io 'try again at [^.]*' | tail -n 1 | sed -E 's/^[Tt]ry again at //; s/([0-9]+)(st|nd|rd|th),/\1,/') || true
@@ -104,11 +89,8 @@ reset_epoch() {
   echo $(($(date +%s) + 1800))
 }
 
-# Add the pull requests that request my review to the tracked list, keeping
-# only those in the repositories to review. Pull requests from a repository
-# taken off the list are dropped from it too.
-# (自分にレビュー依頼が来た PR を、追いかける一覧に足す。残すのはレビューする
-#  リポジトリのものだけ。リストから外したリポジトリの PR は、一覧からも外す。)
+# 自分にレビュー依頼が来た PR を、追いかける一覧に足す。残すのはレビューする
+# リポジトリのものだけ。リストから外したリポジトリの PR は、一覧からも外す。
 discover() {
   local found repos
   repos=$(review_repos)
@@ -125,8 +107,7 @@ discover() {
   mv "$TRACKED.new" "$TRACKED"
 }
 
-# The repositories to review: pull requests and dependency updates.
-# (レビューするリポジトリ。PR も依存更新も。)
+# レビューするリポジトリ。PR も依存更新も。
 review_repos() {
   if [ -n "${DEV_FLOW_REPOS:-}" ]; then
     printf '%s\n' $DEV_FLOW_REPOS
@@ -135,8 +116,7 @@ review_repos() {
   fi
 }
 
-# Open, non-draft dependency updates in those repositories.
-# (それらのリポジトリの、draft でない open の依存更新。)
+# それらのリポジトリの、draft でない open の依存更新。
 dep_pull_requests() {
   local repo bot
   review_repos | while read -r repo; do
@@ -147,8 +127,7 @@ dep_pull_requests() {
   done
 }
 
-# Pause until Codex's allowance comes back, and say so once.
-# (Codex の利用枠が戻るまで止め、1回だけ知らせる。)
+# Codex の利用枠が戻るまで止め、1回だけ知らせる。
 pause_for_limit() {
   local until
   until=$(reset_epoch "$1")
@@ -156,8 +135,7 @@ pause_for_limit() {
   notify "pause:$until" "Codex の利用枠が切れました。$(date -r "$until" +%H:%M 2>/dev/null || date -d "@$until" +%H:%M) から再開します"
 }
 
-# Check the dependency updates. Returns 1 when Codex hit its usage limit.
-# (依存更新を確かめる。Codex の利用枠が切れたら 1 を返す。)
+# 依存更新を確かめる。Codex の利用枠が切れたら 1 を返す。
 check_dependency_updates() {
   local used=0 pr out status head
   # The list is read from fd 3, so the commands in the loop cannot read the rest
@@ -201,8 +179,7 @@ take_lock() {
   local pid
   if ! mkdir "$LOCK" 2>/dev/null; then
     pid=$(cat "$LOCK/pid" 2>/dev/null || true)
-    # No pid yet means the other run has only just made the lock.
-    # (pid がまだないのは、相手がロックを作った直後。)
+    # pid がまだないのは、相手がロックを作った直後。
     if { [ -z "$pid" ] || kill -0 "$pid" 2>/dev/null; } &&
       [ -z "$(find "$LOCK" -maxdepth 0 -mmin +"$LOCK_STALE_MINUTES")" ]; then
       return 1

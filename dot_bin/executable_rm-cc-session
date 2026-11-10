@@ -2,23 +2,20 @@
 
 # =============================================================================
 # rm-cc-session
-# Interactive Claude Code session browser and deleter using fzf.
-# (fzf を使って Claude Code セッションを一覧表示・削除する対話型ツール。)
+# fzf を使って Claude Code セッションを一覧表示・削除する対話型ツール。
 #
-# Dependencies / 依存:
+# 依存:
 #   - fzf  https://github.com/junegunn/fzf
 #   - jq   https://stedolan.github.io/jq/
 #
-# Setup / セットアップ:
+# セットアップ:
 #   1. Install dependencies
 #      brew install fzf jq
 #
-# Usage / 使い方:
+# 使い方:
 #   rm-cc-session
-#   [Tab] select multiple  [ctrl-d] delete mode  [Esc] quit
-#   ([Tab] 複数選択 / [ctrl-d] 削除モード / [Esc] で終了)
-#   Session preview is shown in the right pane, from the start of the conversation.
-#   (プレビューは右側に、会話を先頭から表示する。)
+#   [Tab] select multiple  [Tab] 複数選択 / [ctrl-d] 削除モード / [Esc] で終了
+#   プレビューは右側に、会話を先頭から表示する。
 # =============================================================================
 
 PROJECTS_DIR="$HOME/.claude/projects"

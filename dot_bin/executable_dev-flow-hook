@@ -2,29 +2,22 @@
 
 # =============================================================================
 # dev-flow-hook
-# Claude Code and Codex hook for the running-dev-flow skill's state file. Both
-# send the same JSON and read the same answer, so one script serves both
-# (~/.claude/settings.json and ~/.codex/hooks.json).
-# (running-dev-flow の状態ファイル dev-flow.md を扱う、Claude Code と Codex の hook。
-#  どちらも同じ JSON を渡し同じ返事を読むので、1つのスクリプトで両方に使う
-#  （~/.claude/settings.json と ~/.codex/hooks.json）。)
+# running-dev-flow の状態ファイル dev-flow.md を扱う、Claude Code と Codex の hook。
+# どちらも同じ JSON を渡し同じ返事を読むので、1つのスクリプトで両方に使う
+# （~/.claude/settings.json と ~/.codex/hooks.json）。
 #
-# The file lives in the worktree's own git dir, so it is never committed and goes
-# away with `git wt -D`.
-# (ファイルは worktree ごとの git dir に置くので commit されず、git wt -D で消える。)
+# ファイルは worktree ごとの git dir に置くので commit されず、git wt -D で消える。
 #
-# Usage / 使い方:
-#   dev-flow-hook context   SessionStart: print the file so the session resumes from it
-#                           (中身を出力し、コンパクトや /clear の後も続きから動けるようにする)
+# 使い方:
+#   dev-flow-hook context   中身を出力し、コンパクトや /clear の後も続きから動けるようにする
 #   dev-flow-hook stop      Stop: block while the state is 作業中 and steps remain
-#                           (状態が「作業中」で未完了の手順があれば、終わらせない)
+#                           状態が「作業中」で未完了の手順があれば、終わらせない
 #   dev-flow-hook prompt    UserPromptSubmit: turn ユーザー待ち back into 作業中
-#                           (ユーザーが返事をしたら「ユーザー待ち」を「作業中」に戻す)
+#                           ユーザーが返事をしたら「ユーザー待ち」を「作業中」に戻す
 #
 # Stop only blocks on 作業中: a driver waiting for its reviewer or for the user has
-# to end its turn to receive the reply.
-# (止めるのは「作業中」のときだけ。reviewer やユーザーの返事を待つ driver は、
-#  ターンを終えないと返事を受け取れないため。)
+# 止めるのは「作業中」のときだけ。reviewer やユーザーの返事を待つ driver は、
+# ターンを終えないと返事を受け取れないため。
 # =============================================================================
 
 set -eu
