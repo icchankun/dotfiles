@@ -33,6 +33,11 @@ eval "$(zoxide init zsh --cmd j)"
 export DIRENV_LOG_FORMAT=
 eval "$(direnv hook zsh)"
 
+# macOS の /etc/zshrc は 1000 件しか残さない
+HISTSIZE=100000
+SAVEHIST=100000
+setopt EXTENDED_HISTORY
+
 source ~/.zsh/functions.zsh
 
 source ~/.zsh/aliases.zsh
