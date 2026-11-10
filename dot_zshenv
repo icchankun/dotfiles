@@ -4,6 +4,7 @@ path=(
   $HOME/.local/bin
   $HOME/bin
   $HOME/.cargo/bin
+  # keg-only のため Homebrew が PATH に入れない
   /opt/homebrew/opt/sqlite/bin
   /opt/homebrew/opt/mysql@8.0/bin
   /opt/homebrew/opt/postgresql@16/bin
