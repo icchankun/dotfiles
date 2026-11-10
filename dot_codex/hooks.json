@@ -46,6 +46,10 @@
             "type": "command",
             "command": "~/.bin/graphify-hook-guard search",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "~/.bin/git-rewrite-guard --codex-pre"
           }
         ]
       }
