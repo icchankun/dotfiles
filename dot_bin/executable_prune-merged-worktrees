@@ -40,9 +40,6 @@
 
 set -uo pipefail
 
-# launchd starts with a minimal PATH / launchd 経由だと PATH が最小限なので補う
-export PATH="/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
-
 # ssh-agent is not always inherited / launchd 経由で ssh-agent が引き継がれない場合の補完
 if [[ -z "${SSH_AUTH_SOCK:-}" ]] && command -v launchctl >/dev/null 2>&1; then
   sock="$(launchctl getenv SSH_AUTH_SOCK 2>/dev/null)"
