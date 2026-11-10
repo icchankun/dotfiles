@@ -29,3 +29,9 @@ jq = "latest"
 fzf = "latest"
 # Claude Code の statusLine（dot_claude/settings.json）が動かす
 "npm:ccstatusline" = "latest"
+# Herdr の agent-notify mod が通知に使う
+"github:vjeantet/alerter" = "latest"
+
+# mise で入れないもの
+#   herdr: brew
+#   hc, herdr-app: Herdr.app が ~/.local/bin にリンクを置く
