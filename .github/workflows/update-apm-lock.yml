@@ -33,6 +33,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
+          # apm は lockfile を 0600 で書くので、chezmoi の権限差分を避けるため private_ を付ける
           mv private_apm.lock.yaml apm.lock.yaml
           apm lock --update
           mv apm.lock.yaml private_apm.lock.yaml
