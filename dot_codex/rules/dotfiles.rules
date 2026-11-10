@@ -1,6 +1,7 @@
 # Codex の実行ポリシー。Claude Code の settings.json の permissions に当たる
 # Codex は「常に許可」を選ぶと default.rules に書き足すので、dotfiles で管理するのはこのファイルだけにする
 # 読むだけのコマンドは確認なしで通す（permissions.allow）
+# git・which・ls は Claude Code では最初から確認なしで通るので、settings.json の allow には書いていない
 
 prefix_rule(pattern = ["gh", "issue", "list"])
 prefix_rule(pattern = ["gh", "issue", "view"])
