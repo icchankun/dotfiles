@@ -2,51 +2,43 @@
 
 # =============================================================================
 # prune-merged-worktrees
-# Delete git worktrees/branches whose pull request has been merged.
-# (PR がマージ済みの worktree/branch を削除する。)
+# PR がマージ済みの worktree/branch を削除する。
 #
-# Dependencies / 依存:
+# 依存:
 #   - git, git-wt, gh（認証済み）, pgrep (macOS 標準)
 #   - osascript (macOS 標準。失敗を通知で知らせる)
 #
-# Usage / 使い方:
+# 使い方:
 #   prune-merged-worktrees [-n] [-q] [--root DIR] [--depth N]
 #
-#   -n, --dry-run   Show what would be deleted without deleting.
-#                   (削除せず対象を表示するだけ。)
-#   -q, --quiet     Only report repositories that had something to do.
-#                   (何か処理したリポジトリだけを出力する。)
+#   -n, --dry-run   削除せず対象を表示するだけ。
+#   -q, --quiet     何か処理したリポジトリだけを出力する。
 #       --root DIR  Directory to scan for repositories. (default: ~/workspace)
 #       --depth N   Max search depth under --root. (default: 3)
 #
-# Criteria / 削除条件 (AND):
+# 削除条件 (AND):
 #   - A merged pull request has this branch as its head. / このブランチを head にした PR がマージ済み。
-#   - The branch tip is that PR's last commit or one of its ancestors.
-#     (ブランチの先端が、その PR の最後のコミットかその祖先。)
+#   - ブランチの先端が、その PR の最後のコミットかその祖先。
 #   git の履歴ではなく PR の状態で判定するので、squash / rebase でマージしたものも拾える。
 #   2 つ目は、マージ済みの PR と同じ名前で作り直したブランチの作業を消さないためのもの。
 #
-# Safety / 安全策:
-#   - A worktree with uncommitted or untracked changes is skipped.
-#     (未コミット・未追跡の変更がある worktree はスキップする。)
-#   - The default branch and the main worktree are never touched.
-#     (デフォルトブランチとメイン worktree には触れない。)
-#   - A repository where gh fails (no network, no auth) is skipped.
-#     (gh が失敗したリポジトリはスキップする。)
+# 安全策:
+#   - 未コミット・未追跡の変更がある worktree はスキップする。
+#   - デフォルトブランチとメイン worktree には触れない。
+#   - gh が失敗したリポジトリはスキップする。
 #
-# Also removes the Claude Code sessions recorded for each deleted worktree.
-# (消した worktree の Claude Code のセッションも消す。)
+# 消した worktree の Claude Code のセッションも消す。
 # =============================================================================
 
 set -uo pipefail
 
-# ssh-agent is not always inherited / launchd 経由で ssh-agent が引き継がれない場合の補完
+# launchd 経由で ssh-agent が引き継がれない場合の補完
 if [[ -z "${SSH_AUTH_SOCK:-}" ]] && command -v launchctl >/dev/null 2>&1; then
   sock="$(launchctl getenv SSH_AUTH_SOCK 2>/dev/null)"
   [[ -n "$sock" ]] && export SSH_AUTH_SOCK="$sock"
 fi
 
-# Never block on credential prompts / 認証プロンプトで固まらないようにする
+# 認証プロンプトで固まらないようにする
 export GIT_TERMINAL_PROMPT=0
 # ConnectTimeout は接続確立までにしか効かない。確立後にスリープや回線切り替えで
 # 応答が止まると ssh が永久に待つので、ServerAlive* で無通信を検出して落とす。
@@ -120,7 +112,7 @@ run_with_timeout() {
   wait "$pid"
 }
 
-# Branches whose pull request has been merged / PR がマージ済みのブランチ
+# PR がマージ済みのブランチ
 # gh が失敗したら 1 を返し、そのリポジトリを飛ばさせる。
 prunable_branches() {
   local repo="$1" default="$2" branch tip head
@@ -136,7 +128,7 @@ prunable_branches() {
   done < <(git -C "$repo" for-each-ref --format='%(refname:short)' refs/heads)
 }
 
-# Worktree path for a branch, empty if none / ブランチに対応する worktree のパス
+# ブランチに対応する worktree のパス
 worktree_path() {
   git -C "$1" worktree list --porcelain \
     | awk -v br="refs/heads/$2" '
@@ -145,14 +137,13 @@ worktree_path() {
       '
 }
 
-# The first entry of `git worktree list` is the main worktree
-# (`git worktree list` の先頭がメイン worktree)
+# `git worktree list` の先頭がメイン worktree
 main_worktree() {
   git -C "$1" worktree list --porcelain \
     | awk '/^worktree / { print substr($0, 10); exit }'
 }
 
-# origin/HEAD, falling back to main/master / origin/HEAD がなければ main/master を見る
+# origin/HEAD がなければ main/master を見る
 default_branch() {
   local repo="$1" ref branch
   ref="$(git -C "$repo" symbolic-ref --quiet refs/remotes/origin/HEAD 2>/dev/null)"
@@ -172,8 +163,7 @@ is_dirty() {
   [[ -n "$(git -C "$1" status --porcelain 2>/dev/null)" ]]
 }
 
-# Remove directories left empty by `git wt -D`, stopping at the repo
-# (`git wt -D` で空になった中間ディレクトリを、リポジトリ直下まで遡って掃除する)
+# `git wt -D` で空になった中間ディレクトリを、リポジトリ直下まで遡って掃除する
 prune_empty_dirs() {
   local dir="$1" stop="$2"
   while [[ "$dir" != "$stop" && "$dir" != "/" ]]; do
@@ -182,16 +172,13 @@ prune_empty_dirs() {
   done
 }
 
-# Claude Code keeps a worktree's sessions under ~/.claude/projects/<path with
-# every non-alphanumeric character replaced by "-">
-# (Claude Code はセッションを、パスの英数字以外を "-" にした名前のディレクトリに置く)
+# Claude Code はセッションを、パスの英数字以外を "-" にした名前のディレクトリに置く
 remove_claude_sessions() {
   local dir="$HOME/.claude/projects/${1//[^a-zA-Z0-9]/-}"
   [[ -d "$dir" ]] && rm -rf "$dir"
 }
 
-# Delete the worktree (if any) and the branch together with git wt
-# (git wt で worktree とブランチをまとめて消す)
+# git wt で worktree とブランチをまとめて消す
 # 未コミットの変更は呼び出し側で確かめているので、-D で消す。
 delete_branch() {
   local repo="$1" branch="$2" wt="$3" out
