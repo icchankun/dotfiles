@@ -9,6 +9,8 @@
 # 使い方: Claude Code は settings.json の hooks.PreToolUse（matcher: Bash）に登録する。
 #   Codex は ~/.codex/hooks.json の PermissionRequest（matcher: Bash）に `git-rewrite-guard --codex` で登録する。
 #   Codex の PreToolUse は allow を返しても確認を飛ばさず、確認を決めるのは PermissionRequest のため。
+#   PermissionRequest は確認なしで動くコマンドでは呼ばれない。deny は PreToolUse に `--codex-pre` で登録して返す。
+#   Codex の PreToolUse は ask を扱えない。force push の確認はふだんの承認に任せる。
 #   `git-rewrite-guard test` で自己テスト
 import json
 import os
@@ -415,6 +417,14 @@ if __name__ == "__main__":
     decision = rewrite_decision(command, cwd)
     if not decision and not ok and lease_push(command):
         decision = ("ask", unsafe_push_reason(command, cwd))
+    if sys.argv[1:] == ["--codex-pre"]:
+        if decision and decision[0] == "deny":
+            print(json.dumps({"hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "permissionDecision": "deny",
+                "permissionDecisionReason": f"git-rewrite-guard: {decision[1]}",
+            }}))
+        sys.exit()
     if decision or not ok:
         if decision and sys.argv[1:] != ["--codex"]:
             print(json.dumps({"hookSpecificOutput": {
