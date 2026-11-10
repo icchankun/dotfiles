@@ -17,7 +17,7 @@
 #     -a, --agent NAME   Agent for the reviewer: claude or codex.
 #                        (レビュー役の agent。default: driver と同じ)
 #     -m, --model NAME   Model for the reviewer.
-#                        (レビュー役のモデル。default: claude は sonnet、codex は gpt-6.1-sol)
+#                        (レビュー役のモデル。default: claude は sonnet、codex は gpt-6-luna)
 #     -h, --help         Show this help. (このヘルプを表示する。)
 #
 # Notes / 補足:
@@ -133,7 +133,7 @@ resolve_agent() {
   #  固定しているため、ここで決まるのは主に指摘の仕分けを担うモデル。)
   case "$agent" in
     claude) model="${model:-sonnet}" ;;
-    codex) model="${model:-gpt-6.1-sol}" ;;
+    codex) model="${model:-gpt-6-luna}" ;;
     *) die "unknown agent: $agent (claude or codex)" ;;
   esac
   command -v "$agent" >/dev/null || die "$agent not found in PATH"
