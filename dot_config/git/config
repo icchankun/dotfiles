@@ -3,6 +3,8 @@
 [core]
 	commentChar = ^
 	editor = code --wait
+[pull]
+	rebase = true
 [wt]
 	# ~/.graphify/projects に貯めた graphify のグラフをコピーする。Herdr で開く前に置き、最初のターンから使えるようにする
 	hook = ~/.bin/graphify-store seed
