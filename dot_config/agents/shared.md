@@ -7,7 +7,7 @@
 
 上記に当たらない依頼（調査・質問・資料のまとめ・簡単な設定変更など）は、リンクがあっても branch を作らずそのまま対応する。
 
-worktree の作成・削除は `git wt` で行う。`git worktree add` / `git worktree remove` を直接使うと、Herdr.app で開くフックが走らない。
+worktree の作成・削除は `git wt` で行う。`git worktree add` を直接使うと、Herdr.app で開くフックが走らない。
 
 # コードを探すとき
 
@@ -32,19 +32,17 @@ hc ls --label role=reviewer --label driver="$HC_TERMINAL_ID"   # 自分の revie
 hc ls --label role=driver --label driver=t7                     # t7 の driver
 ```
 
-# コードコメントを書くとき
-
-コードを書く・直すときは、`writing-code-comments` の SKILL.md を読み、コメントはその基準で書く。`ponytail:` のコメントは書かない。
-
 # ファイルを編集するとき
 
 ファイルの編集は、使える編集ツールで、同じ応答の中にまとめて出す。複数のファイルを1回で編集できるツールなら、1回にまとめる。
 
 サブエージェントに分けるのは、互いに関係しない機械的な変更が3ファイル以上あるときだけにする。何をどう変えるかは自分で決めて渡すので、軽いモデルでよい。サブエージェントは起動のたびに要件と周りのコードを読み直すので、小さな変更では自分で書くより遅く、トークンも増える。
 
-# 文章を書くとき
+# 文章・コメントを書くとき
 
 返答は日本語で書く。
+
+コードを書く・直すときは、`writing-code-comments` の SKILL.md を読み、コメントはその基準で書く。`ponytail:` のコメントは書かない。
 
 人が読む、会話の外に残る文章（コミットメッセージ、PR、レビューへの返信、ドキュメント、コードコメント、Notion）は、`reviewing-writing` で見直してから出す。この会話での返答と、agent が読むもの（引き継ぎ・依頼・SKILL.md・AGENTS.md・CLAUDE.md などの指示ファイル）は対象外。
 
