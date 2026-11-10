@@ -119,7 +119,9 @@ sync_repo() {
     return 0
   fi
   [[ -d "$dest" ]] && cp -R "$dest" "$work"
-  if (cd "$src" && GRAPHIFY_OUT="$work" graphify update . --force) >"$tmp/graphify.log" 2>&1 && [[ -f "$work/graph.json" ]]; then
+  # 取り出した mise.toml は trust せず無視する。
+  # trust すると graphify の shim がリポジトリのツールを探しにいき、入っていなければ失敗する。
+  if (cd "$src" && MISE_IGNORED_CONFIG_PATHS="$src" GRAPHIFY_OUT="$work" graphify update . --force) >"$tmp/graphify.log" 2>&1 && [[ -f "$work/graph.json" ]]; then
     rm -rf "$dest.old"
     [[ -d "$dest" ]] && mv "$dest" "$dest.old"
     mv "$work" "$dest"
