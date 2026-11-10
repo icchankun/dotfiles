@@ -2,67 +2,46 @@
 
 # =============================================================================
 # herdr-coding
-# Start a reviewer beside the calling pane, which does the coding itself.
-# (呼び出し元のペインが実装役を兼ね、その隣にレビュー役を立てる。)
+# 呼び出し元のペインが実装役を兼ね、その隣にレビュー役を立てる。
 #
-# Dependencies / 依存:
+# 依存:
 #   - Herdr.app (herdr-app, hc)  https://herdr.dev
 #   - jq
-#   - claude or codex (the reviewer's agent / レビュー役の agent)
+#   - claude or codex (レビュー役の agent)
 #
-# Usage / 使い方:
+# 使い方:
 #   herdr-coding [options]
 #
-#   Options / オプション:
-#     -a, --agent NAME   Agent for the reviewer: claude or codex.
-#                        (レビュー役の agent。default: driver と同じ)
-#     -m, --model NAME   Model for the reviewer.
-#                        (レビュー役のモデル。default: claude は sonnet、codex は gpt-6-luna)
-#     -h, --help         Show this help. (このヘルプを表示する。)
+#   オプション:
+#     -a, --agent NAME   レビュー役の agent。default: driver と同じ
+#     -m, --model NAME   レビュー役のモデル。default: claude は sonnet、codex は gpt-6-luna
+#     -h, --help         このヘルプを表示する。
 #
-# Notes / 補足:
-#   - Herdr.app moves focus to the pane it splits, so focus is put back on the
-#     calling pane afterwards.
-#     (Herdr.app は分割したペインにフォーカスを移すので、最後に呼び出し元へ戻す。)
-#   - Agents are addressed by their terminal (`t8`), not by a session name, so
-#     a Claude Code driver and a Codex reviewer can talk with `hc send`.
-#     (agent は session 名ではなく terminal の番地（`t8`）で呼ぶので、Claude Code
-#      の driver と Codex のレビュー役でも `hc send` でやりとりできる。)
-#   - The reviewer is labelled role=reviewer and driver=<calling terminal>, so
-#     re-running reuses this driver's reviewer. The label also keeps the reviewer
-#     out of the agent-notify mod's notifications.
-#     (レビュー役には role=reviewer と driver=<呼び出し元の terminal> の label が
-#      付くので、再実行すればその driver のレビュー役が再利用される。label は
-#      agent-notify mod がレビュー役を通知しないための目印にもなる。)
-#   - The tab ends up holding only the driver and its reviewer: any other pane is
-#     closed (one whose agent is still working is left open and reported), and
-#     another agent without a role sharing the tab is an error rather than
-#     something to close, since that is a driver a person talks to.
-#     (タブは driver とそのレビュー役だけになる。それ以外のペインは閉じるが、
-#      作業中の agent のペインは閉じず報告に残す。同じタブに役割の label がない
-#      別の agent がいるときは、人がやりとりする driver のため、閉じずにエラーで
-#      止める。)
+# 補足:
+#   - Herdr.app は分割したペインにフォーカスを移すので、最後に呼び出し元へ戻す。
+#   - agent は session 名ではなく terminal の番地（`t8`）で呼ぶので、Claude Code
+#     の driver と Codex のレビュー役でも `hc send` でやりとりできる。
+#   - レビュー役には role=reviewer と driver=<呼び出し元の terminal> の label が
+#     付くので、再実行すればその driver のレビュー役が再利用される。label は
+#     agent-notify mod がレビュー役を通知しないための目印にもなる。
+#   - タブは driver とそのレビュー役だけになる。それ以外のペインは閉じるが、
+#     作業中の agent のペインは閉じず報告に残す。同じタブに役割の label がない
+#     別の agent がいるときは、人がやりとりする driver のため、閉じずにエラーで
+#     止める。
 # =============================================================================
 
 set -euo pipefail
 
-# Args a Claude Code reviewer starts with.
-# (Claude Code のレビュー役の起動引数。)
+# Claude Code のレビュー役の起動引数。
 readonly CLAUDE_ARGS=(
-  # MCP off: every server's tool definitions are resent on each request, and that
-  # cost multiplies by the number of workers.
-  # (MCP 無効。ツール定義は毎リクエスト再送され、その費用がワーカー数の分だけ掛かる。)
+  # MCP 無効。ツール定義は毎リクエスト再送され、その費用がワーカー数の分だけ掛かる。
   --strict-mcp-config
   --mcp-config '{"mcpServers":{}}'
-  # Notifications off: only the driver talks to the user, so a worker going idle
-  # is not something to interrupt them for.
-  # (通知は無効。ユーザーとやりとりするのは driver だけなので、ワーカーが手を
-  #  空けたことでユーザーを中断させない。)
+  # 通知は無効。ユーザーとやりとりするのは driver だけなので、ワーカーが手を
+  # 空けたことでユーザーを中断させない。
   --settings '{"inputNeededNotifEnabled":false,"agentPushNotifEnabled":false}'
-  # Pre-approve these commands. With notifications off, a reviewer stopped at
-  # a permission prompt goes unnoticed and the review loop stalls.
-  # (コマンドを事前に許可する。通知を切っているので、許可待ちで止まった
-  #  reviewer には誰も気づかず、往復が止まる。)
+  # コマンドを事前に許可する。通知を切っているので、許可待ちで止まった
+  # reviewer には誰も気づかず、往復が止まる。
   --allowedTools Read Grep Glob Agent Skill
   "Bash(git diff:*)" "Bash(git status:*)" "Bash(git log:*)" "Bash(git show:*)"
   "Bash(git config --get:*)" "Bash(git rev-parse:*)" "Bash(gh repo view:*)"
@@ -70,16 +49,11 @@ readonly CLAUDE_ARGS=(
   "Bash(sh ~/.claude/skills/reviewing-git-diffs/scripts/snapshot.sh)"
 )
 
-# Args a Codex reviewer starts with. --no-daemon keeps its commands inside hc.
-# Approvals are off so it never waits on a prompt nobody sees. The "dotfiles"
-# permission profile from ~/.codex/config.toml lets it write in the worktree,
-# because the review snapshot writes a git tree object, and keeps secrets
-# unreadable; the skill tells it not to edit files.
-# (Codex のレビュー役の起動引数。--no-daemon がないとコマンドが hc の外で動く。
-#  誰も見ていない確認で止まらないよう承認は切る。~/.codex/config.toml の権限
-#  プロファイル dotfiles で、レビューのスナップショットが git の tree オブジェクトを
-#  書くための worktree への書き込みは許し、秘密情報は読ませない。ファイルを編集
-#  しないことは skill に書いてある。)
+# Codex のレビュー役の起動引数。--no-daemon がないとコマンドが hc の外で動く。
+# 誰も見ていない確認で止まらないよう承認は切る。~/.codex/config.toml の権限
+# プロファイル dotfiles で、レビューのスナップショットが git の tree オブジェクトを
+# 書くための worktree への書き込みは許し、秘密情報は読ませない。ファイルを編集
+# しないことは skill に書いてある。
 readonly CODEX_ARGS=(
   --no-daemon
   --config 'default_permissions="dotfiles"'
@@ -116,21 +90,16 @@ require_environment() {
   command -v jq >/dev/null || die "jq not found in PATH"
 }
 
-# Pick the reviewer's agent and model: the driver's own agent unless --agent says
-# otherwise, as reported by the program itself or else the command it runs.
-# (レビュー役の agent とモデルを決める。--agent がなければ driver と同じ agent に
-#  する。agent はプログラム自身の報告か、なければ起動コマンドから読む。)
+# レビュー役の agent とモデルを決める。--agent がなければ driver と同じ agent に
+# する。agent はプログラム自身の報告か、なければ起動コマンドから読む。
 resolve_agent() {
   if [ -z "$agent" ]; then
     agent=$(hc get --json "$HC_TERMINAL_ID" | jq -r '(.status.app // .argv[0] // "") | ascii_downcase')
     case "$agent" in *codex*) agent=codex ;; *) agent=claude ;; esac
   fi
-  # The reviewer runs every round until the findings clear, so it defaults to the
-  # cheaper model. For Claude Code, the bug-finding agent inside the review command
-  # pins its own model, so this mainly sets who sorts the findings.
-  # (レビュー役は指摘がなくなるまで毎ラウンド動くので、既定は安いモデルにする。
-  #  Claude Code では、レビューコマンド内でバグを探すエージェントが自分でモデルを
-  #  固定しているため、ここで決まるのは主に指摘の仕分けを担うモデル。)
+  # レビュー役は指摘がなくなるまで毎ラウンド動くので、既定は安いモデルにする。
+  # Claude Code では、レビューコマンド内でバグを探すエージェントが自分でモデルを
+  # 固定しているため、ここで決まるのは主に指摘の仕分けを担うモデル。
   case "$agent" in
     claude) model="${model:-sonnet}" ;;
     codex) model="${model:-gpt-6-luna}" ;;
@@ -139,23 +108,19 @@ resolve_agent() {
   command -v "$agent" >/dev/null || die "$agent not found in PATH"
 }
 
-# Print the terminals of the tab this driver sits in, one JSON object per line.
-# (この driver がいるタブの terminal を1行1つの JSON で出力する。)
+# この driver がいるタブの terminal を1行1つの JSON で出力する。
 tab_terminals() {
   herdr-app ls | jq -c --arg self "$HC_TERMINAL_ID" '
     .spaces[].tabs[] | select(any(.terminals[]; .terminal == $self)) | .terminals[]'
 }
 
-# Print the live terminal of this driver's worker for ROLE ($1), or nothing.
-# (この driver の ROLE ($1) のワーカーの terminal を出力する。いなければ何も出さない。)
+# この driver の ROLE ($1) のワーカーの terminal を出力する。いなければ何も出さない。
 worker_terminal() {
   hc ls --json --label "role=$1" --label "driver=$HC_TERMINAL_ID" | jq -r '.terminals[0].address // empty'
 }
 
-# Start the worker for ROLE ($1) in a pane split from this driver toward
-# DIRECTION ($2), and label it as this driver's.
-# (この driver のペインを DIRECTION ($2) に分割して ROLE ($1) のワーカーを起動し、
-#  この driver のものだと分かる label を付ける。)
+# この driver のペインを DIRECTION ($2) に分割して ROLE ($1) のワーカーを起動し、
+# この driver のものだと分かる label を付ける。
 start_agent() {
   local role="$1" direction="$2" pane argv opened terminal
   pane=$(jq -r --arg self "$HC_TERMINAL_ID" 'select(.terminal == $self) | .pane' <<<"$terminals")
@@ -173,10 +138,8 @@ start_agent() {
   kept+=("$terminal")
 }
 
-# Make sure this driver's worker for ROLE ($1) is running, splitting toward
-# DIRECTION ($2) when it is not.
-# (この driver の ROLE ($1) のワーカーが動いている状態にする。いなければ
-#  DIRECTION ($2) に分割して起動する。)
+# この driver の ROLE ($1) のワーカーが動いている状態にする。いなければ
+# DIRECTION ($2) に分割して起動する。
 ensure_agent() {
   local role="$1" direction="$2" terminal
   terminal=$(worker_terminal "$role")
@@ -189,10 +152,8 @@ ensure_agent() {
   fi
 }
 
-# Fail when another driver shares the tab, labelled role=driver or not labelled at
-# all: that is an agent a person talks to, not something to close on a guess.
-# (別の driver が同じタブにいたら止める。role=driver の label が付いたものと、役割の
-#  label がない agent のこと。人がやりとりする agent で、当て推量で閉じるものではない。)
+# 別の driver が同じタブにいたら止める。role=driver の label が付いたものと、役割の
+# label がない agent のこと。人がやりとりする agent で、当て推量で閉じるものではない。
 require_sole_driver() {
   local drivers
   drivers=$(jq -r --arg self "$HC_TERMINAL_ID" 'select(.terminal != $self and .app != null) | .terminal' <<<"$terminals" |
@@ -203,11 +164,8 @@ require_sole_driver() {
   [ -z "$drivers" ] || die "another driver shares this tab: $drivers"
 }
 
-# Close every pane in this tab that is not one this run kept, so the tab ends up
-# holding the driver and its reviewer and nothing else. A pane whose agent is
-# still working is reported instead of cut off mid-task.
-# (このタブのうち今回残したもの以外のペインを閉じ、タブを driver とレビュー役だけにする。
-#  まだ作業中のエージェントが乗っているペインは、途中で切らずに報告に残す。)
+# このタブのうち今回残したもの以外のペインを閉じ、タブを driver とレビュー役だけにする。
+# まだ作業中のエージェントが乗っているペインは、途中で切らずに報告に残す。
 prune_tab() {
   local terminal pane status
 

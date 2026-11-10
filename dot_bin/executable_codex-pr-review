@@ -1,68 +1,44 @@
 #!/usr/bin/env bash
 
-# Review a pull request someone else opened with Codex: a reviewer finds the
-# problems, an advisor checks each one against the code, and this script turns
-# what is left into a GitHub review.
-# (他の人が作った PR を Codex でレビューする。reviewer が問題を見つけ、advisor が
-#  1件ずつコードで確かめ、残ったものをこのスクリプトが GitHub のレビューにする。)
+# 他の人が作った PR を Codex でレビューする。reviewer が問題を見つけ、advisor が
+# 1件ずつコードで確かめ、残ったものをこのスクリプトが GitHub のレビューにする。
 #
-# Dependencies / 依存:
+# 依存:
 #   - gh, git, jq, codex
 #   - the reviewing-pull-requests and checking-review-findings skills
 #     (icchankun/skills, deployed by apm to ~/.agents/skills)
-#   - graphify (optional / 任意)
+#   - graphify (任意)
 #
-# Usage / 使い方:
+# 使い方:
 #   codex-pr-review [--post] <PR URL | owner/repo#number>
 #
-#   Without --post the review is printed and nothing is sent to GitHub.
-#   (--post を付けなければ、文面を表示するだけで GitHub には送らない。)
+#   --post を付けなければ、文面を表示するだけで GitHub には送らない。
 #
-# Rounds / ラウンド:
-#   Each run picks up where the last posted review left off, read back from the
-#   hidden marker in that review.
-#   (実行のたびに、前に投稿したレビューの隠しマーカーから続きを読み戻す。)
-#     - a new push, or a new reply from the author -> review the next round
-#       (新しい push か、作者の新しい返信がある -> 次のラウンドをレビューする)
-#     - must or should left -> post a COMMENT review
-#       (must か should が残っている -> COMMENT のレビューを投稿する)
-#     - none left -> wait for CI, then post a COMMENT review and leave the
-#       approval to me
-#       (残っていない -> CI を待って COMMENT のレビューを投稿し、approve は人に任せる)
-#     - more than MAX_ROUNDS rounds -> stop and leave it to you
-#       (MAX_ROUNDS を超えた -> 止めて人に任せる)
-#   The wording follows the review comment templates: the labels, a section for
-#   findings outside the diff, what was checked and what was left out on purpose,
-#   and a reply on each inline thread whose finding was settled.
-#   (文面はレビューコメントのテンプレートに沿う。ラベル、差分の外の指摘の見出し、
-#    確認したことと指摘しなかった点、解消した指摘のインラインのスレッドへの返信。)
+# ラウンド:
+#   実行のたびに、前に投稿したレビューの隠しマーカーから続きを読み戻す。
+#     - 新しい push か、作者の新しい返信がある -> 次のラウンドをレビューする
+#     - must か should が残っている -> COMMENT のレビューを投稿する
+#     - 残っていない -> CI を待って COMMENT のレビューを投稿し、approve は人に任せる
+#     - MAX_ROUNDS を超えた -> 止めて人に任せる
+#   文面はレビューコメントのテンプレートに沿う。ラベル、差分の外の指摘の見出し、
+#   確認したことと指摘しなかった点、解消した指摘のインラインのスレッドへの返信。
 #
-# Exit status / 終了コード:
+# 終了コード:
 #   0   reviewed with Codex (Codex でレビューした)
-#   3   Codex not needed: nothing new, or only CI was checked
-#       (Codex は使っていない。新しいことがないか、CI だけを見た)
+#   3   Codex は使っていない。新しいことがないか、CI だけを見た
 #   4   handed over after MAX_ROUNDS (MAX_ROUNDS を超えたので人に任せた)
-#   6   nothing left and CI passed: ready for me to approve
-#       (指摘が残っておらず CI も通った。approve するかを自分で決める)
+#   6   指摘が残っておらず CI も通った。approve するかを自分で決める
 #   75  Codex's usage limit; the message says when it resets (Codex の利用枠切れ。
 #       戻る時刻はメッセージに出る)
 #
-# Notes / 補足:
-#   - Codex runs with the dotfiles-readonly permission profile from
-#     ~/.codex/config.toml: it only reads, cannot read ~/.ssh or .env files, and
-#     never gets GitHub credentials. Only this script posts, and it never
-#     approves: a pull request could still talk Codex out of its findings.
-#     (Codex は ~/.codex/config.toml の権限プロファイル dotfiles-readonly で動く。
-#      読むだけで、~/.ssh と .env は読めず、GitHub の権限も持たない。投稿するのは
-#      このスクリプトだけで、approve はしない。PR の中身に誘導されて、Codex が
-#      指摘を出さないこともあるため。)
-#   - Models are set here, not read from ~/.codex/config.toml: /model in Codex
-#     rewrites that value, and each role needs its own effort.
-#     (モデルは ~/.codex/config.toml の値を使わず、ここで決める。その値は Codex の
-#      /model で書き換わり、役割ごとに effort も変えるため。)
-#   - Each run's input and what Codex returned are kept under
-#     ~/.local/state/codex-pr-review/ for checking.
-#     (実行ごとの入力と Codex の結果は ~/.local/state/codex-pr-review/ に残す。)
+# 補足:
+#   - Codex は ~/.codex/config.toml の権限プロファイル dotfiles-readonly で動く。
+#     読むだけで、~/.ssh と .env は読めず、GitHub の権限も持たない。投稿するのは
+#     このスクリプトだけで、approve はしない。PR の中身に誘導されて、Codex が
+#     指摘を出さないこともあるため。
+#   - モデルは ~/.codex/config.toml の値を使わず、ここで決める。その値は Codex の
+#     /model で書き換わり、役割ごとに effort も変えるため。
+#   - 実行ごとの入力と Codex の結果は ~/.local/state/codex-pr-review/ に残す。
 
 set -euo pipefail
 
@@ -71,33 +47,24 @@ readonly REVIEWER_EFFORT=medium
 readonly ADVISOR_MODEL=gpt-6.1-sol
 readonly ADVISOR_EFFORT=high
 readonly MAX_ROUNDS=5
-# How much history to hand the reviewer: the changed files looked up, the commits
-# per file, and the earlier pull requests whose comments are read.
-# (reviewer に渡す履歴の量。調べる変えたファイルの数、ファイルごとのコミット数、
-#  コメントを読む以前の PR の数。)
+# reviewer に渡す履歴の量。調べる変えたファイルの数、ファイルごとのコミット数、
+# コメントを読む以前の PR の数。
 readonly MAX_CONTEXT_FILES=15
 readonly HISTORY_COMMITS=3
 readonly MAX_PAST_PRS=3
-# Files left out of diff.patch: lockfiles and generated files. The reviewer does
-# not read their contents anyway, and they can make up most of a diff's tokens.
-# Their names are still listed in skipped-files. Codex's usage allowance is small
-# on the Business plan, so the input is kept to what the review uses.
-# (diff.patch から外すファイル。lockfile と生成物。reviewer は中身を読まないのに、
-#  差分のトークンの大半になりうる。名前は skipped-files に残す。Business プランの
-#  Codex は利用枠が小さいので、入力はレビューに使うものだけにする。)
+# diff.patch から外すファイル。lockfile と生成物。reviewer は中身を読まないのに、
+# 差分のトークンの大半になりうる。名前は skipped-files に残す。Business プランの
+# Codex は利用枠が小さいので、入力はレビューに使うものだけにする。
 readonly SKIPPED_PATHSPECS=(
   ':(exclude,glob)**/*.lock' ':(exclude,glob)**/package-lock.json' ':(exclude,glob)**/npm-shrinkwrap.json'
   ':(exclude,glob)**/yarn.lock' ':(exclude,glob)**/pnpm-lock.yaml'
   ':(exclude,glob)**/*.min.js' ':(exclude,glob)**/*.min.css' ':(exclude,glob)**/*.map'
   ':(exclude,glob)**/*.snap' ':(exclude,glob)**/__snapshots__/**'
 )
-# Longest body kept for a comment in conversation.json and past_reviews.json.
-# CI and coverage bots post reports far longer than any review comment.
-# (conversation.json と past_reviews.json に残すコメントの本文の長さの上限。CI や
-#  カバレッジの bot は、レビューのコメントよりずっと長い報告を書く。)
+# conversation.json と past_reviews.json に残すコメントの本文の長さの上限。CI や
+# カバレッジの bot は、レビューのコメントよりずっと長い報告を書く。
 readonly MAX_BODY_CHARS=2000
-# Most commits of the pull request written to commits.md, newest first.
-# (commits.md に書く PR のコミットの数の上限。新しい順。)
+# commits.md に書く PR のコミットの数の上限。新しい順。
 readonly MAX_PR_COMMITS=50
 # Ends every review, inline comment and reply, so a reader can tell Codex wrote
 # it and not me. (レビュー・インラインのコメント・返信の最後に付ける。自分ではなく
@@ -156,8 +123,7 @@ require_environment() {
   schema="$skill_root/reviewing-pull-requests/schemas/findings.json"
 }
 
-# Read the pull request and refuse the ones this script must not review.
-# (PR を読み、レビューしてはいけないものを断る。)
+# PR を読み、レビューしてはいけないものを断る。
 load_pull_request() {
   pr=$(gh api "repos/$repo/pulls/$number") || die "could not read $repo#$number"
   me=$(gh api user --jq .login)
@@ -172,10 +138,8 @@ load_pull_request() {
   pending="$STATE_DIR/pending/$key.json"
 }
 
-# Read back the last review this script posted: its round, the head it saw, the
-# findings still open, and when it was posted.
-# (このスクリプトが前に投稿したレビューから、ラウンド・見た head・残っている指摘・
-#  投稿した時刻を読み戻す。)
+# このスクリプトが前に投稿したレビューから、ラウンド・見た head・残っている指摘・
+# 投稿した時刻を読み戻す。
 load_last_review() {
   local last data
   reviews=$(gh api --paginate --slurp "repos/$repo/pulls/$number/reviews" | jq 'add // []')
@@ -204,10 +168,8 @@ author_replied() {
     [.[] | add // [] | .[] | select(.user.login == $author and .created_at > $since)] | length > 0' >/dev/null
 }
 
-# Where the CI of the head stands: pass, pending or fail. cancel counts as fail;
-# no checks, or a failed gh call, counts as pass.
-# (head の CI の状態。pass / pending / fail。cancel は fail。チェックがないか gh が
-#  失敗したときは pass とみなす。)
+# head の CI の状態。pass / pending / fail。cancel は fail。チェックがないか gh が
+# 失敗したときは pass とみなす。
 ci_state() {
   local buckets
   buckets=$(gh pr checks "$number" -R "$repo" --json bucket --jq 'map(.bucket)' 2>/dev/null) || buckets='[]'
@@ -215,10 +177,8 @@ ci_state() {
          elif any(.[]; . == "pending") then "pending" else "pass" end' <<<"${buckets:-[]}"
 }
 
-# Check out the head in a throwaway worktree of a cached bare clone, so the
-# repositories you work in are never touched.
-# (キャッシュした bare clone から、使い捨ての worktree に head を checkout する。
-#  普段作業しているリポジトリには触らない。)
+# キャッシュした bare clone から、使い捨ての worktree に head を checkout する。
+# 普段作業しているリポジトリには触らない。
 checkout() {
   bare="$CACHE_DIR/repos/$repo.git"
   if [ ! -d "$bare" ]; then
@@ -236,10 +196,8 @@ checkout() {
 
   merge_base=$(git -C "$bare" merge-base "refs/heads/$base" "$head")
 
-  # From the second round, only what changed since the last review is read. After
-  # a force push the old head may be gone, so the whole pull request is read again.
-  # (2回目以降は前回から変わったところだけを読む。force push で前回の head が
-  #  消えていたら、PR 全体を読み直す。)
+  # 2回目以降は前回から変わったところだけを読む。force push で前回の head が
+  # 消えていたら、PR 全体を読み直す。
   diff_from=$merge_base
   if [ -n "$last_head" ] && git -C "$bare" cat-file -e "$last_head^{commit}" 2>/dev/null &&
     git -C "$bare" merge-base --is-ancestor "$last_head" "$head"; then
@@ -268,10 +226,8 @@ write_input() {
     (.[2] | add // [] | map(who + {kind: "inline", id, in_reply_to: .in_reply_to_id, path, line, body: (.body | cut), created_at}))
     | sort_by(.created_at)' >"$run/input/conversation.json"
 
-  # The pull request's own commits: their messages say what was meant, and the
-  # advisor cites the commit that settled a finding.
-  # (PR のコミット。メッセージに意図が書かれていることがあり、advisor は指摘を
-  #  解消したコミットをここから引く。)
+  # PR のコミット。メッセージに意図が書かれていることがあり、advisor は指摘を
+  # 解消したコミットをここから引く。
   git -C "$bare" log -n "$MAX_PR_COMMITS" --format='### %h %as %an%n%n%s%n%n%b' "$merge_base..$head" >"$run/input/commits.md" || true
 
   git -C "$bare" diff --name-only "$diff_from" "$head" | head -n "$MAX_CONTEXT_FILES" >"$run/changed-files"
@@ -280,12 +236,9 @@ write_input() {
   write_past_reviews
 }
 
-# Copy the CLAUDE.md and AGENTS.md of the base that cover the changed files: the
-# root one and those in the changed directories and their parents. They come from
-# the base, so a pull request cannot rewrite the rules it is reviewed by.
-# (変えたファイルにかかる、ベースの CLAUDE.md と AGENTS.md を写す。ルートと、変えた
-#  ディレクトリとその親のもの。ベースから取るので、PR がレビューの基準を書き換え
-#  られない。)
+# 変えたファイルにかかる、ベースの CLAUDE.md と AGENTS.md を写す。ルートと、変えた
+# ディレクトリとその親のもの。ベースから取るので、PR がレビューの基準を書き換え
+# られない。
 write_guidance() {
   local dir name path
   {
@@ -305,12 +258,9 @@ write_guidance() {
   done
 }
 
-# The recent commits of the base that touched each changed file, for reading the
-# change in light of why the code is the way it is. Written here because Codex
-# cannot fetch from the partial clone in its sandbox.
-# (変えたファイルごとに、ベースでそのファイルを触った最近のコミット。コードがなぜ
-#  今の形なのかを踏まえて差分を読むため。Codex はサンドボックスの中で partial
-#  clone から取ってこられないので、ここで書く。)
+# 変えたファイルごとに、ベースでそのファイルを触った最近のコミット。コードがなぜ
+# 今の形なのかを踏まえて差分を読むため。Codex はサンドボックスの中で partial
+# clone から取ってこられないので、ここで書く。
 write_history() {
   local path
   while read -r path; do
@@ -319,10 +269,8 @@ write_history() {
   done <"$run/changed-files" >"$run/input/history.md"
 }
 
-# Inline comments from earlier merged pull requests on the changed files, since
-# what a reviewer said there may apply again.
-# (変えたファイルに、以前 merge された PR で付いたインラインのコメント。そこで
-#  言われたことが今回にも当てはまることがあるため。)
+# 変えたファイルに、以前 merge された PR で付いたインラインのコメント。そこで
+# 言われたことが今回にも当てはまることがあるため。
 write_past_reviews() {
   local path shas query numbers files past
   printf '[]\n' >"$run/input/past_reviews.json"
@@ -378,26 +326,21 @@ review() {
   [ "$round" -eq 1 ] || effort=low
   run_codex reviewer "$REVIEWER_MODEL" "$effort" \
     "\$reviewing-pull-requests を使って PR をレビューしてください。ラウンド: ${round}。入力のディレクトリ: $run/input"
-  # Nothing to check: no new findings and none carried over. The advisor would
-  # return the reviewer's JSON as it is, so it is not run.
-  # (確かめるものがない。今回の指摘も持ち越しもなければ、advisor は reviewer の JSON を
-  #  そのまま返すだけなので動かさない。)
+  # 確かめるものがない。今回の指摘も持ち越しもなければ、advisor は reviewer の JSON を
+  # そのまま返すだけなので動かさない。
   if jq -e '.findings | length == 0' "$run/reviewer.json" >/dev/null && [ "$(jq length <<<"$open")" -eq 0 ]; then
     jq '.previous = [] | .dropped = []' "$run/reviewer.json" >"$run/advisor.json"
     return
   fi
-  # Later rounds check fewer and smaller findings, so medium is enough.
-  # (2回目以降は確かめる指摘が少なく小さいので、medium で足りる。)
+  # 2回目以降は確かめる指摘が少なく小さいので、medium で足りる。
   local advisor_effort=$ADVISOR_EFFORT
   [ "$round" -eq 1 ] || advisor_effort=medium
   run_codex advisor "$ADVISOR_MODEL" "$advisor_effort" \
     "\$checking-review-findings を使って指摘を確かめてください。ラウンド: ${round}。入力のディレクトリ: ${run}/input。reviewer が返した JSON: $run/reviewer.json"
 }
 
-# Drop the line of a finding that is outside the diff's hunks: GitHub rejects
-# inline comments there, so it is listed in the review body only.
-# (差分の hunk の外を指す指摘は行を外す。GitHub はそこにインラインのコメントを付け
-#  られないので、レビューの本文の一覧にだけ出す。)
+# 差分の hunk の外を指す指摘は行を外す。GitHub はそこにインラインのコメントを付け
+# られないので、レビューの本文の一覧にだけ出す。
 place_findings() {
   local lines
   lines=$(awk '
@@ -415,15 +358,10 @@ place_findings() {
   ' "$run/advisor.json" >"$run/findings.json"
 }
 
-# Settle the previous findings: one the advisor did not mention counts as still
-# open. Then the open list for the next round is the new findings plus the
-# previous ones left unresolved.
-# fyi needs no answer, so it is not carried over. Only must and should keep the
-# review from being ready; ask, nit and fyi do not.
-# (前回の指摘を確定する。advisor が触れなかったものは残っているとみなす。次の
-#  ラウンドに持ち越すのは、今回の指摘と、解消していない前回の指摘。fyi は返事が
-#  要らないので持ち越さない。must と should が残っていれば approve に進めず、ask・
-#  nit・fyi は止めない。)
+# 前回の指摘を確定する。advisor が触れなかったものは残っているとみなす。次の
+# ラウンドに持ち越すのは、今回の指摘と、解消していない前回の指摘。fyi は返事が
+# 要らないので持ち越さない。must と should が残っていれば approve に進めず、ask・
+# nit・fyi は止めない。
 settle_findings() {
   jq --argjson open "$open" '
     (.previous | map({key: .id, value: .}) | from_entries) as $seen
@@ -434,14 +372,10 @@ settle_findings() {
   mv "$run/settled.json" "$run/findings.json"
 }
 
-# Build the GitHub review from the settled findings, following the review comment
-# templates. The body has no closing line yet: the closings for a ready review, a
-# comment and a failed CI are built here, and the one to use is picked when the
-# review is posted. The hidden marker holds the open findings for the next round.
-# (確定した指摘から、テンプレートに沿って GitHub のレビューを組み立てる。本文には
-#  まだ締めの1行を入れない。指摘なし・コメント・CI 失敗の3つの締めをここで作り、
-#  投稿するときにどれを使うかを選ぶ。隠しマーカーには次のラウンドに持ち越す指摘を
-#  入れる。)
+# 確定した指摘から、テンプレートに沿って GitHub のレビューを組み立てる。本文には
+# まだ締めの1行を入れない。指摘なし・コメント・CI 失敗の3つの締めをここで作り、
+# 投稿するときにどれを使うかを選ぶ。隠しマーカーには次のラウンドに持ち越す指摘を
+# 入れる。
 build_review() {
   local saved
   saved=$(jq -c '{open}' "$run/findings.json" | base64 | tr -d '\n')
@@ -450,8 +384,7 @@ build_review() {
     def tag: "[" + .severity + "]";
     def stop: sub("。$"; "");
     def items: map("- " + .) | join("\n");
-    # The text of one finding: what happens, the suggestion, and how optional it is.
-    # (指摘1件の本文。何が起きるか、直し方の案、どれくらい任意か。)
+    # 指摘1件の本文。何が起きるか、直し方の案、どれくらい任意か。
     def detail: .body
       + (if .suggestion then "\n\n直し方の案：" + .suggestion else "" end)
       + ({nit: "\n\n今のままでも動作に問題はありません。", ask: "\n\n意図どおりであれば対応は不要です。"}[.severity] // "");
@@ -463,8 +396,7 @@ build_review() {
     | (.open // []) as $open
     | ([$open[] | select(.severity == "must" or .severity == "should") | .severity] | unique | sort_by({must: 0, should: 1}[.]) | map("[" + . + "]") | join(" / ")) as $blocking
     | (if any($f[], $open[]; .severity == "nit") then "[nit] は任意です。" else "" end) as $nit
-    # Findings outside the diff cannot be inline, so they are written out in the body.
-    # (差分の外の指摘はインラインにできないので、本文に書き出す。)
+    # 差分の外の指摘はインラインにできないので、本文に書き出す。
     | ($outside | map(["", "### " + tag + " " + .title, "", "差分の外のため本文に書きます。", "", detail])) as $outside_sections
     | (if $round == 1 then
         ["レビューしました。" + (.summary // "")]
@@ -542,10 +474,8 @@ post_replies() {
   done
 }
 
-# A review with nothing left waits for CI: on pass, post it and exit 6 so that
-# I approve it myself; on fail, post it; otherwise keep it pending.
-# (残りのないレビューは CI を待つ。通れば投稿して 6 で終わり、approve は自分でする。
-#  落ちれば投稿し、まだなら保留のまま残す。)
+# 残りのないレビューは CI を待つ。通れば投稿して 6 で終わり、approve は自分でする。
+# 落ちれば投稿し、まだなら保留のまま残す。
 finish_when_ci_done() {
   local file="$1"
   case "$(ci_state)" in
@@ -586,8 +516,7 @@ main() {
   load_pull_request
   load_last_review
 
-  # A review already built for this head is only waiting for CI.
-  # (この head のレビューがもうできていれば、CI を待っているだけ。)
+  # この head のレビューがもうできていれば、CI を待っているだけ。
   if [ "$post" = true ] && [ -f "$pending" ]; then
     if [ "$(jq -r .head "$pending")" = "$head" ]; then
       finish_when_ci_done "$pending"
