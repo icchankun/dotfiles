@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 # Claude Code と Codex の hook。git commit --amend と git push --force-with-lease を、
-# 引数を1つずつ確かめて安全な形のときだけ確認なしで通す。それ以外は何も出さず、ふだんの判断に任せる。
-# ただし安全と言えない force push は確認に回す。settings.json の allow に入れた形でも、リポジトリの設定が危なければ止めるため。
+# 引数を1つずつ確かめて安全な形のときだけ確認なしで通す。それ以外の git の操作は何も出さず、ふだんの判断に任せる。
+# 確認（ask）は返さない。毎回出る確認は中身を見ずに Yes を押すだけになり、止める役に立たなかったため。
+# 安全と言えない force push は deny する。settings.json の allow に入れた形でも、リポジトリの設定が危なければ止めるため。
 # settings.json の allow は文字列の前方一致なので、git が受け付ける省略形（--rec で --receive-pack など）を塞げない。
-# ready の PR の履歴は、レビュアーが追っている差分を変えるので書き換えさせない。push 済みコミットの amend は deny して Claude に新しいコミットを積ませる。
-# force push は base への rebase 後などに必要なので、確認に回す。auto モードでは && でつないだ形も確認なしで動くので、この判定はコマンド全体を解析して行う。
+# 人がレビュー・レビュー依頼・コメントした PR の履歴は、人が追っている差分を変えるので書き換えさせない。
+# AI のレビュアーしかいない PR は、指摘を直すたびに書き換えてよい。
+# auto モードでは && でつないだ形も確認なしで動くので、この判定はコマンド全体を解析して行う。
 # 解析するのはシェルの区切りと引用符までで、bash -c の中身や python から呼ぶ git は見ない。
 # 使い方: Claude Code は settings.json の hooks.PreToolUse（matcher: Bash）に登録する。
 #   Codex は ~/.codex/hooks.json の PermissionRequest（matcher: Bash）に `git-rewrite-guard --codex` で登録する。
 #   Codex の PreToolUse は allow を返しても確認を飛ばさず、確認を決めるのは PermissionRequest のため。
 #   PermissionRequest は確認なしで動くコマンドでは呼ばれない。deny は PreToolUse に `--codex-pre` で登録して返す。
-#   Codex の PreToolUse は ask を扱えない。force push の確認はふだんの承認に任せる。
 #   `git-rewrite-guard test` で自己テスト
 import json
 import os
@@ -31,7 +32,10 @@ LEASE = re.compile(r"^--force-with-lease(=[\w./-]+:[0-9a-f]{7,40})?$")
 # -F で任意のファイルを読ませると、読めないはずの中身をメッセージに入れて持ち出せる。symlink で外を指せないよう、実体のパスで見る
 MSG_DIR = os.path.join(os.path.realpath("/tmp"), f"claude-{os.getuid()}")
 SHELL_PUNCTUATION = "();<>|&\n"
-UNVERIFIED = "PR の状態を確かめられません。履歴を書き換えてよいと分かっているなら Yes、そうでなければ No。"
+UNVERIFIED = "PR の状態を確かめられないため、履歴を書き換えない。新しいコミットを積む。"
+# REST API の user.type が Bot にならず、User として返る AI のアカウント
+AI_REVIEWERS = {"claude", "copilot-pull-request-reviewer", "devin-ai-integration", "github-actions", "notion-workspace"}
+KEEP_HISTORY = "新しいコミットを積む。どうしても書き換えるなら、ユーザーが `! git ...` で実行する。"
 
 
 def msg_dir_trusted():
@@ -76,8 +80,10 @@ def safe_amend(args):
 SAFE_LOCAL_KEYS = re.compile(
     r"core\.(repositoryformatversion|filemode|bare|logallrefupdates|ignorecase|precomposeunicode|commentchar)"
     r"|extensions\.worktreeconfig|lfs\.repositoryformatversion|log\.excludedecoration|user\.(name|email)"
-    r"|remote\.[^=\n]+\.fetch|branch\.[^=\n]+\.(merge|vscode-merge-base|github-pr-owner-number)"
-    r"|gitbutler\..*",
+    r"|remote\.[^=\n]+\.fetch|branch\.[^=\n]+\.(merge|vscode-merge-base|gh-merge-base|github-pr-owner-number|gk-last-accessed|gk-last-modified)"
+    r"|rerere\.enabled|gitbutler\..*"
+    # git wt が読む設定で、git push は読まない
+    r"|wt\.(hook|deletehook|copy|copymodified)",
     re.IGNORECASE,
 )
 SAFE_REMOTE_URL = re.compile(r"(https://github\.com/|git@github\.com:)[\w.-]+/[\w.-]+")
@@ -99,7 +105,7 @@ def repo_config_problem(cwd):
         if re.fullmatch(r"remote\.[^=\n]+\.url", key, re.IGNORECASE):
             if not SAFE_REMOTE_URL.fullmatch(value):
                 return f"設定 {key}"
-        elif re.fullmatch(r"branch\.[^=\n]+\.remote", key, re.IGNORECASE):
+        elif re.fullmatch(r"branch\.[^=\n]+\.remote|remote\.pushdefault", key, re.IGNORECASE):
             # branch.*.remote には URL も書ける。引数なしの push の送り先になるので、origin だけにする
             if value not in ("origin", "."):
                 return f"設定 {key}"
@@ -107,8 +113,19 @@ def repo_config_problem(cwd):
             return f"設定 {key}"
     hooks = git("rev-parse", "--git-path", "hooks").stdout.strip()
     hooks = hooks if os.path.isabs(hooks) else os.path.join(cwd, hooks)
-    installed = [f for f in (os.listdir(hooks) if os.path.isdir(hooks) else []) if not f.endswith(".sample")]
+    installed = [f for f in (os.listdir(hooks) if os.path.isdir(hooks) else [])
+                 if not f.endswith(".sample") and not lefthook_stub(os.path.join(hooks, f))]
     return f"hook {installed[0]}" if installed else None
+
+
+# lefthook が入れた hook は、リポジトリの lefthook.yml を動かすだけで、普通の git commit でも同じものが動く
+def lefthook_stub(path):
+    try:
+        with open(path, errors="replace") as f:
+            body = f.read(65536)
+    except OSError:
+        return False
+    return body.startswith("#!/bin/sh") and "call_lefthook()" in body and 'if [ "$LEFTHOOK" = "0" ]' in body
 
 
 def repo_config_safe(cwd):
@@ -230,20 +247,42 @@ def head_pushed(cwd):
     return not unpushed.stdout.strip()
 
 
-def ready_pr_number(cwd):
+def humans(logins, author):
+    return {login for login in logins
+            if login != author and not login.endswith("[bot]") and login not in AI_REVIEWERS}
+
+
+def gh_json(gh, args, cwd):
+    out = subprocess.run([gh, *args], cwd=cwd, capture_output=True, text=True, timeout=10)
+    if out.returncode != 0:
+        raise RuntimeError(out.stderr)
+    return out.stdout
+
+
+def human_pr_number(cwd):
     # 作業先で mise を動かすとそのリポジトリの mise の設定を読んでしまうので、gh の場所はホームで引く
     gh = subprocess.run(["mise", "which", "gh"], cwd=os.path.expanduser("~"),
                         capture_output=True, text=True, timeout=3, check=True).stdout.strip()
-    view = subprocess.run([gh, "pr", "view", "--json", "number,isDraft,state"], cwd=cwd, capture_output=True, text=True, timeout=5)
-    if view.returncode != 0:
-        if "no pull requests found" in view.stderr:
+    try:
+        pr = json.loads(gh_json(gh, ["pr", "view", "--json", "number,isDraft,state,author,url"], cwd))
+    except RuntimeError as e:
+        if "no pull requests found" in str(e):
             return None
-        raise RuntimeError(view.stderr)
-    pr = json.loads(view.stdout)
-    return pr["number"] if pr["state"] == "OPEN" and not pr["isDraft"] else None
+        raise
+    if pr["state"] != "OPEN" or pr["isDraft"]:
+        return None
+    repo = GITHUB_REPO.search(pr["url"].rsplit("/pull/", 1)[0]).group(1)
+    base = f"repos/{repo}"
+    # gh pr view の login は bot でも [bot] が付かないので、user.type を返す REST API で見る
+    not_bot = 'select(.type != "Bot") | .login'
+    logins = gh_json(gh, ["api", "--paginate", f"{base}/pulls/{pr['number']}/reviews", "--jq", f".[].user | {not_bot}"], cwd).split()
+    logins += gh_json(gh, ["api", "--paginate", f"{base}/issues/{pr['number']}/comments", "--jq", f".[].user | {not_bot}"], cwd).split()
+    logins += gh_json(gh, ["api", f"{base}/pulls/{pr['number']}/requested_reviewers",
+                           "--jq", f'(.users[] | {not_bot}), (.teams[] | "team:" + .slug)'], cwd).split()
+    return pr["number"] if humans(logins, pr["author"]["login"]) else None
 
 
-def rewrite_decision(command, cwd=".", pushed=head_pushed, ready=ready_pr_number):
+def rewrite_decision(command, cwd=".", pushed=head_pushed, human=human_pr_number):
     decision = None
     for kind, target in git_rewrites(command):
         where = resolve(cwd, target)
@@ -251,17 +290,13 @@ def rewrite_decision(command, cwd=".", pushed=head_pushed, ready=ready_pr_number
             # まだ push していないコミットの amend は、レビュアーの見ている履歴を変えない
             if kind == "amend" and not pushed(where):
                 continue
-            number = ready(where)
+            number = human(where)
         except Exception:
-            decision = decision or ("ask", UNVERIFIED)
-            continue
-        if number is None:
-            continue
-        if kind == "amend":
-            return ("deny", f"ready の PR #{number} の push 済みコミットは amend しない。新しいコミットを積む。"
-                            "どうしても amend するなら、ユーザーが `! git commit --amend` で実行する。")
-        decision = ("ask", f"ready の PR #{number} を force push で書き換え、レビュアーが見ている差分が変わります。"
-                           "base への rebase 後なら Yes、それ以外は No（新しいコミットを積みます）。")
+            return ("deny", UNVERIFIED)
+        if number is not None:
+            return ("deny", f"人が見ている PR #{number} の履歴は書き換えない。{KEEP_HISTORY}")
+        if kind == "force":
+            decision = decision or ("deny", "--force ではなく --force-with-lease で push する。")
     return decision
 
 
@@ -272,9 +307,9 @@ def unsafe_push_reason(command, cwd):
     except Exception:
         problem = "読めない git の設定"
     if problem:
-        return f"リポジトリに {problem} があるため、この force push は安全と確かめられません。心当たりがなければ No。"
-    return ("この force push は、確認なしで通せる形ではありません（別のコマンドとの連結、origin 以外への送信、refspec の指定など）。"
-            "自分が頼んだ push なら Yes、心当たりがなければ No。")
+        return f"リポジトリに {problem} があるため、この force push は安全と確かめられない。{KEEP_HISTORY}"
+    return ("この形の force push は通さない（別のコマンドとの連結、origin 以外への送信、refspec の指定など）。"
+            "`git push --force-with-lease` を単独で実行する。")
 
 
 def test():
@@ -339,8 +374,8 @@ def test():
     assert not lease_push("echo 'git push --force-with-lease && x'") and not lease_push("git commit -m '--force-with-lease を許す'")
     assert lease_push("""echo "it's; git push --force-with-lease"'"""), "解析できないときは文字列で見る"
 
-    def decide(command, pushed=True, ready=12):
-        decision = rewrite_decision(command, pushed=lambda cwd: pushed, ready=lambda cwd: ready)
+    def decide(command, pushed=True, human=12):
+        decision = rewrite_decision(command, pushed=lambda cwd: pushed, human=lambda cwd: human)
         return decision and decision[0]
 
     def unverified(cwd):
@@ -349,24 +384,28 @@ def test():
     assert decide("git status") is None and decide("grep -- --amend notes.md | head") is None
     assert decide("printf 'git commit --amend'") is None
     assert decide("git commit --amend --no-edit") == "deny" and decide("git add a && git commit --amend -m x") == "deny"
-    assert decide("git commit --amend", ready=None) is None, "draft の PR か、PR がないとき"
+    assert decide("git commit --amend", human=None) is None, "PR がない、draft、AI のレビューだけのとき"
     assert decide("git commit --amend", pushed=False) is None, "push していないコミット"
-    assert decide("git push --force-with-lease") == "ask" and decide("git push -f origin x") == "ask"
-    assert decide("git push --force", pushed=False) == "ask", "push は HEAD の状態によらず確かめる"
-    assert decide("git push --force-with-lease", ready=None) is None
-    assert decide("git commit --amend && git push --force-with-lease") == "deny"
-    assert decide("git commit --amend && git push --force-with-lease", pushed=False) == "ask"
-    assert rewrite_decision("git push --force", ready=unverified) == ("ask", UNVERIFIED)
-    assert "#12" in rewrite_decision("git push --force", ready=lambda cwd: 12)[1]
+    assert decide("git push --force-with-lease") == "deny" and decide("git push -f origin x") == "deny"
+    assert decide("git push --force-with-lease", pushed=False) == "deny", "push は HEAD の状態によらず確かめる"
+    assert decide("git push --force-with-lease", human=None) is None
+    assert decide("git push --force origin x", human=None) == "deny", "--force-with-lease を使わせる"
+    assert decide("git commit --amend && git push --force-with-lease", human=None) is None
+    assert decide("git commit --amend && git push --force-with-lease", pushed=False) == "deny"
+    assert rewrite_decision("git push --force-with-lease", human=unverified) == ("deny", UNVERIFIED)
+    assert "#12" in rewrite_decision("git push --force-with-lease", human=lambda cwd: 12)[1]
     seen = []
 
     def record(cwd):
         seen.append(cwd)
 
-    rewrite_decision("cd /x/a && git commit --amend", pushed=lambda cwd: True, ready=record)
-    rewrite_decision("git -C /x/b push --force-with-lease", ready=record)
-    rewrite_decision("git push --force", cwd="/x/c", ready=record)
+    rewrite_decision("cd /x/a && git commit --amend", pushed=lambda cwd: True, human=record)
+    rewrite_decision("git -C /x/b push --force-with-lease", human=record)
+    rewrite_decision("git push --force", cwd="/x/c", human=record)
     assert seen == ["/x/a", "/x/b", "/x/c"], seen
+    assert humans(["me", "copilot-pull-request-reviewer", "claude[bot]", "Copilot[bot]"], "me") == set()
+    assert humans(["me", "copilot-pull-request-reviewer", "teammate"], "me") == {"teammate"}
+    assert humans(["team:backend"], "me") == {"team:backend"}, "チームへの依頼は人として数える"
     with tempfile.TemporaryDirectory() as repo:
         def git(*args):
             subprocess.run(["git", "-C", repo, *args], check=True, capture_output=True)
@@ -397,6 +436,13 @@ def test():
         hook = os.path.join(repo, ".git", "hooks", "pre-commit")
         open(hook, "w").write("#!/bin/sh\ntouch x\n")
         assert repo_config_problem(repo) == "hook pre-commit", repo_config_problem(repo)
+        open(hook, "w").write('#!/bin/sh\nif [ "$LEFTHOOK" = "0" ]; then\n  exit 0\nfi\ncall_lefthook()\n{\n}\n')
+        assert repo_config_safe(repo), "lefthook が入れた hook"
+        git("config", "remote.pushDefault", "https://evil.example/x.git")
+        assert not repo_config_safe(repo), "remote.pushDefault に URL"
+        git("config", "remote.pushDefault", "origin")
+        git("config", "wt.hook", "touch x")
+        assert repo_config_safe(repo), "git push は wt.hook を読まない"
     print("ok")
 
 
@@ -416,7 +462,7 @@ if __name__ == "__main__":
         ok = False
     decision = rewrite_decision(command, cwd)
     if not decision and not ok and lease_push(command):
-        decision = ("ask", unsafe_push_reason(command, cwd))
+        decision = ("deny", unsafe_push_reason(command, cwd))
     if sys.argv[1:] == ["--codex-pre"]:
         if decision and decision[0] == "deny":
             print(json.dumps({"hookSpecificOutput": {
