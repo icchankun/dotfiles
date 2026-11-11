@@ -1,5 +1,5 @@
 lockfile_version: '2'
-generated_at: '2026-11-10T16:13:52.256334+00:00'
+generated_at: '2026-11-11T00:56:11.928194+00:00'
 apm_version: 0.31.0
 dependencies:
 - repo_url: anthropics/claude-plugins-official
@@ -834,6 +834,7 @@ dependencies:
   name: icchankun-skills
   host: github.com
   resolved_commit: 377af1005fb0dbdf264a91fade5ecf42f58a53ba
+  resolved_ref: main
   version: 377af10
   package_type: marketplace_plugin
   deployed_files:
