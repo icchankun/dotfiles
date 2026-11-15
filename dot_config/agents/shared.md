@@ -49,6 +49,8 @@ hc ls --label role=driver --label driver=t7                     # t7 の driver
 
 HTML のページ・Claude の artifact・Notion のページを作るときは、作る前に `yomiyasu` と `visual-explainer` の SKILL.md を読む。文章は yomiyasu、図や表の見せ方は visual-explainer に従う。
 
+Notion に書き込むときは、どの skill を使っていても、先に書く場所と下書きを見せ、OK が出てから書き込む。
+
 `prompt-master` で依頼を整えるとき、依頼が日本語なら `tuning-japanese-prompts` の SKILL.md も読む。
 
 # UI を作るとき

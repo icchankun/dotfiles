@@ -46,6 +46,10 @@ dependencies:
     - git: heydamir/unslop
       ref: 620163eedb3529d9cd23a3994ed8d287d06f760d
       path: skills/unslop
+    # Notion の複数のページを調べて、出典つきの文書にまとめる。書き込む前の確認は shared.md の決まりに従わせる
+    - git: openai/skills
+      ref: 77963424cd7687fd52e5fcfdd3f08d826ab9b1ab
+      path: skills/.curated/notion-research-documentation
     # grill-with-docs が grilling と domain-modeling を呼ぶので、まとめて入れる
     - git: mattpocock/skills
       ref: 4ae2317ddb22b046e26455e4f9c9b3aaaf62212d
