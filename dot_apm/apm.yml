@@ -68,10 +68,7 @@ dependencies:
         - typescript-best-practices
     # ここに並べる official plugins は skills/commands/agents だけのもの。次の3種類は apm では入れず、settings.json の enabledPlugins で入れる
     # - hooks を持つ plugin：apm は hooks/ 内のスクリプトしか展開せず、core/ などの依存が入らない
-    # - LSP の ru    - git: anthropics/claude-plugins-official
-      path: plugins/playground
-      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-by-lsp, typescript-lsp：リポジトリが空で、apm では何も展開されない
+    # - LSP の ruby-lsp, typescript-lsp：リポジトリが空で、apm では何も展開されない
     # - pr-review-toolkit：herdr-coding が /pr-review-toolkit:review-pr の名前で呼ぶ
     - git: anthropics/claude-plugins-official
       path: plugins/code-review
