@@ -5,7 +5,7 @@ import { v_flex, h_flex } from "gpui-base";
 import { spaces, panes, focused, exec, watchFolder, theme, settings, shared, openOverlay, home, notify } from "herdr";
 import { layoutLanes } from "./lanes.js";
 import { READ, STATUS, LABEL, logArgs, parseLog, parseStatus, withUncommitted, labelsOf, parseShortstat,
-  fileArgs, joinFiles, SHOWN, PARENT_TRIES, REF_ARGS, parseBranches, pickParent, shownRefs } from "./git.js";
+  fileArgs, joinFiles, SHOWN, BASES, baseParent, PARENT_TRIES, REF_ARGS, parseBranches, pickParent, shownRefs } from "./git.js";
 const icon = (name) => (name.includes("/") ? name : `mods/git-graph/icons/${name}.svg`);
 import { Review, Sender } from "./review.js";
 
@@ -59,12 +59,12 @@ const keep = (map, key, value, max) => { map.delete(key); map.set(key, value); i
 const folderState = () => ({
   state: "loading", root: null, on: null, cwd: null, error: null,
   base: [], commits: [], rows: [], lanes: 1, labels: new Map(), index: new Map(), hasMore: false, limit: PAGE, files: [], ctx: null,
-  head: null, current: null, signature: null, moreAsked: null,
+  head: null, current: null, parent: null, parentMoved: null, signature: null, moreAsked: null,
   selected: null, details: null, diff: null,
   // Per folder, so a branch's Rebase button never shows on another folder.
   branchStat: null, baseRef: null, branchStatFor: null, rebaseArmed: false,
-  // The uncommitted changes' files: always shown open under their row.
-  wip: null,
+  // The uncommitted changes' files, shown under their row while it is open (a click toggles it).
+  wip: null, wipOpen: false,
 });
 
 // Everything the table shows for a folder: each git call answers from any subfolder,
@@ -78,8 +78,10 @@ async function readFolder(cwd, on, { limit }) {
   if (top.code !== 0) return { state: "norepo", cwd, on };
   const name = current.code === 0 ? current.stdout.trim() : null;
   const branches = parseBranches(refList.code === 0 ? refList.stdout : "");
-  let parent = null;
-  if (head.code === 0) {
+  // A base branch is not cut from a branch cut from it: develop is behind few of them,
+  // so counting would pick one of those.
+  let parent = BASES.includes(name) ? baseParent(name) : null;
+  if (head.code === 0 && !BASES.includes(name)) {
     const tries = branches.local.filter((b) => b !== name).slice(0, PARENT_TRIES);
     const counts = await Promise.all(tries.map(async (b) => {
       const r = await git(["rev-list", "--count", `refs/heads/${b}..HEAD`]);
@@ -87,8 +89,18 @@ async function readFolder(cwd, on, { limit }) {
     }));
     parent = pickParent(counts);
   }
+  // Whether the branch it was cut from moved since shows in the header too. origin's copy
+  // when there is one, as a local develop is often behind.
+  const parentRef = parent ? branches.remote.find((r) => r.remote === "origin" && r.name === parent)?.ref ?? `refs/heads/${parent}` : null;
+  // History older than where the branch was cut is left out: the cut commit is the last row.
+  // main is cut off at the same time, as its history is not under the cut commit.
+  const fork = parentRef ? await git(["merge-base", "HEAD", parentRef]) : null;
+  const forkTime = fork?.code === 0 ? (await git(["log", "-1", "--format=%ct", fork.stdout.trim()])).stdout.trim() : "";
+  const stop = forkTime ? [`--since=${forkTime}`, "--not", `${fork.stdout.trim()}^@`] : [];
   // One commit past the page says whether there are more, as Git Graph asks.
-  const log = await git(logArgs({ limit: limit + 1, refs: shownRefs([name, parent, ...SHOWN], branches) }));
+  const [log, moved] = await Promise.all([
+    git(logArgs({ limit: limit + 1, refs: [...shownRefs([name, parent, ...SHOWN], branches), ...stop] })),
+    parentRef ? git(["rev-list", "--count", "--first-parent", `HEAD..${parentRef}`]) : null]);
   // A log that fails without a HEAD is a repository with no commits yet.
   if (log.code !== 0 && head.code === 0) throw new Error(log.stderr.trim());
   const base = log.code === 0 ? parseLog(log.stdout) : [];
@@ -96,7 +108,8 @@ async function readFolder(cwd, on, { limit }) {
     root: top.stdout.trim(), on, cwd, base: base.slice(0, limit), limit, hasMore: base.length > limit,
     head: head.code === 0 ? head.stdout.trim() : null, current: current.code === 0 ? current.stdout.trim() : null,
     files: status.code === 0 ? parseStatus(status.stdout) : [],
-    signature: [log.stdout, head.stdout, current.stdout].join("\0"),
+    parent, parentMoved: moved?.code === 0 ? Number(moved.stdout.trim()) : null,
+    signature: [log.stdout, head.stdout, current.stdout, parent, moved?.stdout].join("\0"),
   };
 }
 
@@ -211,6 +224,11 @@ export class Graph {
     const commits = withUncommitted(this.base, this.files.length, this.head);
     const { rows, width } = layoutLanes(commits);
     this.commits = commits; this.rows = rows; this.lanes = width;
+    // The checked-out branch and the one it was cut from keep their own colors (see list()).
+    const laneOf = (hit) => { const i = commits.findIndex(hit); return i < 0 ? null : rows[i].lane; };
+    const parent = this.parent;
+    this.headLane = laneOf((c) => c.head || c.uncommitted);
+    this.parentLane = parent ? laneOf((c) => c.refs.some((r) => r.name === parent || r.name === `origin/${parent}`)) : null;
     this.labels = new Map(commits.map((c) => [c.hash, labelsOf(c)]));
     this.index = new Map(commits.map((c, i) => [c.hash, i]));
     this.state = commits.length ? "ready" : "empty"; this.error = null;
@@ -260,7 +278,8 @@ export class Graph {
   clicked(key, cx) {
     if (key === "more") return this.loadMore(cx);
     const commit = this.commits[this.index.get(key)];
-    if (!commit || commit.uncommitted) return;
+    if (commit?.uncommitted) { this.wipOpen = !this.wipOpen; cx.notify(); return; }
+    if (!commit) return;
     this.pick(commit, cx);
   }
 
@@ -436,7 +455,7 @@ export class Graph {
     // Merge commits are muted, as Git Graph does by default.
     const fg = commit.uncommitted ? t.muted : commit.parents.length > 1 ? t.dim : t.foreground;
     return h_flex().id(`c-${commit.hash}`).w_full().h(ROW).flex_none().pr(10).gap(LABEL.GAP).items_center().overflow_hidden()
-      .when(commit.head, (e) => e.bg(color + "14")).when(this.selected === commit.hash, (e) => e.bg(t.selected)).hover((s) => s.bg(t.hover))
+      .when(commit.head, (e) => e.bg(color + "14")).when(this.selected === commit.hash || (commit.uncommitted && this.wipOpen), (e) => e.bg(t.selected)).hover((s) => s.bg(t.hover))
       .child(this.graphCell(row, commit, colors, t, width))
       // Labels and description clip together, so many labels never push the fixed columns out.
       .child(h_flex().flex_1().min_w(0).h_full().gap(LABEL.GAP).items_center().overflow_hidden()
@@ -461,6 +480,9 @@ export class Graph {
           .child(div().text_color(t.dim).child(`vs ${s.base} · ${count(s.files, "file")}`))
           .child(div().text_color(t.ansi2).child(`+${s.add}`)).child(div().text_color(t.ansi1).child(`−${s.del}`)));
       })
+      .when(ready && this.parent && this.parentMoved !== null, (e) => e.child(div().flex_none().text_size(11.5)
+        .text_color(this.parentMoved ? t.ansi3 : t.dim)
+        .child(this.parentMoved ? `${this.parent} +${this.parentMoved} since cut` : `${this.parent} not moved`)))
       .when(ready && Boolean(this.baseRef), (e) => e.child(this.rebaseButton(t)));
   }
 
@@ -477,11 +499,13 @@ export class Graph {
   // Git Graph. A page is at most PAGE commits, so drawing them all stays cheap.
   list(t, mono) {
     const colors = laneColors(t), width = this.graphWidth(), rows = [];
+    if (this.parentLane !== null && this.parentLane < colors.length) colors[this.parentLane] = t.ansi3;
+    if (this.headLane !== null && this.headLane < colors.length) colors[this.headLane] = t.accent;
     this.commits.forEach((commit, i) => {
       const key = commit.hash;
       rows.push(this.row(i, t, colors, mono, width)
         .on_click((_e, cx) => this.clicked(key, cx)));
-      if (commit.uncommitted && this.wip) rows.push(this.card(key, this.fileList(commit, this.wip, t).w_full().border_l(0), t));
+      if (commit.uncommitted && this.wip && this.wipOpen) rows.push(this.card(key, this.fileList(commit, this.wip, t).w_full().border_l(0), t));
       if (key === this.selected) rows.push(this.detailsPane(t, mono));
     });
     if (this.hasMore) rows.push(div().id("graph-more").h(ROW).flex_none().px(14).flex().items_center().text_color(t.accent).cursor_pointer().hover((s) => s.bg(t.hover))
