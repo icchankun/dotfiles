@@ -1,6 +1,9 @@
-# セッション開始時の手順
+# エージェント共通の指示
+
+## セッション開始時の手順
 
 以下のいずれかと一緒に実装を頼まれたら、`dispatching-tasks` で branch・worktree を作り、driver に引き継ぐ：
+
 - GitHub Issue のリンク
 - Notion チケットのリンク
 - PR を前提とした実装方針
@@ -9,7 +12,7 @@
 
 worktree の作成・削除は `git wt` で行う。`git worktree add` を直接使うと、Herdr.app で開くフックが走らない。
 
-# Herdr.app のペイン間でやりとりする手順
+## Herdr.app のペイン間でやりとりする手順
 
 相手が Claude Code でも Codex でも `hc` を使う。使う前に `hc --skill` を読み、それに従う。
 
@@ -23,17 +26,17 @@ hc ls --label role=reviewer --label driver="$HC_TERMINAL_ID"   # 自分の revie
 hc ls --label role=driver --label driver=t7                     # t7 の driver
 ```
 
-# ファイルを編集するとき
+## ファイルを編集するとき
 
 ファイルの編集は、使える編集ツールで、同じ応答の中にまとめて出す。複数のファイルを1回で編集できるツールなら、1回にまとめる。
 
 サブエージェントに分けるのは、互いに関係しない機械的な変更が3ファイル以上あるときだけにする。何をどう変えるかは自分で決めて渡すので、軽いモデルでよい。サブエージェントは起動のたびに要件と周りのコードを読み直すので、小さな変更では自分で書くより遅く、トークンも増える。
 
-# ユーザーに聞くとき
+## ユーザーに聞くとき
 
 選択肢から選んでもらう質問は、選んで答えられる形で聞く。Claude Code では `AskUserQuestion` を使う。Codex では、選択肢を出せるツールがあればそれを使い、なければ番号を振って並べる。grilling など、skill の手順の中で聞く質問も同じ。
 
-# 文章・コメントを書くとき
+## 文章・コメントを書くとき
 
 返答は日本語で書く。
 
@@ -42,22 +45,27 @@ hc ls --label role=driver --label driver=t7                     # t7 の driver
 人が読む、会話の外に残る文章（コミットメッセージ、PR、レビューへの返信、ドキュメント、コードコメント、Notion）は、推敲してから出す。日本語は `yomiyasu`、英語は `humanizer` の SKILL.md に従う。この会話での返答と、agent が読むもの（引き継ぎ・依頼・SKILL.md・AGENTS.md・CLAUDE.md などの指示ファイル）は対象外。
 
 推敲の前に、読み手が判断や作業に使わない文を削る。yomiyasu は情報を削らないため。次のものは、読み手の判断に関わると言えない限り削る：
+
 - 作業の経緯や試した過程
 - 調べていないこと・確かめていないことの断り書き
 - 読み手が何もしなくてよい後始末や予定
 - 背景の説明に入れた細かい数値（件数・秒数・割合）
 
+## ページを作るとき
+
 HTML のページ・Claude の artifact・Notion のページを作るときは、作る前に `yomiyasu` と `visual-explainer` の SKILL.md を読む。文章は yomiyasu、図や表の見せ方は visual-explainer に従う。
 
 Notion に書き込むときは、どの skill を使っていても、先に書く場所と下書きを見せ、OK が出てから書き込む。
 
-`prompt-master` で依頼を整えるとき、依頼が日本語なら `tuning-japanese-prompts` の SKILL.md も読む。
-
-# UI を作るとき
+## UI を作るとき
 
 アプリの画面・コンポーネント・ランディングページの UI をデザインするとき、作るとき、直すときは、`frontend-design` と `unslop` の SKILL.md を両方読む。デザインの方向は frontend-design、AI が作ったように見えるところの直しは unslop に従う。
 
-# モデルの重さ
+## 依頼を整えるとき
+
+`prompt-master` で依頼を整えるとき、依頼が日本語なら `tuning-japanese-prompts` の SKILL.md も読む。
+
+## モデルの重さ
 
 skill や指示が「軽いモデル」「標準のモデル」「重いモデル」と書いたら、次のモデルを使う。モデルが廃止されたら、この表と、dotfiles（`~/.local/share/chezmoi`）でモデル名を直書きしている次のファイルを直す：`dot_bin/executable_codex-code-pr-review`、`dot_bin/executable_codex-dep-pr-review`、`dot_bin/executable_herdr-coding`、`dot_codex/modify_config.toml.tmpl`、`dot_claude/settings.json`。
 
@@ -69,6 +77,6 @@ skill や指示が「軽いモデル」「標準のモデル」「重いモデ�
 
 Codex のいちばん上のモデル（`gpt-6-astra`）は使わない。使える量が少なく、毎回の作業で回すと足りなくなる。
 
-# skill を入れるとき
+## skill を入れるとき
 
 `find-skills` で見つけた skill は `npx skills add` で入れず、dotfiles の `dot_apm/apm.yml` に追記して apm で入れる。
