@@ -13,16 +13,23 @@ export const STATUS = ["status", "--porcelain=v1", "-z", "--no-renames", "--untr
 export const UNCOMMITTED = "*";
 const FORMAT = "%x1e%H%x1f%P%x1f%an%x1f%ae%x1f%at%x1f%D%x1f%s";
 
-// The history of the given refs, or of every branch when none are given.
+// The history of the given refs, or of every branch when none are given. Each branch
+// is followed by its first parents only: a repository that merges many pull requests
+// would otherwise draw a lane for each one still open, 35 at once in a big one.
 export function logArgs({ limit, refs }) {
   const which = refs?.length ? refs : ["--exclude=refs/stash", "--all"];
-  return ["log", ...which, "--date-order", "--decorate=full", `-n${limit}`, `--format=${FORMAT}`];
+  return ["log", ...which, "--first-parent", "--date-order", "--decorate=full", `-n${limit}`, `--format=${FORMAT}`];
 }
 
 // Only a few branches are drawn, so a repository with many branches still draws fast:
-// the checked-out branch, the branch it was cut from, main and develop. Each with its
-// remote branches of the same name.
-export const SHOWN = ["main", "develop"];
+// the checked-out branch, the branch it was cut from (from where it was cut), and main.
+// Each with its remote branches of the same name.
+export const SHOWN = ["main"];
+// Branches others are cut from. A tie for the one a branch was cut from goes to
+// develop, then main, as creating-git-branches cuts from them.
+export const BASES = ["main", "develop"];
+// The branch a base branch was cut from: develop from main, main from none.
+export const baseParent = (name) => (name === "develop" ? "main" : null);
 // How many local branches are tried as the one the branch was cut from, newest first.
 export const PARENT_TRIES = 50;
 export const REF_ARGS = ["for-each-ref", "--sort=-committerdate", "--format=%(refname)", "refs/heads", "refs/remotes"];
@@ -43,9 +50,9 @@ export function parseBranches(text) {
 // The branch this one was cut from: of the other local branches, the one the fewest
 // of HEAD's commits are missing from (`git rev-list --count <branch>..HEAD`). A branch
 // that already has every commit of HEAD (0) was cut from the current branch, or is the same, so it
-// is skipped. A tie goes to develop, then main, as creating-git-branches cuts from them.
+// is skipped. A tie goes to develop, then main (BASES).
 export function pickParent(counts) {
-  const rank = (name) => { const i = SHOWN.indexOf(name); return i < 0 ? SHOWN.length : SHOWN.length - 1 - i; };
+  const rank = (name) => { const i = BASES.indexOf(name); return i < 0 ? BASES.length : BASES.length - 1 - i; };
   return counts.filter((c) => c.count > 0)
     .sort((a, b) => a.count - b.count || rank(a.name) - rank(b.name) || a.name.localeCompare(b.name))[0]?.name ?? null;
 }
