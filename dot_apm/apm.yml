@@ -42,6 +42,10 @@ dependencies:
     - git: nicobailon/visual-explainer
       ref: 9d5f880b7e8e0a9a80c890b8e1bb6918b68481ad # v0.15.0
       path: plugins/visual-explainer
+    # AI が作ったように見える UI を直す。作るときの方向付けは frontend-design に任せる
+    - git: heydamir/unslop
+      ref: 620163eedb3529d9cd23a3994ed8d287d06f760d
+      path: skills/unslop
     # grill-with-docs が grilling と domain-modeling を呼ぶので、まとめて入れる
     - git: mattpocock/skills
       ref: 4ae2317ddb22b046e26455e4f9c9b3aaaf62212d
