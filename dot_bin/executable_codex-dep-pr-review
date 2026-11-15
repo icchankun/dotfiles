@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 
-# Renovate や Dependabot の依存更新の PR を確かめる。先に AI を使わないゲートを
-# 通し、通ったものだけを checking-library-updates の skill で Codex に見せる。
-# 判定はコメントに残す。PR の中身に誘導されて Codex が ok と判定することも
-# あるので、approve と merge は必ず人がする。
+# Renovate や Dependabot の依存更新の PR を Codex でレビューする。先に AI を使わない
+# ゲートを通し、通ったものだけを reviewer が判定する。reviewer が ok としたものは
+# advisor が確かめ直し、ok のままなら、このスクリプトが approve する。merge は人がする。
 #
 #   ok でない head が来たら、前の head に出した自分の approve を取り消す。
 #
 # 依存:
 #   - gh, git, jq, codex
-#   - the checking-library-updates skill (icchankun/skills, deployed by apm)
+#   - the reviewing-dependency-updates and checking-dependency-reviews skills
+#     (icchankun/skills, deployed by apm)
 #
 # 使い方:
-#   codex-dep-review [--post] <PR URL | owner/repo#number>
+#   codex-dep-pr-review [--post] <PR URL | owner/repo#number>
 #
 #   --post を付けなければ、判定を表示するだけで GitHub には送らない。
 #
@@ -20,35 +20,42 @@
 #   - opened by renovate[bot] or dependabot[bot] (作成者が bot)
 #   - 変わったのは依存のファイルだけ。Dockerfile・compose・workflow は FROM・
 #     image:・uses: の行だけ
-#   - every check passed (CI がすべて通っている)
+#   - every check passed (CI がすべて通っている)。bot の PR には落ちてよい理由を
+#     書く人がおらず、依存更新で落ちたならその更新が原因であることが多いため、
+#     code-pr-review と違って advisor に通すかを聞かない
 #   - major を上げていない。0.x は minor も major 扱い。PR の説明から版を読めない
 #     ときもここで止まる
 #   - Gemfile.lock と package-lock.json に新しいパッケージが増えていない
-#   How long a release has been out is left to Renovate's and Dependabot's own
 #   リリースからの日数は、Renovate と Dependabot の設定に任せる。
 #
 # 終了コード:
+#   0   --post なしで判定を表示した
 #   3   することがない。この head は確かめ済みか、CI がまだ動いている
-#   5   needs a person (自分で見る必要がある)
-#   6   ok: ready for me to approve (ok。approve するかを自分で決める)
+#   4   人に任せた。理由は `handover: ` で始まる行に出る
+#   6   approve した
 #   75  Codex's usage limit (Codex の利用枠切れ)
-#   The last line is `result: <result> <head>`, where result is ok, needs_human,
-#   checked or waiting. (最後の行は `result: <結果> <head>`。結果は ok / needs_human /
-#   checked / waiting。)
+#   最後の行は `result: <結果> <head>`。
+#
+# 補足:
+#   - Codex は ~/.codex/config.toml の権限プロファイル dotfiles-readonly で動く。
+#     読むだけで、GitHub の権限も持たない。投稿・approve・approve の取り消しは
+#     このスクリプトだけが行う。
+#   - pending の待機除外は ~/.config/codex-pr-review/config.json の skip_pending_checks で指定する。
+#     失敗・キャンセルは除外しない。
 
 set -euo pipefail
 
-readonly CHECK_MODEL=gpt-6-luna
-readonly CHECK_EFFORT=low
-# 最初の判断に自信がないときに、確かめ直すモデルと effort。
-readonly RECHECK_MODEL=gpt-6.1-sol
-readonly RECHECK_EFFORT=medium
+readonly REVIEWER_MODEL=gpt-6.1-sol
+readonly REVIEWER_EFFORT=high
+readonly ADVISOR_MODEL=gpt-6.1-sol
+readonly ADVISOR_EFFORT=xhigh
 
-# コメントの最後に付ける。自分ではなく Codex が書いたと分かるように。
+# レビューの最後に付ける。自分ではなく Codex が書いたと分かるように。
 readonly FOOTER='🤖 Generated with [Codex](https://openai.com/codex)'
 
 readonly STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/codex-pr-review"
 readonly CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/codex-pr-review"
+readonly CONFIG_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/codex-pr-review/config.json"
 readonly SHADOW_LOG="$STATE_DIR/deps-shadow.tsv"
 
 readonly BOTS='^(renovate|dependabot)\[bot\]$'
@@ -57,12 +64,12 @@ readonly DOCKER_FILES='(^|/)([^/]*Dockerfile[^/]*|(docker-)?compose[^/]*\.ya?ml)
 readonly ACTION_FILES='(^\.github/workflows/[^/]+\.ya?ml|(^|/)action\.ya?ml)$'
 
 die() {
-  printf 'codex-dep-review: %s\n' "$1" >&2
+  printf 'codex-dep-pr-review: %s\n' "$1" >&2
   exit 1
 }
 
 usage() {
-  sed -n '/^# Usage/,/^# Gates/p' "$0" | sed 's/^# \{0,1\}//;$d'
+  sed -n '/^# 使い方/,/^# ゲート/p' "$0" | sed 's/^# \{0,1\}//;$d'
 }
 
 post=false
@@ -97,9 +104,22 @@ require_environment() {
   done
   schema=
   for dir in "$HOME/.agents/skills" "$HOME/.codex/skills"; do
-    [ -f "$dir/checking-library-updates/schemas/verdict.json" ] && { schema="$dir/checking-library-updates/schemas/verdict.json"; break; }
+    [ -f "$dir/reviewing-dependency-updates/schemas/verdict.json" ] && { schema="$dir/reviewing-dependency-updates/schemas/verdict.json"; break; }
   done
-  [ -n "$schema" ] || die "checking-library-updates is not installed (apm install -g)"
+  [ -n "$schema" ] || die "reviewing-dependency-updates is not installed (apm install -g)"
+  [ -f "$(dirname "$(dirname "$(dirname "$schema")")")/checking-dependency-reviews/SKILL.md" ] ||
+    die "checking-dependency-reviews is not installed (apm install -g)"
+}
+
+result() {
+  printf 'result: %s %s\n' "$1" "$head"
+}
+
+handover() {
+  printf '%s#%s: %s\n' "$repo" "$number" "$1"
+  printf 'handover: %s\n' "$1"
+  result handover
+  exit 4
 }
 
 load_pull_request() {
@@ -119,7 +139,7 @@ already_checked() {
     gh api --paginate --slurp "repos/$repo/issues/$number/comments"
     gh api --paginate --slurp "repos/$repo/pulls/$number/reviews"
   } | jq -s -e --arg me "$me" --arg head "$head" '
-    map(add // []) | add | any(.[]; .user.login == $me and ((.body // "") | contains("<!-- codex-deps:v1 head=" + $head + " ")))' >/dev/null
+    map(add // []) | add | any(.[]; .user.login == $me and ((.body // "") | contains("<!-- codex-deps:v1 head=" + $head + " ")) and (((.body // "") | contains("- ❌ CI：")) | not))' >/dev/null
 }
 
 # 前の head に出した自分の approve を取り消し、コメントに書く1行を出す。
@@ -137,10 +157,24 @@ dismiss_my_approvals() {
 }
 
 ci_state() {
-  local buckets
-  buckets=$(gh pr checks "$number" -R "$repo" --json bucket --jq 'map(.bucket)' 2>/dev/null) || buckets='[]'
-  jq -r 'if any(.[]; . == "fail" or . == "cancel") then "fail"
-         elif any(.[]; . == "pending") then "pending" else "pass" end' <<<"${buckets:-[]}"
+  local checks skipped='[]'
+  if [ -e "$CONFIG_FILE" ]; then
+    skipped=$(jq -ces '
+      if length == 1 and (.[0] | type) == "object" and (.[0].skip_pending_checks | type) == "array"
+        and all(.[0].skip_pending_checks[]; type == "string")
+      then .[0].skip_pending_checks else error("invalid skip_pending_checks") end' "$CONFIG_FILE") || {
+      printf 'unknown\n'
+      return
+    }
+  fi
+  checks=$(gh pr checks "$number" -R "$repo" --json name,bucket 2>/dev/null) || true
+  jq -ers --argjson skipped "$skipped" '
+    if length != 1 then error("invalid response") else .[0] end |
+    if type != "array" then error("invalid checks")
+    elif any(.[]; (.name | type) != "string" or (.bucket | IN("pass", "fail", "pending", "skipping", "cancel") | not)) then error("invalid check")
+    elif any(.[]; .bucket == "fail" or .bucket == "cancel") then "fail"
+    elif any(.[]; .bucket == "pending" and (.name as $name | $skipped | index($name) == null)) then "pending"
+    else "pass" end' <<<"$checks" 2>/dev/null || printf 'unknown\n'
 }
 
 checkout() {
@@ -268,53 +302,69 @@ write_input() {
 }
 
 run_codex() {
-  local model="$1" effort="$2" out="$3"
-  if ! codex exec --ephemeral -m "$model" -c "model_reasoning_effort=$effort" -c 'default_permissions="dotfiles-readonly"' \
-    -C "$tree" --output-schema "$schema" -o "$out" \
-    "\$checking-library-updates を使って、この依存更新の PR を確かめてください。入力のディレクトリ: ${run}/input" </dev/null >"$out.log" 2>&1; then
-    grep -i 'usage limit' "$out.log" >&2 && exit 75
-    die "Codex failed; see $out.log"
+  local role="$1" model="$2" effort="$3" schema_file="$4" check="$5" prompt="$6"
+  if [ "${codex_used:-false}" != true ]; then
+    printf 'codex-used: true\n'
+    codex_used=true
   fi
-  jq -e '.verdict' "$out" >/dev/null || die "Codex did not return the schema; see $out"
+  if ! codex exec --ephemeral -m "$model" -c "model_reasoning_effort=$effort" -c 'default_permissions="dotfiles-readonly"' -c project_doc_max_bytes=0 \
+    -C "$tree" --output-schema "$schema_file" -o "$run/$role.json" "$prompt" </dev/null >"$run/$role.log" 2>&1; then
+    grep -i 'usage limit' "$run/$role.log" >&2 && exit 75
+    die "the $role failed; see $run/$role.log"
+  fi
+  jq -e "$check" "$run/$role.json" >/dev/null || die "the $role did not return the schema; see $run/$role.json"
 }
 
-check_with_codex() {
-  run_codex "$CHECK_MODEL" "$CHECK_EFFORT" "$run/verdict.json"
-  if [ "$(jq -r .confident "$run/verdict.json")" != true ]; then
-    run_codex "$RECHECK_MODEL" "$RECHECK_EFFORT" "$run/verdict.json"
+# reviewer が ok としたものだけを advisor に確かめさせる。needs_human はどのみち
+# 人に回るので、確かめても結果が変わらない。
+review() {
+  run_codex reviewer "$REVIEWER_MODEL" "$REVIEWER_EFFORT" "$schema" '.verdict | type == "string"' \
+    "\$reviewing-dependency-updates を使って、この依存更新の PR を確かめてください。入力のディレクトリ: ${run}/input"
+  if [ "$(jq -r .verdict "$run/reviewer.json")" != ok ]; then
+    cp "$run/reviewer.json" "$run/verdict.json"
+    return
   fi
+  run_codex advisor "$ADVISOR_MODEL" "$ADVISOR_EFFORT" "$schema" '.verdict | type == "string"' \
+    "\$checking-dependency-reviews を使って、この判定を確かめてください。入力のディレクトリ: ${run}/input。reviewer が返した JSON: $run/reviewer.json"
+  cp "$run/advisor.json" "$run/verdict.json"
 }
 
 # ゲートで落ちたときの判定。トークンを節約するため Codex には聞かない。
 gate_verdict() {
   jq '{verdict: "needs_human", reasons: [.gates[] | select(.ok | not) | .name + ": " + .detail],
-       summary: "ゲートで止まったので、Codex では確かめていません。", packages: [], breaking: [], other_reviews: []}' \
+       summary: "ゲートで止まったので、Codex では確かめていません。", packages: [], breaking: [], other_reviews: [], corrections: []}' \
     "$run/input/gates.json" >"$run/verdict.json"
 }
 
-build_comment() {
+# 判定から GitHub のレビューの本文を組み立てる。見出しは code-pr-review と同じく、
+# 読み手が知りたいこと（なぜ自分で見るのか・何が上がるのか・何を確かめたか）で分ける。
+build_review() {
   jq -r --slurpfile gates "$run/input/gates.json" --arg head "$head" --arg footer "$FOOTER" --arg lead "$1" '
     def mark: if . then "✅" else "❌" end;
-    (if .verdict == "ok" then "approve してよいと判断しました。" else "自分で見る必要があると判断しました。" end) as $title
-    | [
-        $lead,
-        "",
-        "**" + $title + "**",
-        "",
-        .summary,
-        "",
-        "ゲート:",
-        ($gates[0].gates | map("- " + (.ok | mark) + " " + .name + ": " + .detail) | join("\n"))
-      ]
-      + (if (.reasons | length) > 0 then ["", "自分で見る理由:", (.reasons | map("- " + .) | join("\n"))] else [] end)
-      + (if ([.packages[] | select(.category != "none")] | length) > 0
-         then ["", "自分で見る種類に当たるもの:", ([.packages[] | select(.category != "none") | "- " + .name + "（" + .category + "）: " + .category_reason] | join("\n"))]
-         else [] end)
-      + (if ([.breaking[] | select(.impact != "none")] | length) > 0
-         then ["", "影響するかもしれない変更:", ([.breaking[] | select(.impact != "none") | "- " + .package + ": " + .change + (if (.used_in | length) > 0 then "（" + (.used_in | join(", ")) + "）" else "" end)] | join("\n"))]
-         else [] end)
+    def scope: {development: "開発用", ci: "CI 用", runtime: "本番"}[.] // .;
+    def section($title; $lines): if ($lines | length) > 0 then ["", "## " + $title] + $lines else [] end;
+    ($gates[0]) as $g
+    | (if (.packages | length) > 0
+       then .packages | map("- " + .name + " " + (.from // "?") + " → " + (.to // "?") + "（" + (.scope | scope) + "）")
+       else $g.versions | map("- " + .from + " → " + .to) end) as $packages
+    | [$lead, "", .summary]
+      + (if .verdict == "ok" then [] else section("自分で見る理由"; .reasons | map("- " + .)) end)
+      + section("上がるもの"; $packages)
+      + section("確かめたこと";
+          ($g.gates | map("- " + (.ok | mark) + " " + .name + "：" + .detail))
+          + (.breaking | map("- " + .package + "：" + .change
+              + if .impact == "none" then "（このリポジトリでは使っていません）"
+                else "（" + (.used_in | join(", ")) + " で使っています）" end)))
+      + section("ほかのレビュー"; .other_reviews | map("- " + .source + "：" + .their_verdict + "。" + (if .agrees then "同じ結論です" else .note end)))
       + ["", $footer, "", "<!-- codex-deps:v1 head=" + $head + " verdict=" + .verdict + " -->"]
-    | join("\n")' "$run/verdict.json" >"$run/comment.md"
+    | join("\n")' "$run/verdict.json" >"$run/review.md"
+}
+
+post_review() {
+  local event="$1"
+  jq -n --arg head "$head" --arg event "$event" --rawfile body "$run/review.md" '{commit_id: $head, event: $event, body: $body}' |
+    gh api -X POST "repos/$repo/pulls/$number/reviews" --input - --jq .html_url ||
+    die "could not post the review; it is kept at $run/review.md"
 }
 
 main() {
@@ -322,13 +372,15 @@ main() {
   require_environment
   load_pull_request
 
-  if [ "$post" = true ] && already_checked; then
-    printf 'result: checked %s\n' "$head"
+  ci=$(ci_state)
+  if [ "$ci" != pass ]; then
+    printf '%s#%s: waiting for CI\n' "$repo" "$number"
+    result waiting
     exit 3
   fi
-  ci=$(ci_state)
-  if [ "$ci" = pending ]; then
-    printf '%s#%s: waiting for CI\nresult: waiting %s\n' "$repo" "$number" "$head"
+
+  if [ "$post" = true ] && already_checked; then
+    result checked
     exit 3
   fi
 
@@ -336,37 +388,37 @@ main() {
   run_gates
   write_input
   if jq -e 'all(.gates[]; .ok)' "$run/input/gates.json" >/dev/null; then
-    check_with_codex
+    review
   else
     gate_verdict
   fi
   verdict=$(jq -r .verdict "$run/verdict.json")
+
   if [ "$post" != true ]; then
-    build_comment "依存更新を確かめました（まだ投稿していません）。"
-    cat "$run/comment.md"
+    build_review "依存更新を確かめました（まだ投稿していません）。"
+    cat "$run/review.md"
+    jq -r '.corrections[]? | "\n(advisor が直した) \(.field): \(.before) -> \(.after)（\(.reason)）"' "$run/verdict.json"
     printf '\n(not posted; run again with --post. Saved in %s)\n' "$run"
-  else
-    if [ "$verdict" = ok ]; then
-      lead="依存更新を確かめました。approve と merge は人がしてください。"
-    else
-      lead="依存更新を確かめました。approve はしていません。"
-      note=$(dismiss_my_approvals)
-      [ -z "$note" ] || lead="$lead $note"
-    fi
-    build_comment "$lead"
-    gh api -X POST "repos/$repo/issues/$number/comments" -F "body=@$run/comment.md" --jq .html_url ||
-      die "could not post the comment; it is kept at $run/comment.md"
+    result "$verdict"
+    exit 0
   fi
 
-  if [ "$post" = true ]; then
-    mkdir -p "$(dirname "$SHADOW_LOG")"
-    printf '%s\t%s#%s\t%s\t%s\t%s\n' "$(date '+%F %T')" "$repo" "$number" "$head" "$(jq -r .verdict "$run/verdict.json")" \
-      "$(jq -r '.reasons | join(" / ")' "$run/verdict.json")" >>"$SHADOW_LOG"
-  fi
+  mkdir -p "$(dirname "$SHADOW_LOG")"
+  printf '%s\t%s#%s\t%s\t%s\t%s\n' "$(date '+%F %T')" "$repo" "$number" "$head" "$verdict" \
+    "$(jq -r '.reasons | join(" / ")' "$run/verdict.json")" >>"$SHADOW_LOG"
 
-  printf 'result: %s %s\n' "$verdict" "$head"
-  [ "$verdict" = ok ] && exit 6
-  exit 5
+  if [ "$verdict" = ok ]; then
+    build_review "依存更新を確かめました。approve します。"
+    post_review APPROVE
+    result approved
+    exit 6
+  fi
+  lead="依存更新を確かめました。自分で見る必要があるので、approve していません。"
+  note=$(dismiss_my_approvals)
+  [ -z "$note" ] || lead="$lead$note"
+  build_review "$lead"
+  post_review COMMENT
+  handover "依存更新を自分で見る必要があります（$(jq -r '.reasons[0] // "理由はレビューを見てください"' "$run/verdict.json")）"
 }
 
 main "$@"
