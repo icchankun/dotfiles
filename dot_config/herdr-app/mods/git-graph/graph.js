@@ -515,25 +515,25 @@ export class Graph {
   }
 
   maxDetails() { return Math.max(DETAILS_MIN, (this.height ?? 640) - 160); }
+  // A commit's columns sit under its 32px top bar inside the card's border, so they get that much less.
+  maxColumns() { return this.maxDetails() - 34; }
 
   detailsPane(t, mono) {
     const commit = this.commits[this.index.get(this.selected)], d = this.details;
     if (!commit) return div();
     const top = h_flex().h(32).flex_none().px(10).gap(6).items_center().border_b(1).border_color(t.border).text_size(11.5);
-    // The card has no height of its own: each column takes its content's height, up to a cap, then scrolls.
-    const body = v_flex().id("graph-details").flex_auto().min_w(0).max_h(this.maxDetails()).overflow_y_scrollbar().px(14).py(10).gap(4);
+    // The message column is as tall as the whole message, with no cap: the history scrolls past it.
+    // Only the file list has a cap, and scrolls inside.
+    const body = v_flex().id("graph-details").flex_auto().min_w(0).px(14).py(10).gap(4);
     const pane = (content) => this.card(commit.hash, v_flex()
       .child(top
-        .child(this.copyButton("graph-copy-hash", "Copy hash", commit.hash, t))
-        // The message's text can't be selected with the mouse in the panel, so it copies whole.
-        .when(Boolean(d) && !d.error, (e) => e.child(this.copyButton("graph-copy-message", "Copy message", d.message, t)))
-        .when(Boolean(d) && !d.error, (e) => e.child(this.review.button(t))))
+        .child(this.copyButton("graph-copy-hash", "Copy hash", commit.hash, t)))
       .child(content), t);
     if (d?.error) return pane(body.child(div().text_color(t.ansi1).child(d.error)));
     const meta = (k, v, color) => h_flex().gap(8).text_size(11.5).child(div().w(64).flex_none().text_color(t.dim).child(k)).child(div().min_w(0).truncate().text_color(color ?? t.muted).child(v));
     // The history already has the header: it shows at once, and what git adds lands below it.
     const head = body
-      .child(d && !d.error ? this.review.view(commit, d.message, t) : div().font_semibold().child(commit.subject))
+      .child(d && !d.error ? this.review.view(commit, d.message, t, this.messageW()) : div().font_semibold().child(commit.subject))
       .child(meta("Author", `${commit.author} <${commit.email}>`))
       .child(meta("Date", `${stamp(commit.time)} · ${ago(commit.time)}`));
     if (!d) return pane(head.child(div().pt(8).text_size(11.5).text_color(t.dim).child("Loading files…")));
@@ -544,14 +544,14 @@ export class Graph {
 
   // Ids carry the commit, as the uncommitted card and a commit's card can show together.
   card(id, content, t) {
-    return v_flex().id(`graph-card-${id}`).flex_none().ml(PAD).mr(10).my(4).max_h(this.maxDetails()).rounded(8).overflow_hidden()
+    return v_flex().id(`graph-card-${id}`).flex_none().ml(PAD).mr(10).my(4).rounded(8).overflow_hidden()
       .border_1().border_color(t.border).bg(t.surface).child(content);
   }
 
   // As in VS Code's Git Graph: a file opens its diff in a window of its own.
   fileList(commit, d, t) {
     const add = d.files.reduce((n, f) => n + f.add, 0), del = d.files.reduce((n, f) => n + f.del, 0);
-    return v_flex().id(`graph-files-${commit.hash}`).w(this.filesW()).flex_none().max_h(this.maxDetails()).overflow_y_scrollbar().px(8).py(8).gap(1).border_l(1).border_color(t.border)
+    return v_flex().id(`graph-files-${commit.hash}`).w(this.filesW()).flex_none().max_h(this.maxColumns()).overflow_y_scrollbar().px(8).py(8).gap(1).border_l(1).border_color(t.border)
       .child(h_flex().px(6).pb(4).gap(8).items_center().text_size(11.5)
         .child(div().text_color(t.muted).child(count(d.files.length + d.more, "file")))
         .when(add > 0 || del > 0, (e) => e.child(div().text_color(t.ansi2).child(`+${add}`)).child(div().text_color(t.ansi1).child(`−${del}`))))
@@ -567,6 +567,9 @@ export class Graph {
       }))
       .when(d.more > 0, (e) => e.child(div().text_size(11).text_color(t.dim).child(`and ${d.more} more`)));
   }
+
+  // The message column: the card's width less its margins, border, padding and the file list.
+  messageW() { return (this.width ?? 400) - PAD - 10 - 2 - 28 - this.filesW(); }
 
   filesW() { return Math.round(Math.max(180, (this.width ?? 400) * 0.45)); }
 
@@ -606,8 +609,10 @@ export class Graph {
       .on_size_change((size, cx) => {
         this.height = size.height / this.unit();
         const width = size.width / this.unit(), wide = width >= 600, graphMax = Math.max(60, Math.round(width * 0.4));
+        // An open message wraps to the width, so its height follows it.
+        const rewrap = Boolean(this.selected) && width !== this.width;
         this.width = width;
-        if (wide !== this.wide || graphMax !== this.graphMax) { this.wide = wide; this.graphMax = graphMax; cx.notify(); }
+        if (rewrap || wide !== this.wide || graphMax !== this.graphMax) { this.wide = wide; this.graphMax = graphMax; cx.notify(); }
       })
       .child(this.header(t))
       // Several agents in the space: pick the one a message goes to.
