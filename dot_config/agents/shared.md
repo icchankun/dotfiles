@@ -51,6 +51,10 @@ HTML のページ・Claude の artifact・Notion のページを作るときは�
 
 `prompt-master` で依頼を整えるとき、依頼が日本語なら `tuning-japanese-prompts` の SKILL.md も読む。
 
+# UI を作るとき
+
+アプリの画面・コンポーネント・ランディングページの UI をデザインするとき、作るとき、直すときは、`frontend-design` と `unslop` の SKILL.md を両方読む。デザインの方向は frontend-design、AI が作ったように見えるところの直しは unslop に従う。
+
 # モデルの重さ
 
 skill や指示が「軽いモデル」「標準のモデル」「重いモデル」と書いたら、次のモデルを使う。モデルが廃止されたら、この表と、dotfiles（`~/.local/share/chezmoi`）でモデル名を直書きしている次のファイルを直す：`dot_bin/executable_codex-code-pr-review`、`dot_bin/executable_codex-dep-pr-review`、`dot_bin/executable_herdr-coding`、`dot_codex/modify_config.toml.tmpl`、`dot_claude/settings.json`。
