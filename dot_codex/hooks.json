@@ -45,6 +45,11 @@
           {
             "type": "command",
             "command": "~/.bin/git-rewrite-guard --codex-pre"
+          },
+          {
+            "type": "command",
+            "command": "[ ! -x ~/.bin/wt-pool ] || ~/.bin/wt-pool hook",
+            "timeout": 1800
           }
         ]
       }
