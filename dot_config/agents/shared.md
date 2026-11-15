@@ -35,7 +35,15 @@ hc ls --label role=driver --label driver=t7                     # t7 の driver
 
 コードを書く・直すときは、`writing-code-comments` の SKILL.md を読み、コメントはその基準で書く。`ponytail:` のコメントは書かない。
 
-人が読む、会話の外に残る文章（コミットメッセージ、PR、レビューへの返信、ドキュメント、コードコメント、Notion）は、`reviewing-writing` で見直してから出す。この会話での返答と、agent が読むもの（引き継ぎ・依頼・SKILL.md・AGENTS.md・CLAUDE.md などの指示ファイル）は対象外。
+人が読む、会話の外に残る文章（コミットメッセージ、PR、レビューへの返信、ドキュメント、コードコメント、Notion）は、推敲してから出す。日本語は `yomiyasu`、英語は `humanizer` の SKILL.md に従う。この会話での返答と、agent が読むもの（引き継ぎ・依頼・SKILL.md・AGENTS.md・CLAUDE.md などの指示ファイル）は対象外。
+
+推敲の前に、読み手が判断や作業に使わない文を削る。yomiyasu は情報を削らないため。次のものは、読み手の判断に関わると言えない限り削る：
+- 作業の経緯や試した過程
+- 調べていないこと・確かめていないことの断り書き
+- 読み手が何もしなくてよい後始末や予定
+- 背景の説明に入れた細かい数値（件数・秒数・割合）
+
+HTML のページ・Claude の artifact・Notion のページを作るときは、作る前に `yomiyasu` と `visual-explainer` の SKILL.md を読む。文章は yomiyasu、図や表の見せ方は visual-explainer に従う。
 
 # モデルの重さ
 

@@ -34,6 +34,14 @@ dependencies:
     # 新しい作業の依頼を、作業の前に整える。~/.bin/prompt-tune-hook が呼ぶ
     - git: nidhinjs/prompt-master
       ref: 49b3a72469b1e7287d66387004ccfcca90e5968a # v1.8.2
+    # 日本語の文章の推敲。自作の日本語を直す skill の代わりに使う
+    - git: nanaism/yomiyasu
+      ref: db78b9bc5e868549b517a037df7a4d1c93edac23 # v3.1.0
+      path: skills/yomiyasu
+    # 図や表を HTML のページにする。skills/visual-explainer は plugins/visual-explainer へのリンクなので、実体のほうを指す
+    - git: nicobailon/visual-explainer
+      ref: 9d5f880b7e8e0a9a80c890b8e1bb6918b68481ad # v0.15.0
+      path: plugins/visual-explainer
     # grill-with-docs が grilling と domain-modeling を呼ぶので、まとめて入れる
     - git: mattpocock/skills
       ref: 4ae2317ddb22b046e26455e4f9c9b3aaaf62212d
@@ -60,16 +68,16 @@ dependencies:
         - typescript-best-practices
     # ここに並べる official plugins は skills/commands/agents だけのもの。次の3種類は apm では入れず、settings.json の enabledPlugins で入れる
     # - hooks を持つ plugin：apm は hooks/ 内のスクリプトしか展開せず、core/ などの依存が入らない
-    # - LSP の ruby-lsp, typescript-lsp：リポジトリが空で、apm では何も展開されない
+    # - LSP の ru    - git: anthropics/claude-plugins-official
+      path: plugins/playground
+      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
+by-lsp, typescript-lsp：リポジトリが空で、apm では何も展開されない
     # - pr-review-toolkit：herdr-coding が /pr-review-toolkit:review-pr の名前で呼ぶ
     - git: anthropics/claude-plugins-official
       path: plugins/code-review
       ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
     - git: anthropics/claude-plugins-official
       path: plugins/frontend-design
-      ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-    - git: anthropics/claude-plugins-official
-      path: plugins/playground
       ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
     - git: anthropics/claude-plugins-official
       path: plugins/project-artifact
