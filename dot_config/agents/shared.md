@@ -79,7 +79,7 @@ skill や指示が「軽いモデル」「標準のモデル」「重いモデ�
 | 重い | `opus` | `gpt-6.1-sol` |
 
 - Codex のいちばん上のモデル（`gpt-6-astra`）は使わない。使える量が少なく、毎回の作業で回すと足りなくなる。
-- モデルが廃止されたら、この表と、dotfiles（`~/.local/share/chezmoi`）でモデル名を直書きしている次のファイルを直す：`dot_bin/executable_codex-code-pr-review`、`dot_bin/executable_codex-dep-pr-review`、`dot_bin/executable_herdr-coding`、`dot_codex/modify_config.toml.tmpl`、`dot_claude/settings.json`。
+- モデルが廃止されたら、この表と、dotfiles（`~/.local/share/chezmoi`）でモデル名を直書きしているファイルを直す。ファイルの一覧は dotfiles の AGENTS.md にある。
 
 ## skill を入れるとき
 
