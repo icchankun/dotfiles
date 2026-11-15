@@ -87,12 +87,27 @@
     ],
     "PreToolUse": [
       {
+        "matcher": "Skill|EnterWorktree",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ ! -x ~/.bin/wt-pool ] || ~/.bin/wt-pool hook",
+            "timeout": 30
+          }
+        ]
+      },
+      {
         "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
             "command": "~/.bin/git-rewrite-guard",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "[ ! -x ~/.bin/wt-pool ] || ~/.bin/wt-pool hook",
+            "timeout": 1800
           }
         ]
       }
