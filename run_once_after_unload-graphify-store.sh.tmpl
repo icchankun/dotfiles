@@ -1,0 +1,5 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/sh
+# plist を消しても、読み込み済みの launchd ジョブはログアウトするまで残るため、外しておく
+launchctl bootout "gui/$(id -u)/com.icchankun.graphify-store" 2>/dev/null || true
+{{ end -}}
