@@ -10,7 +10,7 @@
 
 それ以外の依頼（調査・質問・資料のまとめ・簡単な設定変更など）は、リンクがあっても branch を作らずにそのまま対応する。
 
-- worktree の作成・削除は `git wt` で行う。`git worktree add` を直接使うと、Herdr.app で開くフックが走らない。
+- branch の worktree の作成・削除は `git wt` で行う。`git worktree add` を直接使うと、Herdr.app で開くフックが走らない。git-rewrite-guard が `--detach` のない `git worktree add` を止める。
 
 ## Herdr.app のペイン間でやりとりする手順
 

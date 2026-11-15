@@ -13,6 +13,8 @@
 #   Codex の PreToolUse は allow を返しても確認を飛ばさず、確認を決めるのは PermissionRequest のため。
 #   PermissionRequest は確認なしで動くコマンドでは呼ばれない。deny は PreToolUse に `--codex-pre` で登録して返す。
 #   `git-rewrite-guard test` で自己テスト
+# branch の worktree を作る git worktree add も deny し、git wt を使わせる。git wt でないと、Herdr.app で開くフックが走らないため。
+# --detach で作る読むだけの worktree（PR のレビューの一時的な checkout）は Herdr で開かないので通す。
 import json
 import os
 import re
@@ -198,6 +200,25 @@ def simple_commands(command):
             words.append(token.strip("`"))
     if words:
         yield words
+
+
+WORKTREE = "branch の worktree は `git wt <branch>` で作る。git worktree add を直接使うと、Herdr.app で開くフックが走らない。読むだけなら --detach を付ける。"
+
+
+def worktree_bypass(command):
+    try:
+        for words in simple_commands(command):
+            names = [os.path.basename(w) for w in words]
+            if "git" not in names:
+                continue
+            args = words[names.index("git") + 1:]
+            while len(args) >= 2 and args[0] in ("-c", "-C"):
+                args = args[2:]
+            if args[:2] == ["worktree", "add"] and "--detach" not in args:
+                return True
+    except ValueError:
+        return bool(re.search(r"\bworktree\s+add\b", command)) and "--detach" not in command
+    return False
 
 
 def git_rewrites(command):
@@ -443,6 +464,10 @@ def test():
         git("config", "remote.pushDefault", "origin")
         git("config", "wt.hook", "touch x")
         assert repo_config_safe(repo), "git push は wt.hook を読まない"
+    assert worktree_bypass("git worktree add ../x -b x") and worktree_bypass("cd r && git -C /r worktree add ../x main")
+    assert not worktree_bypass('git worktree add --quiet --detach "$tree" "$head"'), "PR を読むだけの worktree"
+    assert not worktree_bypass("git worktree remove --force x") and not worktree_bypass("git worktree list")
+    assert not worktree_bypass("git wt x") and not worktree_bypass("echo 'git worktree add'")
     print("ok")
 
 
@@ -453,6 +478,14 @@ if __name__ == "__main__":
     payload = json.load(sys.stdin)
     command = payload.get("tool_input", {}).get("command", "")
     if not isinstance(command, str):
+        sys.exit()
+    if worktree_bypass(command):
+        if sys.argv[1:] != ["--codex"]:
+            print(json.dumps({"hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "permissionDecision": "deny",
+                "permissionDecisionReason": f"git-rewrite-guard: {WORKTREE}",
+            }}))
         sys.exit()
     # 確かめる途中で落ちたら通さない。落ちたまま終わると、settings.json の allow だけで通ってしまう
     cwd = payload.get("cwd", ".")
