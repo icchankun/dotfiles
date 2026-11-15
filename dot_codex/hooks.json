@@ -29,11 +29,6 @@
             "type": "command",
             "command": "~/.bin/dev-flow-hook prompt",
             "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "~/.bin/prompt-tune-hook --codex",
-            "timeout": 10
           }
         ]
       }

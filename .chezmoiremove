@@ -10,3 +10,4 @@ Library/Logs/graphify-store.log
 .graphify
 .bin/codex-pr-review
 .bin/codex-dep-review
+.bin/prompt-tune-hook

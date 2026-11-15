@@ -45,6 +45,8 @@ hc ls --label role=driver --label driver=t7                     # t7 の driver
 
 HTML のページ・Claude の artifact・Notion のページを作るときは、作る前に `yomiyasu` と `visual-explainer` の SKILL.md を読む。文章は yomiyasu、図や表の見せ方は visual-explainer に従う。
 
+`prompt-master` で依頼を整えるとき、依頼が日本語なら `tuning-japanese-prompts` の SKILL.md も読む。
+
 # モデルの重さ
 
 skill や指示が「軽いモデル」「標準のモデル」「重いモデル」と書いたら、次のモデルを使う。モデルが廃止されたら、この表と、dotfiles（`~/.local/share/chezmoi`）でモデル名を直書きしている次のファイルを直す：`dot_bin/executable_codex-code-pr-review`、`dot_bin/executable_codex-dep-pr-review`、`dot_bin/executable_herdr-coding`、`dot_codex/modify_config.toml.tmpl`、`dot_claude/settings.json`。
