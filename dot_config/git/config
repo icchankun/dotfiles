@@ -8,6 +8,12 @@
 [wt]
 	# worktree を作ったら Herdr のタブに自動で開く
 	hook = ~/.bin/herdr-worktree-open
+	# 先頭に / を付けないと、.wt/ の下にある別の worktree の .env まで写す
+	copy = /.env
+	copy = /.envrc
+	copy = /.vscode
+[checkout]
+	workers = 0
 [hook "betterleaks"]
 	# 全リポジトリでコミット前にシークレットを検出する
 	command = mise exec -- betterleaks git --pre-commit --redact --staged --verbose
