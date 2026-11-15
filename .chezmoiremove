@@ -1,3 +1,10 @@
 # 消した dotfiles。chezmoi apply で手元からも消す
 .bin/rename-cc-session
 .cache/rename-cc-session
+.bin/graphify-store
+.bin/graphify-hook-guard
+Library/LaunchAgents/com.icchankun.graphify-store.plist
+Library/Logs/graphify-store.log
+.claude/skills/graphify
+.codex/skills/graphify
+.graphify
