@@ -32,7 +32,7 @@ MANAGED = {
             # gh で GitHub の API を使えるようにする。切ったままだと api.github.com を名前解決できない
             "network": {"enabled": True},
         },
-        # codex-pr-review と codex-dep-review が使う。PR を読むだけで、秘密情報も読ませない
+        # codex-code-pr-review と codex-dep-pr-review が使う。PR を読むだけで、秘密情報も読ませない
         "dotfiles-readonly": {
             "description": "読むだけ。秘密情報は読ませない",
             "extends": ":read-only",

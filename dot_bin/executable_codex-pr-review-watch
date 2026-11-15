@@ -1,16 +1,11 @@
 #!/usr/bin/env bash
 
-# レビューを頼まれた PR に codex-pr-review を流す。
+# 自分が作成した PR とレビューを頼まれた PR に codex-code-pr-review を、依存更新に codex-dep-pr-review を流す。
 #
 # 依存:
-#   - gh, codex-pr-review, codex-dep-review, osascript (macOS の通知)
-#   - the repositories to review, in DEV_FLOW_REPOS (space separated) or
-#     ~/.config/dev-flow/repos (one per line). Both the pull request reviews and
-#     the dependency update checks run only there. Kept out of dotfiles, which
-#     are public. (レビューするリポジトリ。DEV_FLOW_REPOS（空白区切り）か
-#      ~/.config/dev-flow/repos（1行に1つ）。PR のレビューも依存更新の確認も、
-#      ここに書いたリポジトリだけで動く。dotfiles は公開しているので、そこには
-#      入れない。)
+#   - gh, codex-code-pr-review, codex-dep-pr-review, osascript (macOS の通知)
+#   - 対象リポジトリは ~/.config/codex-pr-review/config.json の repositories で指定する。
+#     リポジトリ名は公開する dotfiles に含めない。
 #
 # 1回の実行ですること:
 #   - Only on weekdays from 9:00 to 20:00. (平日 9:00〜20:00 だけ動く。)
@@ -22,6 +17,7 @@
 #     need this script. (自分個人にレビュー依頼が来た、draft でない open の PR を
 #     拾い、閉じるまで追い続ける。レビューを投稿すると GitHub は依頼を消すが、その
 #     あとのラウンドも見る必要があるため。)
+#   - 自分が作成した open で draft でない PR も、同じ一覧に足す。
 #   - リリースの PR は外す。それぞれの PR でレビュー済みの変更をまとめたもの
 #     なので、もう一度レビューしても Codex の利用枠を使うだけなので。ベースの
 #     ブランチでは決めない（すべての PR を main に出すリポジトリもある）。
@@ -30,34 +26,29 @@
 #   - When Codex hits its usage limit, pauses until the reset time Codex gives,
 #     and resumes with the pull requests left. (Codex の利用枠が切れたら、Codex が
 #     示す時刻まで止め、残りの PR から再開する。)
-#   - Checks the open dependency updates from Renovate and Dependabot in those
-#     repositories with codex-dep-review, at most MAX_DEP_PRS a run. Approving
-#     and merging are left to a person. (それらのリポジトリの Renovate と Dependabot の
-#     依存更新を codex-dep-review で確かめる。1回に MAX_DEP_PRS 件まで。approve と
-#     merge は人がする。)
+#   - それらのリポジトリの Renovate と Dependabot の依存更新を codex-dep-pr-review で
+#     レビューする。1回に MAX_DEP_PRS 件まで。approve は codex-dep-pr-review が
+#     行い、merge は人がする。
 #   - Once a week, runs codex-dep-report to compare those verdicts with what I
 #     did, and notifies the summary. (週に1回、codex-dep-report でその判定と自分の
 #     判断を比べ、要約を知らせる。)
-#   - 知らせるのは自分が要るものだけ。approve を待つ PR、ラウンドが多すぎて任された
-#     PR、approve するか自分で見る依存更新、失敗、一時停止。同じものは1回だけ知らせる。失敗は1日1回。
+#   - 知らせるのは自分が要るものだけ。人に任された PR と依存更新（理由はそれぞれの
+#     スクリプトが出す）、失敗、一時停止。approve したものは知らせない。同じものは1回だけ知らせる。失敗は1日1回。
 
 set -euo pipefail
 
-readonly MAX_PRS=3
+readonly MAX_PRS=10
 readonly MAX_DEP_PRS=5
 readonly RELEASE_JQ='
   (.title | test("リリース|\\brelease\\b"; "i"))
   or (.headRefName | test("^release[/-]"; "i"))
   or any(.labels[]?; .name | test("^(release|リリース)$"; "i"))'
-readonly REPOS_FILE="$HOME/.config/dev-flow/repos"
+readonly CONFIG_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/codex-pr-review/config.json"
 readonly STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/codex-pr-review"
 readonly TRACKED="$STATE_DIR/tracked"
 readonly PAUSED="$STATE_DIR/paused-until"
 readonly NOTIFIED="$STATE_DIR/notified"
-readonly LOCK="$STATE_DIR/watch.lock"
-# A lock older than this is removed even if its pid is alive. (これより古いロックは、
-# pid が生きていても消す。)
-readonly LOCK_STALE_MINUTES=180
+readonly LOCK="$STATE_DIR/watch.lockfile"
 
 log() { printf '%s %s\n' "$(date '+%F %T')" "$*"; }
 
@@ -89,19 +80,23 @@ reset_epoch() {
   echo $(($(date +%s) + 1800))
 }
 
-# 自分にレビュー依頼が来た PR を、追いかける一覧に足す。残すのはレビューする
+# 自分が作成した PR とレビュー依頼が来た PR を、追いかける一覧に足す。残すのはレビューする
 # リポジトリのものだけ。リストから外したリポジトリの PR は、一覧からも外す。
 discover() {
-  local found repos
+  local found repos query
   repos=$(review_repos)
   if [ -z "$repos" ]; then
-    log "no repositories to review; set DEV_FLOW_REPOS or $REPOS_FILE"
+    log "no repositories to review; set repositories in $CONFIG_FILE"
     : >"$TRACKED"
     return 0
   fi
-  found=$(gh search prs "user-review-requested:@me" --state open --draft=false --limit 100 \
-    --json repository,number --jq '.[] | "\(.repository.nameWithOwner)#\(.number)"') ||
-    { log "could not search pull requests"; return 0; }
+  found=$(
+    for query in "user-review-requested:@me" "author:@me"; do
+      gh search prs "$query" --state open --draft=false --limit 100 \
+        --json repository,number --jq '.[] | "\(.repository.nameWithOwner)#\(.number)"' ||
+        { log "could not search pull requests ($query)" >&2; return 1; }
+    done
+  ) || return 0
   { cat "$TRACKED"; [ -z "$found" ] || printf '%s\n' "$found"; } | sort -u |
     awk -F'#' 'NR == FNR { keep[tolower($0)] = 1; next } tolower($1) in keep' <(printf '%s\n' "$repos") - >"$TRACKED.new" || true
   mv "$TRACKED.new" "$TRACKED"
@@ -109,11 +104,12 @@ discover() {
 
 # レビューするリポジトリ。PR も依存更新も。
 review_repos() {
-  if [ -n "${DEV_FLOW_REPOS:-}" ]; then
-    printf '%s\n' $DEV_FLOW_REPOS
-  elif [ -f "$REPOS_FILE" ]; then
-    grep -vE '^[[:space:]]*(#|$)' "$REPOS_FILE"
-  fi
+  [ -e "$CONFIG_FILE" ] || return 0
+  jq -rs '
+    if length == 1 and (.[0] | type) == "object" then .[0].repositories
+    else error("expected one config object") end |
+    if type == "array" and all(.[]; type == "string" and test("^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"))
+    then .[] else error("invalid repositories") end' "$CONFIG_FILE"
 }
 
 # それらのリポジトリの、draft でない open の依存更新。
@@ -122,7 +118,7 @@ dep_pull_requests() {
   review_repos | while read -r repo; do
     for bot in app/renovate app/dependabot; do
       gh pr list -R "$repo" --author "$bot" --state open --json number,isDraft \
-        --jq ".[] | select(.isDraft | not) | \"$repo#\(.number)\"" 2>/dev/null || log "$repo: could not list $bot"
+        --jq ".[] | select(.isDraft | not) | \"$repo#\(.number)\"" || log "$repo: could not list $bot" >&2
     done
   done
 }
@@ -145,15 +141,18 @@ check_dependency_updates() {
     [ -n "$pr" ] || continue
     [ "$used" -lt "$MAX_DEP_PRS" ] || { log "checked $MAX_DEP_PRS dependency updates; the rest wait"; break; }
 
-    if out=$(codex-dep-review --post "$pr" 2>&1); then status=0; else status=$?; fi
+    if out=$(codex-dep-pr-review --post "$pr" 2>&1); then status=0; else status=$?; fi
     [ -z "$out" ] || printf '%s\n' "$out" | sed "s|^|$(date '+%F %T') $pr: |"
     head=$(printf '%s\n' "$out" | sed -n 's/^result: [a-z_]* //p' | tail -n 1)
 
     case "$status" in
       0) used=$((used + 1)) ;;
       3) ;;
-      5) used=$((used + 1)); notify "$pr:deps:$head" "$pr の依存更新は、自分で見てください" ;;
-      6) used=$((used + 1)); notify "$pr:deps-ok:$head" "$pr の依存更新は ok でした。approve するか見てください" ;;
+      4)
+        used=$((used + 1))
+        notify "$pr:deps:$head" "$pr: $(sed -n 's/^handover: //p' <<<"$out" | tail -n 1)"
+        ;;
+      6) used=$((used + 1)) ;;
       75) pause_for_limit "$out"; return 1 ;;
       *) notify "$pr:deps-error:$(date +%F)" "$pr の依存更新の確認に失敗しました。~/Library/Logs/codex-pr-review.log を見てください" ;;
     esac
@@ -172,23 +171,14 @@ weekly_report() {
   printf '%s\n' "$week" >"$STATE_DIR/report-week"
 }
 
-# Take the lock, removing one left by a run whose process is gone or that is
-# older than LOCK_STALE_MINUTES. (ロックを取る。プロセスがもういない回か、
-# LOCK_STALE_MINUTES より古い回が残したロックは消す。)
 take_lock() {
-  local pid
-  if ! mkdir "$LOCK" 2>/dev/null; then
-    pid=$(cat "$LOCK/pid" 2>/dev/null || true)
-    # pid がまだないのは、相手がロックを作った直後。
-    if { [ -z "$pid" ] || kill -0 "$pid" 2>/dev/null; } &&
-      [ -z "$(find "$LOCK" -maxdepth 0 -mmin +"$LOCK_STALE_MINUTES")" ]; then
-      return 1
-    fi
-    log "removing a stale lock${pid:+ (pid $pid)}"
-    rm -rf "$LOCK"
-    mkdir "$LOCK" 2>/dev/null || return 1
-  fi
-  printf '%s\n' "$$" >"$LOCK/pid"
+  local legacy_pid
+  legacy_pid=$(cat "$STATE_DIR/watch.lock/pid" 2>/dev/null || true)
+  if [ -n "$legacy_pid" ] && kill -0 "$legacy_pid" 2>/dev/null; then return 1; fi
+  if [ -z "$legacy_pid" ] && [ -d "$STATE_DIR/watch.lock" ] &&
+    [ -z "$(find "$STATE_DIR/watch.lock" -maxdepth 0 -mmin +1)" ]; then return 1; fi
+  exec 9>"$LOCK"
+  /usr/bin/lockf -s -t 0 9
 }
 
 untrack() {
@@ -203,7 +193,6 @@ main() {
   in_working_hours || exit 0
   command -v codex >/dev/null || exit 0
   take_lock || { log "the previous run is still going"; exit 0; }
-  trap 'rm -rf "$LOCK"' EXIT
 
   if [ -f "$PAUSED" ]; then
     if [ "$(date +%s)" -lt "$(cat "$PAUSED")" ]; then
@@ -215,7 +204,7 @@ main() {
 
   discover
 
-  local used=0 pr repo number state out status
+  local used=0 pr repo number state out status reason
   while read -r pr <&3; do
     [ -n "$pr" ] || continue
     [ "$used" -lt "$MAX_PRS" ] || { log "used Codex on $MAX_PRS pull requests; the rest wait"; break; }
@@ -230,15 +219,16 @@ main() {
       draft) continue ;;
     esac
 
-    if out=$(codex-pr-review --post "$pr" 2>&1); then status=0; else status=$?; fi
+    if out=$(codex-code-pr-review --post "$pr" 2>&1); then status=0; else status=$?; fi
+    if grep -qxF 'codex-used: true' <<<"$out"; then used=$((used + 1)); fi
     [ -z "$out" ] || printf '%s\n' "$out" | sed "s|^|$(date '+%F %T') $pr: |"
 
     case "$status" in
-      0) used=$((used + 1)) ;;
-      3) ;;
-      4) notify "$pr:handover" "$pr はラウンドが多すぎるので、自分で見てください" ;;
-      # 6 is counted as a Codex run even when only CI was checked, so a run may stop short of MAX_PRS
-      6) used=$((used + 1)); notify "$pr:ready:$(grep -o 'pullrequestreview-[0-9]*' <<<"$out" | tail -n 1)" "$pr は指摘が残っておらず CI も通りました。approve するか見てください" ;;
+      0|3|6) ;;
+      4)
+        reason=$(sed -n 's/^handover: //p' <<<"$out" | tail -n 1)
+        notify "$pr:handover:$(sed -n 's/^result: [a-z_]* //p' <<<"$out" | tail -n 1):$reason" "$pr: ${reason}。自分で見てください"
+        ;;
       75) pause_for_limit "$out"; return 0 ;;
       *) notify "$pr:error:$(date +%F)" "$pr のレビューに失敗しました。~/Library/Logs/codex-pr-review.log を見てください" ;;
     esac

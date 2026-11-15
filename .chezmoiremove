@@ -8,3 +8,5 @@ Library/Logs/graphify-store.log
 .claude/skills/graphify
 .codex/skills/graphify
 .graphify
+.bin/codex-pr-review
+.bin/codex-dep-review
