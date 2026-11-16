@@ -1,5 +1,5 @@
 lockfile_version: '2'
-generated_at: '2026-11-11T00:56:11.928194+00:00'
+generated_at: '2026-11-16T00:29:06.519005+00:00'
 apm_version: 0.31.0
 dependencies:
 - repo_url: anthropics/claude-plugins-official
@@ -38,48 +38,6 @@ dependencies:
     .claude/skills/frontend-design/LICENSE.txt: sha256:0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594
     .claude/skills/frontend-design/SKILL.md: sha256:1608ea77fbb6fc30d13a97d12cfa8ebf31358d40f0dd97beed24829d6b3f45dd
   content_hash: sha256:de72f358260d07457ae909ef9771b80fa32ab027ea3d1ebd28b0e51ef1b22a6a
-- repo_url: anthropics/claude-plugins-official
-  name: playground
-  host: github.com
-  resolved_commit: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-  resolved_ref: 57446951ad09cb8d9e7e4820f08dcba34c2d20a2
-  version: '5744695'
-  virtual_path: plugins/playground
-  is_virtual: true
-  package_type: skill_bundle
-  deployed_files:
-  - .agents/skills/playground
-  - .agents/skills/playground/SKILL.md
-  - .agents/skills/playground/templates/code-map.md
-  - .agents/skills/playground/templates/concept-map.md
-  - .agents/skills/playground/templates/data-explorer.md
-  - .agents/skills/playground/templates/design-playground.md
-  - .agents/skills/playground/templates/diff-review.md
-  - .agents/skills/playground/templates/document-critique.md
-  - .claude/skills/playground
-  - .claude/skills/playground/SKILL.md
-  - .claude/skills/playground/templates/code-map.md
-  - .claude/skills/playground/templates/concept-map.md
-  - .claude/skills/playground/templates/data-explorer.md
-  - .claude/skills/playground/templates/design-playground.md
-  - .claude/skills/playground/templates/diff-review.md
-  - .claude/skills/playground/templates/document-critique.md
-  deployed_file_hashes:
-    .agents/skills/playground/SKILL.md: sha256:521a3d62211e5f47b65ed17b660e001b15cf8d88d058cbf31bc00e889bcb63cc
-    .agents/skills/playground/templates/code-map.md: sha256:0eb7c0d1ac3dbd1401c4a2348631e7be2a02ec30739dd514aab6f162cfade77f
-    .agents/skills/playground/templates/concept-map.md: sha256:153810786435a1f3e3948aba075ebf3c887df827464bebca61f48ce7974e9622
-    .agents/skills/playground/templates/data-explorer.md: sha256:4b884e4b400f3af82b7f33210c5c2017a5296cab16f1496963bd42061a1fe342
-    .agents/skills/playground/templates/design-playground.md: sha256:190f7da424ebd3226a679045420b64171a98d081b7d84e26be4553de13c91fe7
-    .agents/skills/playground/templates/diff-review.md: sha256:32112ba4e82fbb8b656af166d1e21f8461cedbb4fdb5d2c314c43d210ea7e37d
-    .agents/skills/playground/templates/document-critique.md: sha256:c5bd7a68a53f2075d127e482c93b5f3d0b51c24bf8d301c1124801cca7be2d41
-    .claude/skills/playground/SKILL.md: sha256:521a3d62211e5f47b65ed17b660e001b15cf8d88d058cbf31bc00e889bcb63cc
-    .claude/skills/playground/templates/code-map.md: sha256:0eb7c0d1ac3dbd1401c4a2348631e7be2a02ec30739dd514aab6f162cfade77f
-    .claude/skills/playground/templates/concept-map.md: sha256:153810786435a1f3e3948aba075ebf3c887df827464bebca61f48ce7974e9622
-    .claude/skills/playground/templates/data-explorer.md: sha256:4b884e4b400f3af82b7f33210c5c2017a5296cab16f1496963bd42061a1fe342
-    .claude/skills/playground/templates/design-playground.md: sha256:190f7da424ebd3226a679045420b64171a98d081b7d84e26be4553de13c91fe7
-    .claude/skills/playground/templates/diff-review.md: sha256:32112ba4e82fbb8b656af166d1e21f8461cedbb4fdb5d2c314c43d210ea7e37d
-    .claude/skills/playground/templates/document-critique.md: sha256:c5bd7a68a53f2075d127e482c93b5f3d0b51c24bf8d301c1124801cca7be2d41
-  content_hash: sha256:e5dc759c9ef85ed12c15f7be87bbb41576b0cde72f8faef04f85e9faba8510cf
 - repo_url: anthropics/claude-plugins-official
   name: project-artifact
   host: github.com
@@ -830,12 +788,22 @@ dependencies:
   content_hash: sha256:b86fb3347a287aa384ba34f24339040390d48ebe5a4e8b6dd6dce176b2414dc8
   skill_subset:
   - herdr-core
+- repo_url: heydamir/unslop
+  name: unslop
+  host: github.com
+  resolved_commit: 620163eedb3529d9cd23a3994ed8d287d06f760d
+  resolved_ref: 620163eedb3529d9cd23a3994ed8d287d06f760d
+  version: unknown
+  virtual_path: skills/unslop
+  is_virtual: true
+  package_type: claude_skill
+  content_hash: sha256:8bd4303a6318c6fa3955ec30dea317e620cbfe49b52263c9d201be3ae587c386
 - repo_url: icchankun/skills
   name: icchankun-skills
   host: github.com
-  resolved_commit: 377af1005fb0dbdf264a91fade5ecf42f58a53ba
+  resolved_commit: b81c88fe86f6db21b289453b6cc4b22b989e5925
   resolved_ref: main
-  version: 377af10
+  version: b81c88f
   package_type: marketplace_plugin
   deployed_files:
   - .agents/skills/capturing-screens
@@ -1077,7 +1045,7 @@ dependencies:
     .claude/skills/writing-code-comments/SKILL.md: sha256:09dc35fdc022606808d554e98f37dfa9b095645d44fba2277c70ed03a3402084
     .claude/skills/writing-notion-docs/SKILL.md: sha256:5952d74a11a7a294b8bfb53599aabbbce52018f38e1d54a6d808b980a0cb8317
     .claude/skills/writing-slack-messages/SKILL.md: sha256:dc50a19242f5cb9f9aebee15d570d4c81b9938a75638aff4f494e33ad67411d3
-  content_hash: sha256:cbfcc91e756a44360ab9ed2478244311e773a54fa1708e2931c6ad54d275fd91
+  content_hash: sha256:9ec693ef4e9888a351847355cdf5cc09ee3018fda41ad707ddafe1e959a12196
 - repo_url: mattpocock/skills
   name: mattpocock-skills
   host: github.com
@@ -1200,6 +1168,27 @@ dependencies:
   content_hash: sha256:eb4b931e6c8544cc32f14384f5af68b8db82a40429b8e535fe32944da75abf03
   skill_subset:
   - playwright-cli
+- repo_url: nanaism/yomiyasu
+  name: yomiyasu
+  host: github.com
+  resolved_commit: db78b9bc5e868549b517a037df7a4d1c93edac23
+  resolved_ref: db78b9bc5e868549b517a037df7a4d1c93edac23
+  version: unknown
+  virtual_path: skills/yomiyasu
+  is_virtual: true
+  package_type: claude_skill
+  content_hash: sha256:f88b5551d606efdff3a10e1e6b3d5900e373cb25f9cafdbe08840c76af36508b
+- repo_url: nicobailon/visual-explainer
+  name: visual-explainer
+  host: github.com
+  resolved_commit: 9d5f880b7e8e0a9a80c890b8e1bb6918b68481ad
+  resolved_ref: 9d5f880b7e8e0a9a80c890b8e1bb6918b68481ad
+  version: 0.15.0
+  virtual_path: plugins/visual-explainer
+  is_virtual: true
+  package_type: hybrid
+  content_hash: sha256:9dc3dff9740d6837642e4fd8fff00894d8b3663db0cfa49de5d2320f1e569307
+  declared_license: MIT
 - repo_url: nidhinjs/prompt-master
   name: prompt-master
   host: github.com
@@ -1232,6 +1221,16 @@ dependencies:
     .claude/skills/prompt-master/references/patterns.md: sha256:95e7b16c32cdf7a5971a952cd40841875dea97fa7c96154e42f1afd2cf468d91
     .claude/skills/prompt-master/references/templates.md: sha256:164f151958cc8aa64954a1d35c1b57f99a58f2c57be9742a86defb9f171fabed
   content_hash: sha256:1ae0c2483ce2478e428078907f3e5d195201db42609b5bdc83cf75c46ed83671
+- repo_url: openai/skills
+  name: notion-research-documentation
+  host: github.com
+  resolved_commit: 77963424cd7687fd52e5fcfdd3f08d826ab9b1ab
+  resolved_ref: 77963424cd7687fd52e5fcfdd3f08d826ab9b1ab
+  version: unknown
+  virtual_path: skills/.curated/notion-research-documentation
+  is_virtual: true
+  package_type: claude_skill
+  content_hash: sha256:b462225ca15173b614f2f747cb5a623c7ce1acdc6053812ce7968020106ab372
 - repo_url: vercel-labs/skills
   name: skills
   host: github.com
@@ -3016,78 +3015,6 @@ deployments:
   - icchankun/skills
   active_owner: icchankun/skills
   content_hash: sha256:9fb8ba7eead294d2be98f39c0cd9b0cf839c32e70cd9d6cc03e4920ab5ab5969
-- kind: project-relative
-  target: claude
-  value: .claude/skills/playground
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/playground
-  active_owner: anthropics/claude-plugins-official/plugins/playground
-  content_hash: null
-- kind: project-relative
-  target: claude
-  value: .claude/skills/playground/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/playground
-  active_owner: anthropics/claude-plugins-official/plugins/playground
-  content_hash: sha256:521a3d62211e5f47b65ed17b660e001b15cf8d88d058cbf31bc00e889bcb63cc
-- kind: project-relative
-  target: claude
-  value: .claude/skills/playground/templates/code-map.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/playground
-  active_owner: anthropics/claude-plugins-official/plugins/playground
-  content_hash: sha256:0eb7c0d1ac3dbd1401c4a2348631e7be2a02ec30739dd514aab6f162cfade77f
-- kind: project-relative
-  target: claude
-  value: .claude/skills/playground/templates/concept-map.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/playground
-  active_owner: anthropics/claude-plugins-official/plugins/playground
-  content_hash: sha256:153810786435a1f3e3948aba075ebf3c887df827464bebca61f48ce7974e9622
-- kind: project-relative
-  target: claude
-  value: .claude/skills/playground/templates/data-explorer.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/playground
-  active_owner: anthropics/claude-plugins-official/plugins/playground
-  content_hash: sha256:4b884e4b400f3af82b7f33210c5c2017a5296cab16f1496963bd42061a1fe342
-- kind: project-relative
-  target: claude
-  value: .claude/skills/playground/templates/design-playground.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/playground
-  active_owner: anthropics/claude-plugins-official/plugins/playground
-  content_hash: sha256:190f7da424ebd3226a679045420b64171a98d081b7d84e26be4553de13c91fe7
-- kind: project-relative
-  target: claude
-  value: .claude/skills/playground/templates/diff-review.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/playground
-  active_owner: anthropics/claude-plugins-official/plugins/playground
-  content_hash: sha256:32112ba4e82fbb8b656af166d1e21f8461cedbb4fdb5d2c314c43d210ea7e37d
-- kind: project-relative
-  target: claude
-  value: .claude/skills/playground/templates/document-critique.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/playground
-  active_owner: anthropics/claude-plugins-official/plugins/playground
-  content_hash: sha256:c5bd7a68a53f2075d127e482c93b5f3d0b51c24bf8d301c1124801cca7be2d41
 - kind: project-relative
   target: claude
   value: .claude/skills/playwright-cli
@@ -5545,78 +5472,6 @@ deployments:
   - icchankun/skills
   active_owner: icchankun/skills
   content_hash: sha256:9fb8ba7eead294d2be98f39c0cd9b0cf839c32e70cd9d6cc03e4920ab5ab5969
-- kind: project-relative
-  target: legacy
-  value: .agents/skills/playground
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/playground
-  active_owner: anthropics/claude-plugins-official/plugins/playground
-  content_hash: null
-- kind: project-relative
-  target: legacy
-  value: .agents/skills/playground/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/playground
-  active_owner: anthropics/claude-plugins-official/plugins/playground
-  content_hash: sha256:521a3d62211e5f47b65ed17b660e001b15cf8d88d058cbf31bc00e889bcb63cc
-- kind: project-relative
-  target: legacy
-  value: .agents/skills/playground/templates/code-map.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/playground
-  active_owner: anthropics/claude-plugins-official/plugins/playground
-  content_hash: sha256:0eb7c0d1ac3dbd1401c4a2348631e7be2a02ec30739dd514aab6f162cfade77f
-- kind: project-relative
-  target: legacy
-  value: .agents/skills/playground/templates/concept-map.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/playground
-  active_owner: anthropics/claude-plugins-official/plugins/playground
-  content_hash: sha256:153810786435a1f3e3948aba075ebf3c887df827464bebca61f48ce7974e9622
-- kind: project-relative
-  target: legacy
-  value: .agents/skills/playground/templates/data-explorer.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/playground
-  active_owner: anthropics/claude-plugins-official/plugins/playground
-  content_hash: sha256:4b884e4b400f3af82b7f33210c5c2017a5296cab16f1496963bd42061a1fe342
-- kind: project-relative
-  target: legacy
-  value: .agents/skills/playground/templates/design-playground.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/playground
-  active_owner: anthropics/claude-plugins-official/plugins/playground
-  content_hash: sha256:190f7da424ebd3226a679045420b64171a98d081b7d84e26be4553de13c91fe7
-- kind: project-relative
-  target: legacy
-  value: .agents/skills/playground/templates/diff-review.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/playground
-  active_owner: anthropics/claude-plugins-official/plugins/playground
-  content_hash: sha256:32112ba4e82fbb8b656af166d1e21f8461cedbb4fdb5d2c314c43d210ea7e37d
-- kind: project-relative
-  target: legacy
-  value: .agents/skills/playground/templates/document-critique.md
-  runtime: null
-  scope: project
-  owners:
-  - anthropics/claude-plugins-official/plugins/playground
-  active_owner: anthropics/claude-plugins-official/plugins/playground
-  content_hash: sha256:c5bd7a68a53f2075d127e482c93b5f3d0b51c24bf8d301c1124801cca7be2d41
 - kind: project-relative
   target: legacy
   value: .agents/skills/playwright-cli
