@@ -198,6 +198,31 @@ notify_failure() {
   osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title "🧹 prune-merged-worktrees"' -e 'end run' "$1" >/dev/null 2>&1 || true
 }
 
+# メイン worktree の develop（なければデフォルトブランチ）を origin に追いつかせ、手で git pull しなくて済むようにする。
+# 追跡していないファイルは git merge が上書きを拒むので、変更があるかの判定には入れない。
+fast_forward_base() {
+  local repo="$1" default="$2" wt="$3" current
+  [[ -n "$wt" ]] || return 0
+  current="$(git -C "$wt" symbolic-ref --quiet --short HEAD 2>/dev/null)" || return 0
+  [[ "$current" == "develop" || ( -n "$default" && "$current" == "$default" ) ]] || return 0
+  git -C "$wt" show-ref --verify --quiet "refs/remotes/origin/$current" || return 0
+  [[ -n "$(git -C "$wt" rev-list -1 "HEAD..origin/$current")" ]] || return 0
+  if [[ -n "$(git -C "$wt" status --porcelain --untracked-files=no)" ]]; then
+    "$QUIET" || log "SKIP  $repo: $current has uncommitted changes, not fast-forwarded"
+    return 0
+  fi
+  if "$DRY_RUN"; then
+    log "DRY   $repo: would fast-forward $current"
+    return 0
+  fi
+  # post-merge の hook（依存のインストールなど）を、毎時のジョブから動かさない
+  if git -C "$wt" -c core.hooksPath=/dev/null merge --ff-only --quiet "origin/$current" 2>/dev/null; then
+    log "UPD   $repo: $current fast-forwarded"
+  else
+    log "WARN  $repo: $current cannot be fast-forwarded"
+  fi
+}
+
 deleted_total=0
 skipped_total=0
 
@@ -216,6 +241,7 @@ while IFS= read -r gitdir; do
 
   default="$(default_branch "$repo")"
   main_wt="$(main_worktree "$repo")"
+  fast_forward_base "$repo" "$default" "$main_wt"
 
   if ! branches_out="$(prunable_branches "$repo" "$default")"; then
     log "WARN  $repo: gh failed, skipped"
