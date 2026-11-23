@@ -3,6 +3,9 @@
     "sessionUrl": false
   },
   "autoContinueAtUsageLimit": true,
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_CODE_MODE": "1"
+  },
   "permissions": {
     "allow": [
       "WebSearch",
