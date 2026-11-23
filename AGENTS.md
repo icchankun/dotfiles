@@ -7,5 +7,5 @@
 - `dot_bin/executable_codex-code-pr-review`
 - `dot_bin/executable_codex-dep-pr-review`
 - `dot_bin/executable_herdr-coding`
-- `dot_codex/modify_config.toml.tmpl`
+- `dot_codex/modify_private_config.toml.tmpl`
 - `dot_claude/settings.json`
