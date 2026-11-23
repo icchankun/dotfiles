@@ -55,8 +55,8 @@ hc ls --label role=driver --label driver=t7                     # t7 の driver
 
 ## ページを作るとき
 
-- HTML のページ・Claude の artifact・Notion のページを作るときは、作る前に `yomiyasu` と `visual-explainer` の SKILL.md を読む。
-- 文章は yomiyasu、図や表の見せ方は visual-explainer に従う。
+- 説明の資料を HTML のページ・Claude の artifact・Notion の HTML ブロックで作るときは、`writing-explainer-pages` を使う。頼まれた言葉が「図解」「まとめ」「資料」のどれでも同じ。
+- Notion のページを作るときは、作る前に `yomiyasu` と `visual-explainer` の SKILL.md を読む。文章は yomiyasu、図や表の見せ方は visual-explainer に従う。
 - Notion に書き込むときは、どの skill を使っていても、先に書く場所と下書きを見せ、OK が出てから書き込む。
 
 ## UI を作るとき
