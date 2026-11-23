@@ -1,5 +1,5 @@
-lockfile_version: '2'
-generated_at: '2026-11-16T00:29:06.519005+00:00'
+lockfile_version: '1'
+generated_at: '2026-11-23T15:38:04.512954+00:00'
 apm_version: 0.31.0
 dependencies:
 - repo_url: anthropics/claude-plugins-official
@@ -801,9 +801,9 @@ dependencies:
 - repo_url: icchankun/skills
   name: icchankun-skills
   host: github.com
-  resolved_commit: b81c88fe86f6db21b289453b6cc4b22b989e5925
+  resolved_commit: 4adcb838a89d600ae1e786524788aaa5afa6e512
   resolved_ref: main
-  version: b81c88f
+  version: 4adcb83
   package_type: marketplace_plugin
   deployed_files:
   - .agents/skills/capturing-screens
@@ -815,6 +815,8 @@ dependencies:
   - .agents/skills/checking-review-findings/SKILL.md
   - .agents/skills/committing-git-changes
   - .agents/skills/committing-git-changes/SKILL.md
+  - .agents/skills/committing-git-changes/references/diagrams.md
+  - .agents/skills/committing-git-changes/references/disclosure.md
   - .agents/skills/committing-git-changes/references/message.md
   - .agents/skills/committing-git-changes/references/templates.md
   - .agents/skills/committing-git-changes/scripts/check_gitmoji.py
@@ -874,6 +876,8 @@ dependencies:
   - .agents/skills/uploading-pr-media/SKILL.md
   - .agents/skills/writing-code-comments
   - .agents/skills/writing-code-comments/SKILL.md
+  - .agents/skills/writing-explainer-pages
+  - .agents/skills/writing-explainer-pages/SKILL.md
   - .agents/skills/writing-notion-docs
   - .agents/skills/writing-notion-docs/SKILL.md
   - .agents/skills/writing-slack-messages
@@ -887,6 +891,8 @@ dependencies:
   - .claude/skills/checking-review-findings/SKILL.md
   - .claude/skills/committing-git-changes
   - .claude/skills/committing-git-changes/SKILL.md
+  - .claude/skills/committing-git-changes/references/diagrams.md
+  - .claude/skills/committing-git-changes/references/disclosure.md
   - .claude/skills/committing-git-changes/references/message.md
   - .claude/skills/committing-git-changes/references/templates.md
   - .claude/skills/committing-git-changes/scripts/check_gitmoji.py
@@ -903,8 +909,6 @@ dependencies:
   - .claude/skills/handover/SKILL.md
   - .claude/skills/herdr-coding
   - .claude/skills/herdr-coding/SKILL.md
-  - .claude/skills/humanizer-ja
-  - .claude/skills/humanizer-ja/SKILL.md
   - .claude/skills/planning-manual-checks
   - .claude/skills/planning-manual-checks/SKILL.md
   - .claude/skills/planning-manual-checks/references/viewpoints.md
@@ -932,10 +936,6 @@ dependencies:
   - .claude/skills/reviewing-pull-requests/references/pr-content.md
   - .claude/skills/reviewing-pull-requests/references/viewpoints.md
   - .claude/skills/reviewing-pull-requests/schemas/findings.json
-  - .claude/skills/reviewing-writing
-  - .claude/skills/reviewing-writing/SKILL.md
-  - .claude/skills/reviewing-writing/references/diagrams.md
-  - .claude/skills/reviewing-writing/textlintrc.json
   - .claude/skills/running-dev-flow
   - .claude/skills/running-dev-flow/SKILL.md
   - .claude/skills/stacking-pull-requests
@@ -946,28 +946,32 @@ dependencies:
   - .claude/skills/uploading-pr-media/SKILL.md
   - .claude/skills/writing-code-comments
   - .claude/skills/writing-code-comments/SKILL.md
+  - .claude/skills/writing-explainer-pages
+  - .claude/skills/writing-explainer-pages/SKILL.md
   - .claude/skills/writing-notion-docs
   - .claude/skills/writing-notion-docs/SKILL.md
   - .claude/skills/writing-slack-messages
   - .claude/skills/writing-slack-messages/SKILL.md
   deployed_file_hashes:
     .agents/skills/capturing-screens/SKILL.md: sha256:097ab2b12f5d06b55b016968ddb63b3613f7721edb746a96318d81130ab023cc
-    .agents/skills/checking-library-updates/SKILL.md: sha256:8afe2f39c56962412740e6c5d9ffdab1379b087034cac97fb40d90ed4c11c7ae
+    .agents/skills/checking-library-updates/SKILL.md: sha256:718519da08a0df528e6aa003dce093d6bae33212834c9acf02ce1c4eec1609dd
     .agents/skills/checking-library-updates/schemas/verdict.json: sha256:a06ec4a04da88a2025ccd8fc9af58c2a928946f2628d4c33274e04a3b58057cf
-    .agents/skills/checking-review-findings/SKILL.md: sha256:b6997e6aafc0706fcc59274c9693826713fac357fb5f53b7456e593589173468
-    .agents/skills/committing-git-changes/SKILL.md: sha256:0833429ee2562ff816b134b588db4964aeffa6ef2deb5a38abaaf227042ea30d
-    .agents/skills/committing-git-changes/references/message.md: sha256:cd3faef8dc612346e6e6fe3dd6037fab92bbdfc252f4b16f72d7757f3d3737f7
-    .agents/skills/committing-git-changes/references/templates.md: sha256:c10b1321b87882d9825ee4c6d1c4ee78207025dfa35ca882d7dc80f16030e2a8
+    .agents/skills/checking-review-findings/SKILL.md: sha256:705a0b91dc96441b01284fe58962fc296a6027d01f6ca9a72a0e07bdf992e026
+    .agents/skills/committing-git-changes/SKILL.md: sha256:707a441b6cc6cc833842109024b7b62bee216ca1ad166c067292e7700fef7507
+    .agents/skills/committing-git-changes/references/diagrams.md: sha256:8b5894e1fb63cc47b003d03ca47c6d4010f5d7e81d259739b52f611aa470c3f2
+    .agents/skills/committing-git-changes/references/disclosure.md: sha256:0494b690d81e04a787addb64de537221c0069a97101d0b2b0f1cfde1c3b55334
+    .agents/skills/committing-git-changes/references/message.md: sha256:574066a8b06b3c1367de9c49ee752b3f7dc0babf47fc8bd7c805cf6b239f527f
+    .agents/skills/committing-git-changes/references/templates.md: sha256:469b6cb1d59206c2196d0d892ff864c31c0dc9b970af881effb1df553b9499ed
     .agents/skills/committing-git-changes/scripts/check_gitmoji.py: sha256:0c32f8d386b11f586e3991591ebe2f1c5465797c6a03cde0f0a124f72a5649c7
     .agents/skills/committing-git-changes/scripts/gitmojis.json: sha256:e9df5954b1fdf4ed4f7a522906c59ec709269527d6b4233c1f6848e6a54adfca
     .agents/skills/creating-git-branches/SKILL.md: sha256:be35b1edcd1dc8f01e3332d8449562ff06dbbc6dd446c30e95972708b99c6d07
-    .agents/skills/creating-pull-requests/SKILL.md: sha256:197e7f26a5e3a048490c3fa68b79a9b878bb8bfebbb3e403d09a82f6da2ae212
+    .agents/skills/creating-pull-requests/SKILL.md: sha256:c0ca8dacdabc36a4d413d0dbb254a2b532ae6034897b1e1c90acca80c3ad8c9e
     .agents/skills/dispatching-tasks/SKILL.md: sha256:042aba5246774505e0ad994fc150dc86b0600fb691c5815866986439fc24854d
     .agents/skills/following-repo-conventions/SKILL.md: sha256:dc60306d2b760a6010fbfe3bba65c399b7de8b39a2a74986dd5dfbf20fa0d13d
     .agents/skills/handover/SKILL.md: sha256:d77e7ea1613630c39cd43a9055adb6ab4592f87e7bacdf9166dd25aa001012c4
     .agents/skills/herdr-coding/SKILL.md: sha256:154a33a53a61a63fd548a6952b006dbe5a363f077637777060e88cea67a10136
     .agents/skills/humanizer-ja/SKILL.md: sha256:6cd8a16cc3329a6b185603023e3d2fc40d009cfb6edfa84aaf8443c99273c93f
-    .agents/skills/planning-manual-checks/SKILL.md: sha256:a5e164ade031204a46a5edc181e5598f25fc842c7e2de55d44ac6232f8c812cf
+    .agents/skills/planning-manual-checks/SKILL.md: sha256:935fd497f9455ec9daf1659d65c19707b74734f28332e7a926f504d4caec64d3
     .agents/skills/planning-manual-checks/references/viewpoints.md: sha256:9fb8ba7eead294d2be98f39c0cd9b0cf839c32e70cd9d6cc03e4920ab5ab5969
     .agents/skills/recording-browser-videos/SKILL.md: sha256:6cf8a486c133f5cf5f505b045fccd314a7a033346a55af51cd3bffb435b1af45
     .agents/skills/recording-browser-videos/references/browser.md: sha256:3d66ca316dcb734df02d12e09bef15be7c86549fca5f381a18cbb6535a079f7c
@@ -975,46 +979,48 @@ dependencies:
     .agents/skills/recording-browser-videos/scripts/lib.sh: sha256:83d83c71255c6fa42afcc0e0ed616d82fa23d1758c3ddec50293c52ad0f7cf5d
     .agents/skills/recording-browser-videos/scripts/record-scenes.sh: sha256:88186d8b38427130e3e207093db2dd93e1109a0a37efb392f4f1339e771d1b63
     .agents/skills/recording-manual-checks/SKILL.md: sha256:ad9431cac1fb8286a48faeed0e7fb440d190eb193d12f99fadefbf69c7d99202
-    .agents/skills/resolving-pr-reviews/SKILL.md: sha256:924aa92a8e3e216da1b0c2f164f2cffb186dadabffc66e58f23a288a2a7b13d2
+    .agents/skills/resolving-pr-reviews/SKILL.md: sha256:ac9fe79b928eb2711b81929b7eeae424934b28907441f5e368cd332c308be84d
     .agents/skills/resolving-pr-reviews/references/watching.md: sha256:aa4221f46ecc51000a8d66e91dd4d4a12f006280bd8d8f76b5e0e3c863f90d65
     .agents/skills/resolving-pr-reviews/scripts/fetch_pr_comments.rb: sha256:e9b5088b1ea18bd668df4189d99badaa0a5a4f19aa082760eea723e9d3729590
     .agents/skills/reviewing-git-diffs/SKILL.md: sha256:dc7aa5dc296ce0288691e9866be74ef3b7d24396781742055bb463cb6fc2c8f0
     .agents/skills/reviewing-git-diffs/scripts/snapshot.sh: sha256:53af0f4be563a48423831dc37366d0019c08ee794f96b6933d376741abecf218
-    .agents/skills/reviewing-pull-requests/SKILL.md: sha256:ccd94067f02816ae610d86565b00f65a4978ea00473d50a58ba8234cc577d30b
+    .agents/skills/reviewing-pull-requests/SKILL.md: sha256:8acaa8bb427f723e2e9b4f7e8b191c09d0715217fc78eb090f7ae4e899a50bda
     .agents/skills/reviewing-pull-requests/references/guidelines/backend.md: sha256:8623e13a1ec2ecef86cdd024e85cccf0b1d006b413075bb288d2a58e5224baa0
     .agents/skills/reviewing-pull-requests/references/guidelines/common.md: sha256:61176736594fa5c3678698220edbeef456081b3bf85f4dbbf362d5627e913a4f
     .agents/skills/reviewing-pull-requests/references/guidelines/terraform.md: sha256:60e15a967ecf978ab8850b8835abaea0c0f9651bf96fa2214fd30b5130a139f5
-    .agents/skills/reviewing-pull-requests/references/input.md: sha256:1b99752a1d9da2b1dd5cc9ecab58f6d25130937b3a45c564d90aa1c7151c7890
+    .agents/skills/reviewing-pull-requests/references/input.md: sha256:28271aa53b696fa8cd6f9b556d09d69fb4a72891392461794b0d87ce21bb81fe
     .agents/skills/reviewing-pull-requests/references/pr-content.md: sha256:b29cefc7f62337a3c6d2872f5080d2dcf6154a4638ead8009084640bfced5726
     .agents/skills/reviewing-pull-requests/references/viewpoints.md: sha256:208291667a894e0f30e4c635f584dbe702dba72f9dcb3ed495c4bc33876891ae
-    .agents/skills/reviewing-pull-requests/schemas/findings.json: sha256:323c799e5d25767885e01a89a930f17a2be66b8a4775368ba1473d78ab471684
+    .agents/skills/reviewing-pull-requests/schemas/findings.json: sha256:9d488b047b22a4d9e193b0ad13fcce448cc1b9c6c7db10ea1f03413bd72bf191
     .agents/skills/reviewing-writing/SKILL.md: sha256:3c01f14f3652490635b02fc03bf270e4c5bc5fedbcbc34c11e22e8f001681e89
     .agents/skills/reviewing-writing/references/diagrams.md: sha256:8b5894e1fb63cc47b003d03ca47c6d4010f5d7e81d259739b52f611aa470c3f2
     .agents/skills/reviewing-writing/textlintrc.json: sha256:2005a62818e93015b12b4095c211fc0628e15c3e7f778b37133197f9db5285bf
     .agents/skills/running-dev-flow/SKILL.md: sha256:175c293dacffc91f35c90e692e196e571b8d135ad21a9dac8e16fe846155b52e
-    .agents/skills/stacking-pull-requests/SKILL.md: sha256:ff7c8bb04824a2068254199347669e5c2345679bf817f9aa2e750095b2ef8e06
-    .agents/skills/tuning-japanese-prompts/SKILL.md: sha256:d45986fa5484810580ab457e587444b53329e0ff29e2fd8704e084efea5ffe1b
+    .agents/skills/stacking-pull-requests/SKILL.md: sha256:ccb0692ee20435a5c693145a3dd58a11c1086775324d7fa6f581e67749894dd0
+    .agents/skills/tuning-japanese-prompts/SKILL.md: sha256:17391b5e5d9384bc24d4402aa573d7ebabd0c8f70f4cdf075abbebb60d029331
     .agents/skills/uploading-pr-media/SKILL.md: sha256:e5461f312f407c70ac3d823cb706eacb0d893bcc376e13152027c670c8d517b5
-    .agents/skills/writing-code-comments/SKILL.md: sha256:09dc35fdc022606808d554e98f37dfa9b095645d44fba2277c70ed03a3402084
-    .agents/skills/writing-notion-docs/SKILL.md: sha256:5952d74a11a7a294b8bfb53599aabbbce52018f38e1d54a6d808b980a0cb8317
-    .agents/skills/writing-slack-messages/SKILL.md: sha256:dc50a19242f5cb9f9aebee15d570d4c81b9938a75638aff4f494e33ad67411d3
+    .agents/skills/writing-code-comments/SKILL.md: sha256:059b1e249fdd35b7f19c36ee9d832ffa12da061ad330e793a2eb27e48499d52d
+    .agents/skills/writing-explainer-pages/SKILL.md: sha256:9cf2213af19f860e9c1b3ec0b90a2b67b0254552c0ad607bae95f3f536401c72
+    .agents/skills/writing-notion-docs/SKILL.md: sha256:94260d0e4ac9704ccd362016bcb8182e294479401282442061ad895217aeee38
+    .agents/skills/writing-slack-messages/SKILL.md: sha256:ea2bc5b8f60d4ac65d788cf94b1a28624f195755c2cd52c4ef9470d254b2e3b1
     .claude/skills/capturing-screens/SKILL.md: sha256:097ab2b12f5d06b55b016968ddb63b3613f7721edb746a96318d81130ab023cc
-    .claude/skills/checking-library-updates/SKILL.md: sha256:8afe2f39c56962412740e6c5d9ffdab1379b087034cac97fb40d90ed4c11c7ae
+    .claude/skills/checking-library-updates/SKILL.md: sha256:718519da08a0df528e6aa003dce093d6bae33212834c9acf02ce1c4eec1609dd
     .claude/skills/checking-library-updates/schemas/verdict.json: sha256:a06ec4a04da88a2025ccd8fc9af58c2a928946f2628d4c33274e04a3b58057cf
-    .claude/skills/checking-review-findings/SKILL.md: sha256:b6997e6aafc0706fcc59274c9693826713fac357fb5f53b7456e593589173468
-    .claude/skills/committing-git-changes/SKILL.md: sha256:0833429ee2562ff816b134b588db4964aeffa6ef2deb5a38abaaf227042ea30d
-    .claude/skills/committing-git-changes/references/message.md: sha256:cd3faef8dc612346e6e6fe3dd6037fab92bbdfc252f4b16f72d7757f3d3737f7
-    .claude/skills/committing-git-changes/references/templates.md: sha256:c10b1321b87882d9825ee4c6d1c4ee78207025dfa35ca882d7dc80f16030e2a8
+    .claude/skills/checking-review-findings/SKILL.md: sha256:705a0b91dc96441b01284fe58962fc296a6027d01f6ca9a72a0e07bdf992e026
+    .claude/skills/committing-git-changes/SKILL.md: sha256:707a441b6cc6cc833842109024b7b62bee216ca1ad166c067292e7700fef7507
+    .claude/skills/committing-git-changes/references/diagrams.md: sha256:8b5894e1fb63cc47b003d03ca47c6d4010f5d7e81d259739b52f611aa470c3f2
+    .claude/skills/committing-git-changes/references/disclosure.md: sha256:0494b690d81e04a787addb64de537221c0069a97101d0b2b0f1cfde1c3b55334
+    .claude/skills/committing-git-changes/references/message.md: sha256:574066a8b06b3c1367de9c49ee752b3f7dc0babf47fc8bd7c805cf6b239f527f
+    .claude/skills/committing-git-changes/references/templates.md: sha256:469b6cb1d59206c2196d0d892ff864c31c0dc9b970af881effb1df553b9499ed
     .claude/skills/committing-git-changes/scripts/check_gitmoji.py: sha256:0c32f8d386b11f586e3991591ebe2f1c5465797c6a03cde0f0a124f72a5649c7
     .claude/skills/committing-git-changes/scripts/gitmojis.json: sha256:e9df5954b1fdf4ed4f7a522906c59ec709269527d6b4233c1f6848e6a54adfca
     .claude/skills/creating-git-branches/SKILL.md: sha256:be35b1edcd1dc8f01e3332d8449562ff06dbbc6dd446c30e95972708b99c6d07
-    .claude/skills/creating-pull-requests/SKILL.md: sha256:197e7f26a5e3a048490c3fa68b79a9b878bb8bfebbb3e403d09a82f6da2ae212
+    .claude/skills/creating-pull-requests/SKILL.md: sha256:c0ca8dacdabc36a4d413d0dbb254a2b532ae6034897b1e1c90acca80c3ad8c9e
     .claude/skills/dispatching-tasks/SKILL.md: sha256:042aba5246774505e0ad994fc150dc86b0600fb691c5815866986439fc24854d
     .claude/skills/following-repo-conventions/SKILL.md: sha256:dc60306d2b760a6010fbfe3bba65c399b7de8b39a2a74986dd5dfbf20fa0d13d
     .claude/skills/handover/SKILL.md: sha256:d77e7ea1613630c39cd43a9055adb6ab4592f87e7bacdf9166dd25aa001012c4
     .claude/skills/herdr-coding/SKILL.md: sha256:154a33a53a61a63fd548a6952b006dbe5a363f077637777060e88cea67a10136
-    .claude/skills/humanizer-ja/SKILL.md: sha256:6cd8a16cc3329a6b185603023e3d2fc40d009cfb6edfa84aaf8443c99273c93f
-    .claude/skills/planning-manual-checks/SKILL.md: sha256:a5e164ade031204a46a5edc181e5598f25fc842c7e2de55d44ac6232f8c812cf
+    .claude/skills/planning-manual-checks/SKILL.md: sha256:935fd497f9455ec9daf1659d65c19707b74734f28332e7a926f504d4caec64d3
     .claude/skills/planning-manual-checks/references/viewpoints.md: sha256:9fb8ba7eead294d2be98f39c0cd9b0cf839c32e70cd9d6cc03e4920ab5ab5969
     .claude/skills/recording-browser-videos/SKILL.md: sha256:6cf8a486c133f5cf5f505b045fccd314a7a033346a55af51cd3bffb435b1af45
     .claude/skills/recording-browser-videos/references/browser.md: sha256:3d66ca316dcb734df02d12e09bef15be7c86549fca5f381a18cbb6535a079f7c
@@ -1022,37 +1028,35 @@ dependencies:
     .claude/skills/recording-browser-videos/scripts/lib.sh: sha256:83d83c71255c6fa42afcc0e0ed616d82fa23d1758c3ddec50293c52ad0f7cf5d
     .claude/skills/recording-browser-videos/scripts/record-scenes.sh: sha256:88186d8b38427130e3e207093db2dd93e1109a0a37efb392f4f1339e771d1b63
     .claude/skills/recording-manual-checks/SKILL.md: sha256:ad9431cac1fb8286a48faeed0e7fb440d190eb193d12f99fadefbf69c7d99202
-    .claude/skills/resolving-pr-reviews/SKILL.md: sha256:924aa92a8e3e216da1b0c2f164f2cffb186dadabffc66e58f23a288a2a7b13d2
+    .claude/skills/resolving-pr-reviews/SKILL.md: sha256:ac9fe79b928eb2711b81929b7eeae424934b28907441f5e368cd332c308be84d
     .claude/skills/resolving-pr-reviews/references/watching.md: sha256:aa4221f46ecc51000a8d66e91dd4d4a12f006280bd8d8f76b5e0e3c863f90d65
     .claude/skills/resolving-pr-reviews/scripts/fetch_pr_comments.rb: sha256:e9b5088b1ea18bd668df4189d99badaa0a5a4f19aa082760eea723e9d3729590
     .claude/skills/reviewing-git-diffs/SKILL.md: sha256:dc7aa5dc296ce0288691e9866be74ef3b7d24396781742055bb463cb6fc2c8f0
     .claude/skills/reviewing-git-diffs/scripts/snapshot.sh: sha256:53af0f4be563a48423831dc37366d0019c08ee794f96b6933d376741abecf218
-    .claude/skills/reviewing-pull-requests/SKILL.md: sha256:ccd94067f02816ae610d86565b00f65a4978ea00473d50a58ba8234cc577d30b
+    .claude/skills/reviewing-pull-requests/SKILL.md: sha256:8acaa8bb427f723e2e9b4f7e8b191c09d0715217fc78eb090f7ae4e899a50bda
     .claude/skills/reviewing-pull-requests/references/guidelines/backend.md: sha256:8623e13a1ec2ecef86cdd024e85cccf0b1d006b413075bb288d2a58e5224baa0
     .claude/skills/reviewing-pull-requests/references/guidelines/common.md: sha256:61176736594fa5c3678698220edbeef456081b3bf85f4dbbf362d5627e913a4f
     .claude/skills/reviewing-pull-requests/references/guidelines/terraform.md: sha256:60e15a967ecf978ab8850b8835abaea0c0f9651bf96fa2214fd30b5130a139f5
-    .claude/skills/reviewing-pull-requests/references/input.md: sha256:1b99752a1d9da2b1dd5cc9ecab58f6d25130937b3a45c564d90aa1c7151c7890
+    .claude/skills/reviewing-pull-requests/references/input.md: sha256:28271aa53b696fa8cd6f9b556d09d69fb4a72891392461794b0d87ce21bb81fe
     .claude/skills/reviewing-pull-requests/references/pr-content.md: sha256:b29cefc7f62337a3c6d2872f5080d2dcf6154a4638ead8009084640bfced5726
     .claude/skills/reviewing-pull-requests/references/viewpoints.md: sha256:208291667a894e0f30e4c635f584dbe702dba72f9dcb3ed495c4bc33876891ae
-    .claude/skills/reviewing-pull-requests/schemas/findings.json: sha256:323c799e5d25767885e01a89a930f17a2be66b8a4775368ba1473d78ab471684
-    .claude/skills/reviewing-writing/SKILL.md: sha256:3c01f14f3652490635b02fc03bf270e4c5bc5fedbcbc34c11e22e8f001681e89
-    .claude/skills/reviewing-writing/references/diagrams.md: sha256:8b5894e1fb63cc47b003d03ca47c6d4010f5d7e81d259739b52f611aa470c3f2
-    .claude/skills/reviewing-writing/textlintrc.json: sha256:2005a62818e93015b12b4095c211fc0628e15c3e7f778b37133197f9db5285bf
+    .claude/skills/reviewing-pull-requests/schemas/findings.json: sha256:9d488b047b22a4d9e193b0ad13fcce448cc1b9c6c7db10ea1f03413bd72bf191
     .claude/skills/running-dev-flow/SKILL.md: sha256:175c293dacffc91f35c90e692e196e571b8d135ad21a9dac8e16fe846155b52e
-    .claude/skills/stacking-pull-requests/SKILL.md: sha256:ff7c8bb04824a2068254199347669e5c2345679bf817f9aa2e750095b2ef8e06
-    .claude/skills/tuning-japanese-prompts/SKILL.md: sha256:d45986fa5484810580ab457e587444b53329e0ff29e2fd8704e084efea5ffe1b
+    .claude/skills/stacking-pull-requests/SKILL.md: sha256:ccb0692ee20435a5c693145a3dd58a11c1086775324d7fa6f581e67749894dd0
+    .claude/skills/tuning-japanese-prompts/SKILL.md: sha256:17391b5e5d9384bc24d4402aa573d7ebabd0c8f70f4cdf075abbebb60d029331
     .claude/skills/uploading-pr-media/SKILL.md: sha256:e5461f312f407c70ac3d823cb706eacb0d893bcc376e13152027c670c8d517b5
-    .claude/skills/writing-code-comments/SKILL.md: sha256:09dc35fdc022606808d554e98f37dfa9b095645d44fba2277c70ed03a3402084
-    .claude/skills/writing-notion-docs/SKILL.md: sha256:5952d74a11a7a294b8bfb53599aabbbce52018f38e1d54a6d808b980a0cb8317
-    .claude/skills/writing-slack-messages/SKILL.md: sha256:dc50a19242f5cb9f9aebee15d570d4c81b9938a75638aff4f494e33ad67411d3
-  content_hash: sha256:9ec693ef4e9888a351847355cdf5cc09ee3018fda41ad707ddafe1e959a12196
+    .claude/skills/writing-code-comments/SKILL.md: sha256:059b1e249fdd35b7f19c36ee9d832ffa12da061ad330e793a2eb27e48499d52d
+    .claude/skills/writing-explainer-pages/SKILL.md: sha256:9cf2213af19f860e9c1b3ec0b90a2b67b0254552c0ad607bae95f3f536401c72
+    .claude/skills/writing-notion-docs/SKILL.md: sha256:94260d0e4ac9704ccd362016bcb8182e294479401282442061ad895217aeee38
+    .claude/skills/writing-slack-messages/SKILL.md: sha256:ea2bc5b8f60d4ac65d788cf94b1a28624f195755c2cd52c4ef9470d254b2e3b1
+  content_hash: sha256:784b493da2a367c437ee85d78662b3dff049b20da596fed71860a1a79c17335b
 - repo_url: mattpocock/skills
   name: mattpocock-skills
   host: github.com
   resolved_commit: 4ae2317ddb22b046e26455e4f9c9b3aaaf62212d
   resolved_ref: 4ae2317ddb22b046e26455e4f9c9b3aaaf62212d
   version: 1.3.2
-  package_type: apm_package
+  package_type: marketplace_plugin
   deployed_files:
   - .agents/skills/domain-modeling
   - .agents/skills/domain-modeling/ADR-FORMAT.md
@@ -1230,13 +1234,109 @@ dependencies:
   virtual_path: skills/.curated/notion-research-documentation
   is_virtual: true
   package_type: claude_skill
+  deployed_files:
+  - .agents/skills/notion-research-documentation
+  - .agents/skills/notion-research-documentation/LICENSE.txt
+  - .agents/skills/notion-research-documentation/SKILL.md
+  - .agents/skills/notion-research-documentation/agents/openai.yaml
+  - .agents/skills/notion-research-documentation/assets/notion-small.svg
+  - .agents/skills/notion-research-documentation/assets/notion.png
+  - .agents/skills/notion-research-documentation/evaluations/README.md
+  - .agents/skills/notion-research-documentation/evaluations/basic-research.json
+  - .agents/skills/notion-research-documentation/evaluations/research-to-database.json
+  - .agents/skills/notion-research-documentation/examples/competitor-analysis.md
+  - .agents/skills/notion-research-documentation/examples/market-research.md
+  - .agents/skills/notion-research-documentation/examples/technical-investigation.md
+  - .agents/skills/notion-research-documentation/examples/trip-planning.md
+  - .agents/skills/notion-research-documentation/reference/advanced-search.md
+  - .agents/skills/notion-research-documentation/reference/citations.md
+  - .agents/skills/notion-research-documentation/reference/comparison-format.md
+  - .agents/skills/notion-research-documentation/reference/comparison-template.md
+  - .agents/skills/notion-research-documentation/reference/comprehensive-report-format.md
+  - .agents/skills/notion-research-documentation/reference/comprehensive-report-template.md
+  - .agents/skills/notion-research-documentation/reference/format-selection-guide.md
+  - .agents/skills/notion-research-documentation/reference/quick-brief-format.md
+  - .agents/skills/notion-research-documentation/reference/quick-brief-template.md
+  - .agents/skills/notion-research-documentation/reference/research-summary-format.md
+  - .agents/skills/notion-research-documentation/reference/research-summary-template.md
+  - .claude/skills/notion-research-documentation
+  - .claude/skills/notion-research-documentation/LICENSE.txt
+  - .claude/skills/notion-research-documentation/SKILL.md
+  - .claude/skills/notion-research-documentation/agents/openai.yaml
+  - .claude/skills/notion-research-documentation/assets/notion-small.svg
+  - .claude/skills/notion-research-documentation/assets/notion.png
+  - .claude/skills/notion-research-documentation/evaluations/README.md
+  - .claude/skills/notion-research-documentation/evaluations/basic-research.json
+  - .claude/skills/notion-research-documentation/evaluations/research-to-database.json
+  - .claude/skills/notion-research-documentation/examples/competitor-analysis.md
+  - .claude/skills/notion-research-documentation/examples/market-research.md
+  - .claude/skills/notion-research-documentation/examples/technical-investigation.md
+  - .claude/skills/notion-research-documentation/examples/trip-planning.md
+  - .claude/skills/notion-research-documentation/reference/advanced-search.md
+  - .claude/skills/notion-research-documentation/reference/citations.md
+  - .claude/skills/notion-research-documentation/reference/comparison-format.md
+  - .claude/skills/notion-research-documentation/reference/comparison-template.md
+  - .claude/skills/notion-research-documentation/reference/comprehensive-report-format.md
+  - .claude/skills/notion-research-documentation/reference/comprehensive-report-template.md
+  - .claude/skills/notion-research-documentation/reference/format-selection-guide.md
+  - .claude/skills/notion-research-documentation/reference/quick-brief-format.md
+  - .claude/skills/notion-research-documentation/reference/quick-brief-template.md
+  - .claude/skills/notion-research-documentation/reference/research-summary-format.md
+  - .claude/skills/notion-research-documentation/reference/research-summary-template.md
+  deployed_file_hashes:
+    .agents/skills/notion-research-documentation/LICENSE.txt: sha256:0f377d9b2a1db642e4b0531ffa126e96d9bc6c085f8d9441f220fb25f723c6f8
+    .agents/skills/notion-research-documentation/SKILL.md: sha256:e88a46da978cf6f088a788fa92ee736df699a355a72f41f14bdc258bf3ef57e7
+    .agents/skills/notion-research-documentation/agents/openai.yaml: sha256:4b30833ad6a110f63a7809ee1f11f2154f2301f4ae845d0432208f386d97f3d3
+    .agents/skills/notion-research-documentation/assets/notion-small.svg: sha256:00f5e4b758cc5c3e36e783dca2fabfafd05169c2f2175063e56d2e1fb6a55f81
+    .agents/skills/notion-research-documentation/assets/notion.png: sha256:5eef1e62d96a3d09bc9d18e4140486c22799145b017033bd0924c2c49d741cd4
+    .agents/skills/notion-research-documentation/evaluations/README.md: sha256:3b4e26d61cf17f9357e5a80f90da662f3d858294f69cad5e94c620bf1ce29455
+    .agents/skills/notion-research-documentation/evaluations/basic-research.json: sha256:41077f0746f28d4e6a12d88c6c2a23ceb5590dc448df4ed8c1335165d0ac6bb9
+    .agents/skills/notion-research-documentation/evaluations/research-to-database.json: sha256:a442c3a60b864f98c2de80bc2e55176773fe31f87feab59b9d1bfd029966496d
+    .agents/skills/notion-research-documentation/examples/competitor-analysis.md: sha256:e51bf2f471d928c4c908f85c86fba81a1b42ceba468bb46024e33adf5c29e4ca
+    .agents/skills/notion-research-documentation/examples/market-research.md: sha256:cb4ed96c9763fe2309354a40a7822c4770a7952909c01b890b3962e0e01adc4d
+    .agents/skills/notion-research-documentation/examples/technical-investigation.md: sha256:2db3f3a1664e6bff4b196b0e96d76e8048fc641722f570cb156f36aed8e74d85
+    .agents/skills/notion-research-documentation/examples/trip-planning.md: sha256:3e2f7f8fc31fb2244af76a09649b8ecf2691ef737398ddef66d5da6e515c350b
+    .agents/skills/notion-research-documentation/reference/advanced-search.md: sha256:f9c70a3b731ce76f35aee7caa53888cc8b22dadc17dd0f54cce95933a0cbbe91
+    .agents/skills/notion-research-documentation/reference/citations.md: sha256:fc81043a5220a350ec17d818c43814f0a5fd466c6cbaaf732fc487d21833a5a6
+    .agents/skills/notion-research-documentation/reference/comparison-format.md: sha256:e80f6ca6573d5d776e24454df04b4a038498dcd2aa93d97edb4113cfdbd88851
+    .agents/skills/notion-research-documentation/reference/comparison-template.md: sha256:4c3af7b72a704beb22ab8741e97d26830421dbb5f489fdc53509fdcbe4000f2f
+    .agents/skills/notion-research-documentation/reference/comprehensive-report-format.md: sha256:956da824ce2e9c5a167dcca8322b18e29c0438ca91109f7e2cbede6785541979
+    .agents/skills/notion-research-documentation/reference/comprehensive-report-template.md: sha256:043096d757ab5cb681c8e0abc3783663dbc5afe544012f8a9a230b0c31d62882
+    .agents/skills/notion-research-documentation/reference/format-selection-guide.md: sha256:6280f5219e141b3e284fbe47e550a1bed1831de044eb0b1b145b43ac86f38133
+    .agents/skills/notion-research-documentation/reference/quick-brief-format.md: sha256:de02fca650fb676db4e2dd5772c9393b91fc9467edc2d4e33ca57df7ccd58d13
+    .agents/skills/notion-research-documentation/reference/quick-brief-template.md: sha256:280912ecdb1c1543038a883d6341587aa8afc8f699952b7449e314dbe68c9243
+    .agents/skills/notion-research-documentation/reference/research-summary-format.md: sha256:29308d84318a717c8f8550bbfaded1826d4f7372f658c68638380d6a2b58f89b
+    .agents/skills/notion-research-documentation/reference/research-summary-template.md: sha256:c1e704d6b28b4414fd8d37b07095859704e34ce92041fa872b15e53da15dfa2a
+    .claude/skills/notion-research-documentation/LICENSE.txt: sha256:0f377d9b2a1db642e4b0531ffa126e96d9bc6c085f8d9441f220fb25f723c6f8
+    .claude/skills/notion-research-documentation/SKILL.md: sha256:e88a46da978cf6f088a788fa92ee736df699a355a72f41f14bdc258bf3ef57e7
+    .claude/skills/notion-research-documentation/agents/openai.yaml: sha256:4b30833ad6a110f63a7809ee1f11f2154f2301f4ae845d0432208f386d97f3d3
+    .claude/skills/notion-research-documentation/assets/notion-small.svg: sha256:00f5e4b758cc5c3e36e783dca2fabfafd05169c2f2175063e56d2e1fb6a55f81
+    .claude/skills/notion-research-documentation/assets/notion.png: sha256:5eef1e62d96a3d09bc9d18e4140486c22799145b017033bd0924c2c49d741cd4
+    .claude/skills/notion-research-documentation/evaluations/README.md: sha256:3b4e26d61cf17f9357e5a80f90da662f3d858294f69cad5e94c620bf1ce29455
+    .claude/skills/notion-research-documentation/evaluations/basic-research.json: sha256:41077f0746f28d4e6a12d88c6c2a23ceb5590dc448df4ed8c1335165d0ac6bb9
+    .claude/skills/notion-research-documentation/evaluations/research-to-database.json: sha256:a442c3a60b864f98c2de80bc2e55176773fe31f87feab59b9d1bfd029966496d
+    .claude/skills/notion-research-documentation/examples/competitor-analysis.md: sha256:e51bf2f471d928c4c908f85c86fba81a1b42ceba468bb46024e33adf5c29e4ca
+    .claude/skills/notion-research-documentation/examples/market-research.md: sha256:cb4ed96c9763fe2309354a40a7822c4770a7952909c01b890b3962e0e01adc4d
+    .claude/skills/notion-research-documentation/examples/technical-investigation.md: sha256:2db3f3a1664e6bff4b196b0e96d76e8048fc641722f570cb156f36aed8e74d85
+    .claude/skills/notion-research-documentation/examples/trip-planning.md: sha256:3e2f7f8fc31fb2244af76a09649b8ecf2691ef737398ddef66d5da6e515c350b
+    .claude/skills/notion-research-documentation/reference/advanced-search.md: sha256:f9c70a3b731ce76f35aee7caa53888cc8b22dadc17dd0f54cce95933a0cbbe91
+    .claude/skills/notion-research-documentation/reference/citations.md: sha256:fc81043a5220a350ec17d818c43814f0a5fd466c6cbaaf732fc487d21833a5a6
+    .claude/skills/notion-research-documentation/reference/comparison-format.md: sha256:e80f6ca6573d5d776e24454df04b4a038498dcd2aa93d97edb4113cfdbd88851
+    .claude/skills/notion-research-documentation/reference/comparison-template.md: sha256:4c3af7b72a704beb22ab8741e97d26830421dbb5f489fdc53509fdcbe4000f2f
+    .claude/skills/notion-research-documentation/reference/comprehensive-report-format.md: sha256:956da824ce2e9c5a167dcca8322b18e29c0438ca91109f7e2cbede6785541979
+    .claude/skills/notion-research-documentation/reference/comprehensive-report-template.md: sha256:043096d757ab5cb681c8e0abc3783663dbc5afe544012f8a9a230b0c31d62882
+    .claude/skills/notion-research-documentation/reference/format-selection-guide.md: sha256:6280f5219e141b3e284fbe47e550a1bed1831de044eb0b1b145b43ac86f38133
+    .claude/skills/notion-research-documentation/reference/quick-brief-format.md: sha256:de02fca650fb676db4e2dd5772c9393b91fc9467edc2d4e33ca57df7ccd58d13
+    .claude/skills/notion-research-documentation/reference/quick-brief-template.md: sha256:280912ecdb1c1543038a883d6341587aa8afc8f699952b7449e314dbe68c9243
+    .claude/skills/notion-research-documentation/reference/research-summary-format.md: sha256:29308d84318a717c8f8550bbfaded1826d4f7372f658c68638380d6a2b58f89b
+    .claude/skills/notion-research-documentation/reference/research-summary-template.md: sha256:c1e704d6b28b4414fd8d37b07095859704e34ce92041fa872b15e53da15dfa2a
   content_hash: sha256:b462225ca15173b614f2f747cb5a623c7ce1acdc6053812ce7968020106ab372
 - repo_url: vercel-labs/skills
   name: skills
   host: github.com
   resolved_commit: a80e4c9d12d607631249d4d7d059f835d4b2f13a
   resolved_ref: a80e4c9d12d607631249d4d7d059f835d4b2f13a
-  version: unknown
+  version: 0.0.0
   package_type: skill_bundle
   deployed_files:
   - .agents/skills/find-skills
@@ -1249,7 +1349,6 @@ dependencies:
   content_hash: sha256:e795960d22825c0b9d2b033da82617e50a22086540f06e113f0ae74adf3e3454
   skill_subset:
   - find-skills
-  resolved_tag: v1.7.4
 deployments:
 - kind: project-relative
   target: claude
@@ -1304,7 +1403,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:8afe2f39c56962412740e6c5d9ffdab1379b087034cac97fb40d90ed4c11c7ae
+  content_hash: sha256:718519da08a0df528e6aa003dce093d6bae33212834c9acf02ce1c4eec1609dd
 - kind: project-relative
   target: claude
   value: .claude/skills/checking-library-updates/schemas/verdict.json
@@ -1331,7 +1430,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:b6997e6aafc0706fcc59274c9693826713fac357fb5f53b7456e593589173468
+  content_hash: sha256:705a0b91dc96441b01284fe58962fc296a6027d01f6ca9a72a0e07bdf992e026
 - kind: project-relative
   target: claude
   value: .claude/skills/committing-git-changes
@@ -1349,7 +1448,25 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:0833429ee2562ff816b134b588db4964aeffa6ef2deb5a38abaaf227042ea30d
+  content_hash: sha256:707a441b6cc6cc833842109024b7b62bee216ca1ad166c067292e7700fef7507
+- kind: project-relative
+  target: claude
+  value: .claude/skills/committing-git-changes/references/diagrams.md
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: sha256:8b5894e1fb63cc47b003d03ca47c6d4010f5d7e81d259739b52f611aa470c3f2
+- kind: project-relative
+  target: claude
+  value: .claude/skills/committing-git-changes/references/disclosure.md
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: sha256:0494b690d81e04a787addb64de537221c0069a97101d0b2b0f1cfde1c3b55334
 - kind: project-relative
   target: claude
   value: .claude/skills/committing-git-changes/references/message.md
@@ -1358,7 +1475,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:cd3faef8dc612346e6e6fe3dd6037fab92bbdfc252f4b16f72d7757f3d3737f7
+  content_hash: sha256:574066a8b06b3c1367de9c49ee752b3f7dc0babf47fc8bd7c805cf6b239f527f
 - kind: project-relative
   target: claude
   value: .claude/skills/committing-git-changes/references/templates.md
@@ -1367,7 +1484,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:c10b1321b87882d9825ee4c6d1c4ee78207025dfa35ca882d7dc80f16030e2a8
+  content_hash: sha256:469b6cb1d59206c2196d0d892ff864c31c0dc9b970af881effb1df553b9499ed
 - kind: project-relative
   target: claude
   value: .claude/skills/committing-git-changes/scripts/check_gitmoji.py
@@ -1421,7 +1538,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:197e7f26a5e3a048490c3fa68b79a9b878bb8bfebbb3e403d09a82f6da2ae212
+  content_hash: sha256:c0ca8dacdabc36a4d413d0dbb254a2b532ae6034897b1e1c90acca80c3ad8c9e
 - kind: project-relative
   target: claude
   value: .claude/skills/deploy-checklist
@@ -1719,24 +1836,6 @@ deployments:
   - herdrdev/herdr-core
   active_owner: herdrdev/herdr-core
   content_hash: sha256:677e9f2e21f13a3ecf11708fc50211373fda7e50251e7e0cb303707ac8eed70a
-- kind: project-relative
-  target: claude
-  value: .claude/skills/humanizer-ja
-  runtime: null
-  scope: project
-  owners:
-  - icchankun/skills
-  active_owner: icchankun/skills
-  content_hash: null
-- kind: project-relative
-  target: claude
-  value: .claude/skills/humanizer-ja/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - icchankun/skills
-  active_owner: icchankun/skills
-  content_hash: sha256:6cd8a16cc3329a6b185603023e3d2fc40d009cfb6edfa84aaf8443c99273c93f
 - kind: project-relative
   target: claude
   value: .claude/skills/modern-web-guidance
@@ -2990,6 +3089,222 @@ deployments:
   content_hash: sha256:78b80afc94fcdc0177345d7cbd0abb83660f309a400266ff408325142db41b2c
 - kind: project-relative
   target: claude
+  value: .claude/skills/notion-research-documentation
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/notion-research-documentation/LICENSE.txt
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:0f377d9b2a1db642e4b0531ffa126e96d9bc6c085f8d9441f220fb25f723c6f8
+- kind: project-relative
+  target: claude
+  value: .claude/skills/notion-research-documentation/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:e88a46da978cf6f088a788fa92ee736df699a355a72f41f14bdc258bf3ef57e7
+- kind: project-relative
+  target: claude
+  value: .claude/skills/notion-research-documentation/agents/openai.yaml
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:4b30833ad6a110f63a7809ee1f11f2154f2301f4ae845d0432208f386d97f3d3
+- kind: project-relative
+  target: claude
+  value: .claude/skills/notion-research-documentation/assets/notion-small.svg
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:00f5e4b758cc5c3e36e783dca2fabfafd05169c2f2175063e56d2e1fb6a55f81
+- kind: project-relative
+  target: claude
+  value: .claude/skills/notion-research-documentation/assets/notion.png
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:5eef1e62d96a3d09bc9d18e4140486c22799145b017033bd0924c2c49d741cd4
+- kind: project-relative
+  target: claude
+  value: .claude/skills/notion-research-documentation/evaluations/README.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:3b4e26d61cf17f9357e5a80f90da662f3d858294f69cad5e94c620bf1ce29455
+- kind: project-relative
+  target: claude
+  value: .claude/skills/notion-research-documentation/evaluations/basic-research.json
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:41077f0746f28d4e6a12d88c6c2a23ceb5590dc448df4ed8c1335165d0ac6bb9
+- kind: project-relative
+  target: claude
+  value: .claude/skills/notion-research-documentation/evaluations/research-to-database.json
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:a442c3a60b864f98c2de80bc2e55176773fe31f87feab59b9d1bfd029966496d
+- kind: project-relative
+  target: claude
+  value: .claude/skills/notion-research-documentation/examples/competitor-analysis.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:e51bf2f471d928c4c908f85c86fba81a1b42ceba468bb46024e33adf5c29e4ca
+- kind: project-relative
+  target: claude
+  value: .claude/skills/notion-research-documentation/examples/market-research.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:cb4ed96c9763fe2309354a40a7822c4770a7952909c01b890b3962e0e01adc4d
+- kind: project-relative
+  target: claude
+  value: .claude/skills/notion-research-documentation/examples/technical-investigation.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:2db3f3a1664e6bff4b196b0e96d76e8048fc641722f570cb156f36aed8e74d85
+- kind: project-relative
+  target: claude
+  value: .claude/skills/notion-research-documentation/examples/trip-planning.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:3e2f7f8fc31fb2244af76a09649b8ecf2691ef737398ddef66d5da6e515c350b
+- kind: project-relative
+  target: claude
+  value: .claude/skills/notion-research-documentation/reference/advanced-search.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:f9c70a3b731ce76f35aee7caa53888cc8b22dadc17dd0f54cce95933a0cbbe91
+- kind: project-relative
+  target: claude
+  value: .claude/skills/notion-research-documentation/reference/citations.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:fc81043a5220a350ec17d818c43814f0a5fd466c6cbaaf732fc487d21833a5a6
+- kind: project-relative
+  target: claude
+  value: .claude/skills/notion-research-documentation/reference/comparison-format.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:e80f6ca6573d5d776e24454df04b4a038498dcd2aa93d97edb4113cfdbd88851
+- kind: project-relative
+  target: claude
+  value: .claude/skills/notion-research-documentation/reference/comparison-template.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:4c3af7b72a704beb22ab8741e97d26830421dbb5f489fdc53509fdcbe4000f2f
+- kind: project-relative
+  target: claude
+  value: .claude/skills/notion-research-documentation/reference/comprehensive-report-format.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:956da824ce2e9c5a167dcca8322b18e29c0438ca91109f7e2cbede6785541979
+- kind: project-relative
+  target: claude
+  value: .claude/skills/notion-research-documentation/reference/comprehensive-report-template.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:043096d757ab5cb681c8e0abc3783663dbc5afe544012f8a9a230b0c31d62882
+- kind: project-relative
+  target: claude
+  value: .claude/skills/notion-research-documentation/reference/format-selection-guide.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:6280f5219e141b3e284fbe47e550a1bed1831de044eb0b1b145b43ac86f38133
+- kind: project-relative
+  target: claude
+  value: .claude/skills/notion-research-documentation/reference/quick-brief-format.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:de02fca650fb676db4e2dd5772c9393b91fc9467edc2d4e33ca57df7ccd58d13
+- kind: project-relative
+  target: claude
+  value: .claude/skills/notion-research-documentation/reference/quick-brief-template.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:280912ecdb1c1543038a883d6341587aa8afc8f699952b7449e314dbe68c9243
+- kind: project-relative
+  target: claude
+  value: .claude/skills/notion-research-documentation/reference/research-summary-format.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:29308d84318a717c8f8550bbfaded1826d4f7372f658c68638380d6a2b58f89b
+- kind: project-relative
+  target: claude
+  value: .claude/skills/notion-research-documentation/reference/research-summary-template.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:c1e704d6b28b4414fd8d37b07095859704e34ce92041fa872b15e53da15dfa2a
+- kind: project-relative
+  target: claude
   value: .claude/skills/planning-manual-checks
   runtime: null
   scope: project
@@ -3005,7 +3320,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:a5e164ade031204a46a5edc181e5598f25fc842c7e2de55d44ac6232f8c812cf
+  content_hash: sha256:935fd497f9455ec9daf1659d65c19707b74734f28332e7a926f504d4caec64d3
 - kind: project-relative
   target: claude
   value: .claude/skills/planning-manual-checks/references/viewpoints.md
@@ -3302,7 +3617,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:924aa92a8e3e216da1b0c2f164f2cffb186dadabffc66e58f23a288a2a7b13d2
+  content_hash: sha256:ac9fe79b928eb2711b81929b7eeae424934b28907441f5e368cd332c308be84d
 - kind: project-relative
   target: claude
   value: .claude/skills/resolving-pr-reviews/references/watching.md
@@ -3365,7 +3680,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:ccd94067f02816ae610d86565b00f65a4978ea00473d50a58ba8234cc577d30b
+  content_hash: sha256:8acaa8bb427f723e2e9b4f7e8b191c09d0715217fc78eb090f7ae4e899a50bda
 - kind: project-relative
   target: claude
   value: .claude/skills/reviewing-pull-requests/references/guidelines/backend.md
@@ -3401,7 +3716,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:1b99752a1d9da2b1dd5cc9ecab58f6d25130937b3a45c564d90aa1c7151c7890
+  content_hash: sha256:28271aa53b696fa8cd6f9b556d09d69fb4a72891392461794b0d87ce21bb81fe
 - kind: project-relative
   target: claude
   value: .claude/skills/reviewing-pull-requests/references/pr-content.md
@@ -3428,43 +3743,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:323c799e5d25767885e01a89a930f17a2be66b8a4775368ba1473d78ab471684
-- kind: project-relative
-  target: claude
-  value: .claude/skills/reviewing-writing
-  runtime: null
-  scope: project
-  owners:
-  - icchankun/skills
-  active_owner: icchankun/skills
-  content_hash: null
-- kind: project-relative
-  target: claude
-  value: .claude/skills/reviewing-writing/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - icchankun/skills
-  active_owner: icchankun/skills
-  content_hash: sha256:3c01f14f3652490635b02fc03bf270e4c5bc5fedbcbc34c11e22e8f001681e89
-- kind: project-relative
-  target: claude
-  value: .claude/skills/reviewing-writing/references/diagrams.md
-  runtime: null
-  scope: project
-  owners:
-  - icchankun/skills
-  active_owner: icchankun/skills
-  content_hash: sha256:8b5894e1fb63cc47b003d03ca47c6d4010f5d7e81d259739b52f611aa470c3f2
-- kind: project-relative
-  target: claude
-  value: .claude/skills/reviewing-writing/textlintrc.json
-  runtime: null
-  scope: project
-  owners:
-  - icchankun/skills
-  active_owner: icchankun/skills
-  content_hash: sha256:2005a62818e93015b12b4095c211fc0628e15c3e7f778b37133197f9db5285bf
+  content_hash: sha256:9d488b047b22a4d9e193b0ad13fcce448cc1b9c6c7db10ea1f03413bd72bf191
 - kind: project-relative
   target: claude
   value: .claude/skills/running-dev-flow
@@ -3536,7 +3815,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:ff7c8bb04824a2068254199347669e5c2345679bf817f9aa2e750095b2ef8e06
+  content_hash: sha256:ccb0692ee20435a5c693145a3dd58a11c1086775324d7fa6f581e67749894dd0
 - kind: project-relative
   target: claude
   value: .claude/skills/system-design
@@ -3617,7 +3896,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:d45986fa5484810580ab457e587444b53329e0ff29e2fd8704e084efea5ffe1b
+  content_hash: sha256:17391b5e5d9384bc24d4402aa573d7ebabd0c8f70f4cdf075abbebb60d029331
 - kind: project-relative
   target: claude
   value: .claude/skills/typescript-best-practices
@@ -3680,7 +3959,25 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:09dc35fdc022606808d554e98f37dfa9b095645d44fba2277c70ed03a3402084
+  content_hash: sha256:059b1e249fdd35b7f19c36ee9d832ffa12da061ad330e793a2eb27e48499d52d
+- kind: project-relative
+  target: claude
+  value: .claude/skills/writing-explainer-pages
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/writing-explainer-pages/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: sha256:9cf2213af19f860e9c1b3ec0b90a2b67b0254552c0ad607bae95f3f536401c72
 - kind: project-relative
   target: claude
   value: .claude/skills/writing-notion-docs
@@ -3698,7 +3995,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:5952d74a11a7a294b8bfb53599aabbbce52018f38e1d54a6d808b980a0cb8317
+  content_hash: sha256:94260d0e4ac9704ccd362016bcb8182e294479401282442061ad895217aeee38
 - kind: project-relative
   target: claude
   value: .claude/skills/writing-slack-messages
@@ -3716,7 +4013,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:dc50a19242f5cb9f9aebee15d570d4c81b9938a75638aff4f494e33ad67411d3
+  content_hash: sha256:ea2bc5b8f60d4ac65d788cf94b1a28624f195755c2cd52c4ef9470d254b2e3b1
 - kind: project-relative
   target: codex
   value: .codex/agents/poteto-agent.toml
@@ -3761,7 +4058,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:8afe2f39c56962412740e6c5d9ffdab1379b087034cac97fb40d90ed4c11c7ae
+  content_hash: sha256:718519da08a0df528e6aa003dce093d6bae33212834c9acf02ce1c4eec1609dd
 - kind: project-relative
   target: legacy
   value: .agents/skills/checking-library-updates/schemas/verdict.json
@@ -3788,7 +4085,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:b6997e6aafc0706fcc59274c9693826713fac357fb5f53b7456e593589173468
+  content_hash: sha256:705a0b91dc96441b01284fe58962fc296a6027d01f6ca9a72a0e07bdf992e026
 - kind: project-relative
   target: legacy
   value: .agents/skills/committing-git-changes
@@ -3806,7 +4103,25 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:0833429ee2562ff816b134b588db4964aeffa6ef2deb5a38abaaf227042ea30d
+  content_hash: sha256:707a441b6cc6cc833842109024b7b62bee216ca1ad166c067292e7700fef7507
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/committing-git-changes/references/diagrams.md
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: sha256:8b5894e1fb63cc47b003d03ca47c6d4010f5d7e81d259739b52f611aa470c3f2
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/committing-git-changes/references/disclosure.md
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: sha256:0494b690d81e04a787addb64de537221c0069a97101d0b2b0f1cfde1c3b55334
 - kind: project-relative
   target: legacy
   value: .agents/skills/committing-git-changes/references/message.md
@@ -3815,7 +4130,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:cd3faef8dc612346e6e6fe3dd6037fab92bbdfc252f4b16f72d7757f3d3737f7
+  content_hash: sha256:574066a8b06b3c1367de9c49ee752b3f7dc0babf47fc8bd7c805cf6b239f527f
 - kind: project-relative
   target: legacy
   value: .agents/skills/committing-git-changes/references/templates.md
@@ -3824,7 +4139,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:c10b1321b87882d9825ee4c6d1c4ee78207025dfa35ca882d7dc80f16030e2a8
+  content_hash: sha256:469b6cb1d59206c2196d0d892ff864c31c0dc9b970af881effb1df553b9499ed
 - kind: project-relative
   target: legacy
   value: .agents/skills/committing-git-changes/scripts/check_gitmoji.py
@@ -3878,7 +4193,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:197e7f26a5e3a048490c3fa68b79a9b878bb8bfebbb3e403d09a82f6da2ae212
+  content_hash: sha256:c0ca8dacdabc36a4d413d0dbb254a2b532ae6034897b1e1c90acca80c3ad8c9e
 - kind: project-relative
   target: legacy
   value: .agents/skills/deploy-checklist
@@ -5447,6 +5762,222 @@ deployments:
   content_hash: sha256:78b80afc94fcdc0177345d7cbd0abb83660f309a400266ff408325142db41b2c
 - kind: project-relative
   target: legacy
+  value: .agents/skills/notion-research-documentation
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: null
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/notion-research-documentation/LICENSE.txt
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:0f377d9b2a1db642e4b0531ffa126e96d9bc6c085f8d9441f220fb25f723c6f8
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/notion-research-documentation/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:e88a46da978cf6f088a788fa92ee736df699a355a72f41f14bdc258bf3ef57e7
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/notion-research-documentation/agents/openai.yaml
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:4b30833ad6a110f63a7809ee1f11f2154f2301f4ae845d0432208f386d97f3d3
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/notion-research-documentation/assets/notion-small.svg
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:00f5e4b758cc5c3e36e783dca2fabfafd05169c2f2175063e56d2e1fb6a55f81
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/notion-research-documentation/assets/notion.png
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:5eef1e62d96a3d09bc9d18e4140486c22799145b017033bd0924c2c49d741cd4
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/notion-research-documentation/evaluations/README.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:3b4e26d61cf17f9357e5a80f90da662f3d858294f69cad5e94c620bf1ce29455
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/notion-research-documentation/evaluations/basic-research.json
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:41077f0746f28d4e6a12d88c6c2a23ceb5590dc448df4ed8c1335165d0ac6bb9
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/notion-research-documentation/evaluations/research-to-database.json
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:a442c3a60b864f98c2de80bc2e55176773fe31f87feab59b9d1bfd029966496d
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/notion-research-documentation/examples/competitor-analysis.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:e51bf2f471d928c4c908f85c86fba81a1b42ceba468bb46024e33adf5c29e4ca
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/notion-research-documentation/examples/market-research.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:cb4ed96c9763fe2309354a40a7822c4770a7952909c01b890b3962e0e01adc4d
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/notion-research-documentation/examples/technical-investigation.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:2db3f3a1664e6bff4b196b0e96d76e8048fc641722f570cb156f36aed8e74d85
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/notion-research-documentation/examples/trip-planning.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:3e2f7f8fc31fb2244af76a09649b8ecf2691ef737398ddef66d5da6e515c350b
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/notion-research-documentation/reference/advanced-search.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:f9c70a3b731ce76f35aee7caa53888cc8b22dadc17dd0f54cce95933a0cbbe91
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/notion-research-documentation/reference/citations.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:fc81043a5220a350ec17d818c43814f0a5fd466c6cbaaf732fc487d21833a5a6
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/notion-research-documentation/reference/comparison-format.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:e80f6ca6573d5d776e24454df04b4a038498dcd2aa93d97edb4113cfdbd88851
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/notion-research-documentation/reference/comparison-template.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:4c3af7b72a704beb22ab8741e97d26830421dbb5f489fdc53509fdcbe4000f2f
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/notion-research-documentation/reference/comprehensive-report-format.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:956da824ce2e9c5a167dcca8322b18e29c0438ca91109f7e2cbede6785541979
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/notion-research-documentation/reference/comprehensive-report-template.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:043096d757ab5cb681c8e0abc3783663dbc5afe544012f8a9a230b0c31d62882
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/notion-research-documentation/reference/format-selection-guide.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:6280f5219e141b3e284fbe47e550a1bed1831de044eb0b1b145b43ac86f38133
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/notion-research-documentation/reference/quick-brief-format.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:de02fca650fb676db4e2dd5772c9393b91fc9467edc2d4e33ca57df7ccd58d13
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/notion-research-documentation/reference/quick-brief-template.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:280912ecdb1c1543038a883d6341587aa8afc8f699952b7449e314dbe68c9243
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/notion-research-documentation/reference/research-summary-format.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:29308d84318a717c8f8550bbfaded1826d4f7372f658c68638380d6a2b58f89b
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/notion-research-documentation/reference/research-summary-template.md
+  runtime: null
+  scope: project
+  owners:
+  - openai/skills/skills/.curated/notion-research-documentation
+  active_owner: openai/skills/skills/.curated/notion-research-documentation
+  content_hash: sha256:c1e704d6b28b4414fd8d37b07095859704e34ce92041fa872b15e53da15dfa2a
+- kind: project-relative
+  target: legacy
   value: .agents/skills/planning-manual-checks
   runtime: null
   scope: project
@@ -5462,7 +5993,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:a5e164ade031204a46a5edc181e5598f25fc842c7e2de55d44ac6232f8c812cf
+  content_hash: sha256:935fd497f9455ec9daf1659d65c19707b74734f28332e7a926f504d4caec64d3
 - kind: project-relative
   target: legacy
   value: .agents/skills/planning-manual-checks/references/viewpoints.md
@@ -5759,7 +6290,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:924aa92a8e3e216da1b0c2f164f2cffb186dadabffc66e58f23a288a2a7b13d2
+  content_hash: sha256:ac9fe79b928eb2711b81929b7eeae424934b28907441f5e368cd332c308be84d
 - kind: project-relative
   target: legacy
   value: .agents/skills/resolving-pr-reviews/references/watching.md
@@ -5822,7 +6353,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:ccd94067f02816ae610d86565b00f65a4978ea00473d50a58ba8234cc577d30b
+  content_hash: sha256:8acaa8bb427f723e2e9b4f7e8b191c09d0715217fc78eb090f7ae4e899a50bda
 - kind: project-relative
   target: legacy
   value: .agents/skills/reviewing-pull-requests/references/guidelines/backend.md
@@ -5858,7 +6389,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:1b99752a1d9da2b1dd5cc9ecab58f6d25130937b3a45c564d90aa1c7151c7890
+  content_hash: sha256:28271aa53b696fa8cd6f9b556d09d69fb4a72891392461794b0d87ce21bb81fe
 - kind: project-relative
   target: legacy
   value: .agents/skills/reviewing-pull-requests/references/pr-content.md
@@ -5885,7 +6416,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:323c799e5d25767885e01a89a930f17a2be66b8a4775368ba1473d78ab471684
+  content_hash: sha256:9d488b047b22a4d9e193b0ad13fcce448cc1b9c6c7db10ea1f03413bd72bf191
 - kind: project-relative
   target: legacy
   value: .agents/skills/reviewing-writing
@@ -5993,7 +6524,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:ff7c8bb04824a2068254199347669e5c2345679bf817f9aa2e750095b2ef8e06
+  content_hash: sha256:ccb0692ee20435a5c693145a3dd58a11c1086775324d7fa6f581e67749894dd0
 - kind: project-relative
   target: legacy
   value: .agents/skills/system-design
@@ -6074,7 +6605,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:d45986fa5484810580ab457e587444b53329e0ff29e2fd8704e084efea5ffe1b
+  content_hash: sha256:17391b5e5d9384bc24d4402aa573d7ebabd0c8f70f4cdf075abbebb60d029331
 - kind: project-relative
   target: legacy
   value: .agents/skills/typescript-best-practices
@@ -6137,7 +6668,25 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:09dc35fdc022606808d554e98f37dfa9b095645d44fba2277c70ed03a3402084
+  content_hash: sha256:059b1e249fdd35b7f19c36ee9d832ffa12da061ad330e793a2eb27e48499d52d
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/writing-explainer-pages
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: null
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/writing-explainer-pages/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - icchankun/skills
+  active_owner: icchankun/skills
+  content_hash: sha256:9cf2213af19f860e9c1b3ec0b90a2b67b0254552c0ad607bae95f3f536401c72
 - kind: project-relative
   target: legacy
   value: .agents/skills/writing-notion-docs
@@ -6155,7 +6704,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:5952d74a11a7a294b8bfb53599aabbbce52018f38e1d54a6d808b980a0cb8317
+  content_hash: sha256:94260d0e4ac9704ccd362016bcb8182e294479401282442061ad895217aeee38
 - kind: project-relative
   target: legacy
   value: .agents/skills/writing-slack-messages
@@ -6173,4 +6722,4 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:dc50a19242f5cb9f9aebee15d570d4c81b9938a75638aff4f494e33ad67411d3
+  content_hash: sha256:ea2bc5b8f60d4ac65d788cf94b1a28624f195755c2cd52c4ef9470d254b2e3b1
