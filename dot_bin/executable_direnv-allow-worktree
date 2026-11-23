@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# =============================================================================
+# direnv-allow-worktree
+# git-wt フック: `git wt` が作った worktree の .envrc を direnv allow する。
+# worktree は作るたびに別のフォルダになり、direnv はフォルダごとに allow を求めるため。
+#
+# 許可するのは、メイン worktree の .envrc と中身が同じで、それが allow 済みのときだけ。
+# ブランチ側で書き換えた .envrc を、中身を見ないまま動かさないため。
+# 失敗しても 0 で終わる。git-wt は失敗したフックより後のフックを動かさないため。
+# =============================================================================
+set -u
+
+[ -f .envrc ] || exit 0
+command -v direnv >/dev/null 2>&1 || exit 0
+
+main=$(git worktree list --porcelain | awk '/^worktree / { print substr($0, 10); exit }')
+[ -n "$main" ] && [ "$main" != "$PWD" ] || exit 0
+
+# direnv status の allowed は 0 が許可済み
+allowed=$(cd "$main" && direnv status --json 2>/dev/null | jq -r '.state.foundRC.allowed // empty')
+if [ "$allowed" != 0 ] || ! cmp -s .envrc "$main/.envrc"; then
+  printf 'direnv-allow-worktree: %s/.envrc は中身を確かめてから direnv allow する\n' "$PWD" >&2
+  exit 0
+fi
+
+direnv allow . || printf 'direnv-allow-worktree: direnv allow に失敗した: %s\n' "$PWD" >&2
+exit 0

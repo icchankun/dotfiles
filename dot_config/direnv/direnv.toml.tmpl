@@ -1,7 +1,3 @@
 # ~/.envrc（共通の .env を読む）は direnv allow なしで読み込む
 [whitelist]
 exact = ["{{ .chezmoi.homeDir }}/.envrc"]
-{{- with index . "direnvPrefixes" }}
-# git wt で worktree を量産するリポジトリは、その都度 direnv allow が要るため、配下をまとめて許可する
-prefix = {{ . | toJson }}
-{{- end }}
