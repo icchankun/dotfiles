@@ -3,7 +3,7 @@
 # =============================================================================
 # herdr-worktree-open
 # git-wt フック: `git wt` が worktree を作った直後に、Herdr.app の space として
-# 開き、最初のタブで driver の agent を、2つ目のタブで lazygit を起動する。
+# 開き、driver の agent を起動する。
 #
 # The driver is Claude Code unless `git config --global herdr.driver codex` says
 # otherwise. (driver は Claude Code。`git config --global herdr.driver codex` で
@@ -39,7 +39,6 @@ opened=$(herdr-app do space.new --folder "$PWD" --tab driver --argv "$argv" 2>&1
   printf 'herdr-worktree-open: could not open %s in Herdr: %s\n' "$PWD" "$opened" >&2
   exit 0
 }
-space=$(printf '%s' "$opened" | jq -r '.space // empty')
 terminal=$(printf '%s' "$opened" | jq -r '.terminal // empty')
 if [ "$argv" != '[]' ] && [ -n "$terminal" ]; then
   # role=driver と driver=<terminal> の label を付ける。herdr-coding がレビュー役に
@@ -48,7 +47,4 @@ if [ "$argv" != '[]' ] && [ -n "$terminal" ]; then
   printf 'driver: %s (%s)\n' "$terminal" "$agent"
 fi
 
-if command -v lazygit >/dev/null 2>&1 && [ -n "$space" ]; then
-  herdr-app do tab.new --space "$space" --name lazygit --folder "$PWD" --argv '["lazygit"]' >/dev/null 2>&1 || true
-fi
 herdr-app do pane.focus --terminal "$HC_TERMINAL_ID" >/dev/null 2>&1 || true
