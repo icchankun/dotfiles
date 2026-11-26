@@ -1,3 +1,14 @@
+#!/usr/bin/env python3
+# chezmoi の modify_ スクリプト。今の ~/.claude/settings.json を標準入力で受け取り、dotfiles で決めた値だけを上書きして出力する
+# Claude Code は /config や /plugin で変えた値をこのファイルに書き込むので、ファイルごとは置き換えず、決めた値だけを混ぜ込む
+# permissions とモデルは、Codex と共通の値を .chezmoidata/agents.yaml から作る
+import copy
+import json
+import sys
+
+AGENTS = json.loads({{ .agents | toJson | quote }})
+
+MANAGED = json.loads(r"""
 {
   "attribution": {
     "sessionUrl": false
@@ -7,46 +18,6 @@
     "CLAUDE_CODE_EXPERIMENTAL_CODE_MODE": "1"
   },
   "permissions": {
-    "allow": [
-      "WebSearch",
-      "Bash(gh issue list*)",
-      "Bash(gh issue view*)",
-      "Bash(gh issue status*)",
-      "Bash(gh pr list*)",
-      "Bash(gh pr view*)",
-      "Bash(gh pr status*)",
-      "Bash(gh pr checks*)",
-      "Bash(gh pr diff*)",
-      "Bash(gh repo view*)",
-      "Bash(gh repo list*)",
-      "Bash(gh release list*)",
-      "Bash(gh release view*)",
-      "Bash(gh run list*)",
-      "Bash(gh run view*)",
-      "Bash(gh workflow list*)",
-      "Bash(gh workflow view*)",
-      "Bash(gh search*)",
-      "Bash(gh gist list*)",
-      "Bash(gh gist view*)",
-      "Bash(bundle list*)",
-      "Bash(bundle info*)",
-      "Bash(ruby -v*)",
-      "Bash(node -v*)",
-      "Bash(yarn --version*)",
-      "Bash(git push --force-with-lease)"
-    ],
-    "deny": [
-      "Read(**/.env)",
-      "Read(**/.env.*)",
-      "Read(~/.ssh/*)",
-      "Read(~/.ssh/**)",
-      "Bash(rm -rf *)",
-      "Bash(rm -fr *)",
-      "Bash(rm -Rf *)",
-      "Bash(rm -rF *)",
-      "Bash(sudo *)",
-      "Bash(gh pr merge*)"
-    ],
     "defaultMode": "auto"
   },
   "hooks": {
@@ -160,7 +131,47 @@
   "agentPushNotifEnabled": true,
   "inputNeededNotifEnabled": true,
   "cleanupPeriodDays": 14,
-  "model": "opus",
   "skipWorkflowUsageWarning": true,
   "syncClaudeAiPlugins": false
 }
+""")
+
+
+def expand(pattern):
+    # ["rm", ["-rf", "-fr"]] を "rm -rf" と "rm -fr" に開く
+    commands = [[]]
+    for word in pattern:
+        commands = [c + [w] for c in commands for w in (word if isinstance(word, list) else [word])]
+    return [" ".join(c) for c in commands]
+
+
+def bash(commands):
+    return [f"Bash({c}*)" for c in commands]
+
+
+secrets = AGENTS["secrets"]
+MANAGED["model"] = AGENTS["models"]["claude"]["heavy"]
+MANAGED["permissions"]["allow"] = [
+    "WebSearch",
+    *bash(AGENTS["commands"]["allow"]),
+    "Bash(git push --force-with-lease)",
+]
+MANAGED["permissions"]["deny"] = [
+    *[f"Read({g})" for g in secrets["workspace_globs"]],
+    *[f"Read(~/{d}/{g})" for d in secrets["home_dirs"] for g in ("*", "**")],
+    *bash(c for f in AGENTS["commands"]["forbidden"] for c in expand(f["pattern"])),
+]
+
+
+def merge(base, managed):
+    for key, value in managed.items():
+        if isinstance(value, dict) and isinstance(base.get(key), dict):
+            merge(base[key], value)
+        else:
+            base[key] = copy.deepcopy(value)
+    return base
+
+
+current = sys.stdin.read()
+config = json.loads(current) if current.strip() else {}
+print(json.dumps(merge(config, MANAGED), ensure_ascii=False, indent=2))

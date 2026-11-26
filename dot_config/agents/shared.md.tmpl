@@ -74,12 +74,14 @@ skill や指示が「軽いモデル」「標準のモデル」「重いモデ�
 
 | 重さ | Claude Code | Codex |
 |---|---|---|
-| 軽い | `haiku` | `gpt-6-luna` |
-| 標準 | `sonnet` | `gpt-6-luna` |
-| 重い | `opus` | `gpt-6.1-sol` |
+{{ with .agents.models -}}
+| 軽い | `{{ .claude.light }}` | `{{ .codex.light }}` |
+| 標準 | `{{ .claude.standard }}` | `{{ .codex.standard }}` |
+| 重い | `{{ .claude.heavy }}` | `{{ .codex.heavy }}` |
+{{- end }}
 
 - Codex のいちばん上のモデル（`gpt-6-astra`）は使わない。使える量が少なく、毎回の作業で回すと足りなくなる。
-- モデルが廃止されたら、この表と、dotfiles（`~/.local/share/chezmoi`）でモデル名を直書きしているファイルを直す。ファイルの一覧は dotfiles の AGENTS.md にある。
+- モデルが廃止されたら、dotfiles（`~/.local/share/chezmoi`）の `.chezmoidata/agents.yaml` を直す。この表と各ツールの設定はそこから作る。モデル名を直書きしているファイルは dotfiles の AGENTS.md にある。
 
 ## skill を入れるとき
 

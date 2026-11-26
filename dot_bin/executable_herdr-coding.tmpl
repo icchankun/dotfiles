@@ -14,7 +14,7 @@
 #
 #   オプション:
 #     -a, --agent NAME   レビュー役の agent。default: driver と同じ
-#     -m, --model NAME   レビュー役のモデル。default: claude は sonnet、codex は gpt-6-luna
+#     -m, --model NAME   レビュー役のモデル。default: claude は {{ .agents.models.claude.standard }}、codex は {{ .agents.models.codex.standard }}
 #     -h, --help         このヘルプを表示する。
 #
 # 補足:
@@ -69,7 +69,7 @@ die() {
 }
 
 usage() {
-  sed -n '/^# Usage/,/^# ===/p' "$0" | sed 's/^# \{0,1\}//;$d'
+  sed -n '/^# 使い方/,/^# ===/p' "$0" | sed 's/^# \{0,1\}//;$d'
 }
 
 parse_args() {
@@ -101,8 +101,8 @@ resolve_agent() {
   # Claude Code では、レビューコマンド内でバグを探すエージェントが自分でモデルを
   # 固定しているため、ここで決まるのは主に指摘の仕分けを担うモデル。
   case "$agent" in
-    claude) model="${model:-sonnet}" ;;
-    codex) model="${model:-gpt-6-luna}" ;;
+    claude) model="${model:-{{ .agents.models.claude.standard }}}" ;;
+    codex) model="${model:-{{ .agents.models.codex.standard }}}" ;;
     *) die "unknown agent: $agent (claude or codex)" ;;
   esac
   command -v "$agent" >/dev/null || die "$agent not found in PATH"

@@ -1,0 +1,68 @@
+# Claude Code と Codex の設定に同じ値を書くもの。chezmoi apply で次のファイルに入る
+# - models: dot_config/agents/shared.md.tmpl の表、dot_claude/modify_settings.json.tmpl、dot_codex/modify_private_config.toml.tmpl、dot_bin/executable_herdr-coding.tmpl
+# - commands・secrets: dot_claude/modify_settings.json.tmpl の permissions、dot_codex/rules/dotfiles.rules.tmpl、dot_codex/modify_private_config.toml.tmpl
+agents:
+  # shared.md の「モデルの重さ」の表
+  models:
+    claude:
+      light: haiku
+      standard: sonnet
+      heavy: opus
+    codex:
+      light: gpt-6-luna
+      standard: gpt-6-luna
+      heavy: gpt-6.1-sol
+  commands:
+    # 読むだけのコマンド。確認なしで通す
+    allow:
+      - gh issue list
+      - gh issue view
+      - gh issue status
+      - gh pr list
+      - gh pr view
+      - gh pr status
+      - gh pr checks
+      - gh pr diff
+      - gh repo view
+      - gh repo list
+      - gh release list
+      - gh release view
+      - gh run list
+      - gh run view
+      - gh workflow list
+      - gh workflow view
+      - gh search
+      - gh gist list
+      - gh gist view
+      - bundle list
+      - bundle info
+      - ruby -v
+      - node -v
+      - yarn --version
+    # Claude Code は最初から確認なしで通すので、Codex にだけ書く
+    allow_codex_only:
+      - git log
+      - git diff
+      - git status
+      - git show
+      - which
+      - ls
+    # 止めるコマンド。pattern の中のリストは、そのどれかに当たれば止める
+    forbidden:
+      - pattern: [rm, [-rf, -fr, -Rf, -rF]]
+        justification: まとめて消すコマンドは使わない。消すファイルを1つずつ指定する
+        match: [rm -rf build]
+        not_match: [rm build/a.txt]
+      - pattern: [sudo]
+        justification: 権限を上げるコマンドは使わない。必要ならユーザーに頼む
+        match: [sudo ls]
+      - pattern: [gh, pr, merge]
+        justification: PR は merge しない。merge は人がする
+        match: [gh pr merge 123 --squash, gh pr merge --auto]
+        not_match: [gh pr view 123]
+  # 読ませないもの
+  secrets:
+    # ホームの下のディレクトリ
+    home_dirs: [.ssh]
+    # 作業ディレクトリの中のファイル
+    workspace_globs: ["**/.env", "**/.env.*"]

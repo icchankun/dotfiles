@@ -9,19 +9,16 @@ import tomllib
 
 HOME = {{ .chezmoi.homeDir | quote }}
 
-# 読ませないもの。Claude Code の permissions.deny の Read に当たる
+# 読ませないもの。Claude Code の permissions.deny の Read に当たり、どちらも .chezmoidata/agents.yaml から作る
 SECRETS = {
-    f"{HOME}/.ssh": "deny",
-    ":workspace_roots": {
-        "**/.env": "deny",
-        "**/.env.*": "deny",
-    },
+    **{f"{HOME}/{d}": "deny" for d in {{ .agents.secrets.home_dirs | toJson }}},
+    ":workspace_roots": {g: "deny" for g in {{ .agents.secrets.workspace_globs | toJson }}},
 }
 
 # Claude Code の settings.json に対応する値。Codex の既定と同じものは書かない
 MANAGED = {
     # effortLevel: medium。モデルは Codex の主力
-    "model": "gpt-6.1-sol",
+    "model": {{ .agents.models.codex.heavy | quote }},
     "model_reasoning_effort": "medium",
     "default_permissions": "dotfiles",
     "permissions": {

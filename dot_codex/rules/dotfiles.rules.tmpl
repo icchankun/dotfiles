@@ -1,0 +1,12 @@
+# Codex の実行ポリシー。Claude Code の settings.json の permissions に当たる
+# Codex は「常に許可」を選ぶと default.rules に書き足すので、dotfiles で管理するのはこのファイルだけにする
+# コマンドの一覧は .chezmoidata/agents.yaml にあり、Claude Code の permissions と共通
+
+# 読むだけのコマンドは確認なしで通す（permissions.allow）
+{{ range concat .agents.commands.allow .agents.commands.allow_codex_only -}}
+prefix_rule(pattern = {{ splitList " " . | toJson }})
+{{ end }}
+# 消す・権限を上げる・PR を merge するコマンドは止める（permissions.deny）
+{{ range .agents.commands.forbidden -}}
+prefix_rule(pattern = {{ .pattern | toJson }}, decision = "forbidden", justification = {{ .justification | toJson }}, match = {{ .match | toJson }}{{ if hasKey . "not_match" }}, not_match = {{ .not_match | toJson }}{{ end }})
+{{ end -}}

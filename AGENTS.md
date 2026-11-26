@@ -1,11 +1,10 @@
 # dotfiles の指示
 
-## モデル名を直書きしているファイル
+## モデル名と permissions
 
-共通の指示（`dot_config/agents/shared.md`）のモデルの表を変えたら、次のファイルのモデル名も合わせて直す：
+モデル名と、確認なしで通す・止めるコマンドは `.chezmoidata/agents.yaml` に置く。`dot_config/agents/shared.md.tmpl` の表、Claude Code と Codex の設定、`herdr-coding` はそこから作る。
+
+次のファイルはモデル名を直書きしているので、`agents.yaml` の `models` を変えたら合わせて直す：
 
 - `dot_bin/executable_codex-code-pr-review`
 - `dot_bin/executable_codex-dep-pr-review`
-- `dot_bin/executable_herdr-coding`
-- `dot_codex/modify_private_config.toml.tmpl`
-- `dot_claude/settings.json`
