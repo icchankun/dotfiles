@@ -117,13 +117,13 @@ def git_rewrites(command):
             target = directory
             while len(args) >= 2 and args[0] in ("-c", "-C"):
                 if args[0] == "-C":
-                    target = args[1]
+                    target = os.path.join(directory, args[1]) if directory else args[1]
                 args = args[2:]
             if args[:1] == ["commit"] and "--amend" in args:
                 rewrites.append(("amend", target))
             elif args[:1] == ["push"] and any(a.startswith("--force-with-lease") for a in args):
                 rewrites.append(("lease", target))
-            elif args[:1] == ["push"] and any(a == "-f" or a.startswith("--force") for a in args):
+            elif args[:1] == ["push"] and force_push(args[1:]):
                 rewrites.append(("force", target))
     except ValueError:
         # 引用符が閉じていないと解析できない。見逃すより、文字列に含まれれば書き換えとして扱う
@@ -134,6 +134,17 @@ def git_rewrites(command):
         elif "--force" in command:
             rewrites.append(("force", None))
     return rewrites
+
+
+def force_push(args):
+    # +main のような refspec と、-fu のようにまとめた短いオプションも force になる。
+    # --force-if-includes は --force-with-lease と組むときだけ効くので、それだけでは force にしない
+    for a in args:
+        if a == "--force" or a.startswith("+"):
+            return True
+        if a.startswith("-") and not a.startswith("--") and "f" in a[1:]:
+            return True
+    return False
 
 
 LEASE_FORM = "`git push --force-with-lease` は、ほかのコマンドとつながず単独で実行する。"

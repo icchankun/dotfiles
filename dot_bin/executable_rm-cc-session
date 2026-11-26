@@ -22,7 +22,7 @@ PROJECTS_DIR="$HOME/.claude/projects"
 SELF="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
 
 _list() {
-  find "$PROJECTS_DIR" -maxdepth 2 -name "*.jsonl" 2>/dev/null | while read -r file; do
+  find "$PROJECTS_DIR" -maxdepth 2 -name "*.jsonl" 2>/dev/null | while IFS= read -r file; do
     local line
     line=$(jq -rcs '
       (map(select(.type == "user" and (.message.role? == "user"))) | first) as $first |

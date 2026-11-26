@@ -226,7 +226,7 @@ fast_forward_base() {
 deleted_total=0
 skipped_total=0
 
-while IFS= read -r gitdir; do
+while IFS= read -r gitdir <&3; do
   repo="$(dirname "$gitdir")"
 
   run_with_timeout "$FETCH_TIMEOUT" git -C "$repo" fetch --prune --quiet 2>/dev/null
@@ -248,7 +248,8 @@ while IFS= read -r gitdir; do
     continue
   fi
   [[ -z "$branches_out" ]] && continue
-  mapfile -t branches <<<"$branches_out"
+  branches=()
+  while IFS= read -r branch; do branches+=("$branch"); done <<<"$branches_out"
 
   "$QUIET" || log "REPO  $repo"
 
@@ -282,6 +283,6 @@ while IFS= read -r gitdir; do
       ((skipped_total++))
     fi
   done
-done < <(find "$ROOT" -maxdepth "$DEPTH" -type d -name .git -prune 2>/dev/null | sort)
+done 3< <(find "$ROOT" -maxdepth "$DEPTH" -type d -name .git -prune 2>/dev/null | sort)
 
 log "DONE  deleted=$deleted_total skipped=$skipped_total root=$ROOT$("$DRY_RUN" && echo ' (dry-run)')"

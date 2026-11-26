@@ -20,6 +20,7 @@
 # 使い方:
 #   `chezmoi merge` 実行時に自動的に呼び出される。
 # =============================================================================
+set -euo pipefail
 
 local_file="$3"   # Destination (current file on disk)
 remote_file="$4"  # Source (chezmoi source)

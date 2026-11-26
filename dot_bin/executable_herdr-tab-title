@@ -14,7 +14,7 @@ set -u
 [ -n "${HC_TERMINAL_ID:-}" ] || exit 0
 command -v herdr-app >/dev/null 2>&1 || exit 0
 
-info=$(hc get "$HC_TERMINAL_ID" 2>/dev/null) || exit 0
+info=$(hc get --json "$HC_TERMINAL_ID" 2>/dev/null) || exit 0
 [ "$(printf '%s' "$info" | jq -r '.labels.role // empty')" = reviewer ] && exit 0
 title=$(printf '%s' "$info" | jq -r '.title // empty')
 tab=$(printf '%s' "$info" | jq -r '.labels."herdr.tab" // empty')
