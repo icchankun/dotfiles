@@ -68,6 +68,11 @@
             "type": "command",
             "command": "~/.bin/dev-flow-hook stop",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "[ ! -x ~/.bin/herdr-tab-title ] || ~/.bin/herdr-tab-title",
+            "timeout": 10
           }
         ]
       }
