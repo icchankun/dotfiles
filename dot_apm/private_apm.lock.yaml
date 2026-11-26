@@ -1,5 +1,5 @@
 lockfile_version: '1'
-generated_at: '2026-11-26T01:38:44.341139+00:00'
+generated_at: '2026-11-26T03:15:37.837178+00:00'
 apm_version: 0.31.0
 dependencies:
 - repo_url: anthropics/claude-plugins-official
@@ -1336,7 +1336,7 @@ dependencies:
   host: github.com
   resolved_commit: a80e4c9d12d607631249d4d7d059f835d4b2f13a
   resolved_ref: a80e4c9d12d607631249d4d7d059f835d4b2f13a
-  version: 0.0.0
+  version: unknown
   package_type: skill_bundle
   deployed_files:
   - .agents/skills/find-skills
