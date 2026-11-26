@@ -1,5 +1,5 @@
 lockfile_version: '1'
-generated_at: '2026-11-24T05:02:16.988774+00:00'
+generated_at: '2026-11-26T01:38:44.341139+00:00'
 apm_version: 0.31.0
 dependencies:
 - repo_url: anthropics/claude-plugins-official
@@ -801,9 +801,9 @@ dependencies:
 - repo_url: icchankun/skills
   name: icchankun-skills
   host: github.com
-  resolved_commit: 4adcb838a89d600ae1e786524788aaa5afa6e512
+  resolved_commit: ac1fc45277b31be5f24d257e81521e85fd80cb8c
   resolved_ref: main
-  version: 4adcb83
+  version: ac1fc45
   package_type: marketplace_plugin
   deployed_files:
   - .agents/skills/capturing-screens
@@ -979,9 +979,9 @@ dependencies:
     .agents/skills/recording-browser-videos/scripts/lib.sh: sha256:83d83c71255c6fa42afcc0e0ed616d82fa23d1758c3ddec50293c52ad0f7cf5d
     .agents/skills/recording-browser-videos/scripts/record-scenes.sh: sha256:88186d8b38427130e3e207093db2dd93e1109a0a37efb392f4f1339e771d1b63
     .agents/skills/recording-manual-checks/SKILL.md: sha256:ad9431cac1fb8286a48faeed0e7fb440d190eb193d12f99fadefbf69c7d99202
-    .agents/skills/resolving-pr-reviews/SKILL.md: sha256:ac9fe79b928eb2711b81929b7eeae424934b28907441f5e368cd332c308be84d
+    .agents/skills/resolving-pr-reviews/SKILL.md: sha256:d8ae8265312776f5dd56df177d78cc80341d38787464de4fd13146025e00e5b6
     .agents/skills/resolving-pr-reviews/references/watching.md: sha256:aa4221f46ecc51000a8d66e91dd4d4a12f006280bd8d8f76b5e0e3c863f90d65
-    .agents/skills/resolving-pr-reviews/scripts/fetch_pr_comments.rb: sha256:e9b5088b1ea18bd668df4189d99badaa0a5a4f19aa082760eea723e9d3729590
+    .agents/skills/resolving-pr-reviews/scripts/fetch_pr_comments.rb: sha256:89bf297bae877a59cdd5802665d28ed1c56c6587f14219ce59883e1b347f981d
     .agents/skills/reviewing-git-diffs/SKILL.md: sha256:dc7aa5dc296ce0288691e9866be74ef3b7d24396781742055bb463cb6fc2c8f0
     .agents/skills/reviewing-git-diffs/scripts/snapshot.sh: sha256:53af0f4be563a48423831dc37366d0019c08ee794f96b6933d376741abecf218
     .agents/skills/reviewing-pull-requests/SKILL.md: sha256:8acaa8bb427f723e2e9b4f7e8b191c09d0715217fc78eb090f7ae4e899a50bda
@@ -1028,9 +1028,9 @@ dependencies:
     .claude/skills/recording-browser-videos/scripts/lib.sh: sha256:83d83c71255c6fa42afcc0e0ed616d82fa23d1758c3ddec50293c52ad0f7cf5d
     .claude/skills/recording-browser-videos/scripts/record-scenes.sh: sha256:88186d8b38427130e3e207093db2dd93e1109a0a37efb392f4f1339e771d1b63
     .claude/skills/recording-manual-checks/SKILL.md: sha256:ad9431cac1fb8286a48faeed0e7fb440d190eb193d12f99fadefbf69c7d99202
-    .claude/skills/resolving-pr-reviews/SKILL.md: sha256:ac9fe79b928eb2711b81929b7eeae424934b28907441f5e368cd332c308be84d
+    .claude/skills/resolving-pr-reviews/SKILL.md: sha256:d8ae8265312776f5dd56df177d78cc80341d38787464de4fd13146025e00e5b6
     .claude/skills/resolving-pr-reviews/references/watching.md: sha256:aa4221f46ecc51000a8d66e91dd4d4a12f006280bd8d8f76b5e0e3c863f90d65
-    .claude/skills/resolving-pr-reviews/scripts/fetch_pr_comments.rb: sha256:e9b5088b1ea18bd668df4189d99badaa0a5a4f19aa082760eea723e9d3729590
+    .claude/skills/resolving-pr-reviews/scripts/fetch_pr_comments.rb: sha256:89bf297bae877a59cdd5802665d28ed1c56c6587f14219ce59883e1b347f981d
     .claude/skills/reviewing-git-diffs/SKILL.md: sha256:dc7aa5dc296ce0288691e9866be74ef3b7d24396781742055bb463cb6fc2c8f0
     .claude/skills/reviewing-git-diffs/scripts/snapshot.sh: sha256:53af0f4be563a48423831dc37366d0019c08ee794f96b6933d376741abecf218
     .claude/skills/reviewing-pull-requests/SKILL.md: sha256:8acaa8bb427f723e2e9b4f7e8b191c09d0715217fc78eb090f7ae4e899a50bda
@@ -1049,7 +1049,7 @@ dependencies:
     .claude/skills/writing-explainer-pages/SKILL.md: sha256:9cf2213af19f860e9c1b3ec0b90a2b67b0254552c0ad607bae95f3f536401c72
     .claude/skills/writing-notion-docs/SKILL.md: sha256:94260d0e4ac9704ccd362016bcb8182e294479401282442061ad895217aeee38
     .claude/skills/writing-slack-messages/SKILL.md: sha256:ea2bc5b8f60d4ac65d788cf94b1a28624f195755c2cd52c4ef9470d254b2e3b1
-  content_hash: sha256:784b493da2a367c437ee85d78662b3dff049b20da596fed71860a1a79c17335b
+  content_hash: sha256:6129adf3046c3756551f6caf10cf1d02835476b14f570252bfdd61d93d1e2351
 - repo_url: mattpocock/skills
   name: mattpocock-skills
   host: github.com
@@ -1336,7 +1336,7 @@ dependencies:
   host: github.com
   resolved_commit: a80e4c9d12d607631249d4d7d059f835d4b2f13a
   resolved_ref: a80e4c9d12d607631249d4d7d059f835d4b2f13a
-  version: unknown
+  version: 0.0.0
   package_type: skill_bundle
   deployed_files:
   - .agents/skills/find-skills
@@ -3617,7 +3617,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:ac9fe79b928eb2711b81929b7eeae424934b28907441f5e368cd332c308be84d
+  content_hash: sha256:d8ae8265312776f5dd56df177d78cc80341d38787464de4fd13146025e00e5b6
 - kind: project-relative
   target: claude
   value: .claude/skills/resolving-pr-reviews/references/watching.md
@@ -3635,7 +3635,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:e9b5088b1ea18bd668df4189d99badaa0a5a4f19aa082760eea723e9d3729590
+  content_hash: sha256:89bf297bae877a59cdd5802665d28ed1c56c6587f14219ce59883e1b347f981d
 - kind: project-relative
   target: claude
   value: .claude/skills/reviewing-git-diffs
@@ -6290,7 +6290,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:ac9fe79b928eb2711b81929b7eeae424934b28907441f5e368cd332c308be84d
+  content_hash: sha256:d8ae8265312776f5dd56df177d78cc80341d38787464de4fd13146025e00e5b6
 - kind: project-relative
   target: legacy
   value: .agents/skills/resolving-pr-reviews/references/watching.md
@@ -6308,7 +6308,7 @@ deployments:
   owners:
   - icchankun/skills
   active_owner: icchankun/skills
-  content_hash: sha256:e9b5088b1ea18bd668df4189d99badaa0a5a4f19aa082760eea723e9d3729590
+  content_hash: sha256:89bf297bae877a59cdd5802665d28ed1c56c6587f14219ce59883e1b347f981d
 - kind: project-relative
   target: legacy
   value: .agents/skills/reviewing-git-diffs
